@@ -52,23 +52,20 @@ function evaluate!(spline_dimension::SplineDimension)::Nothing
     (; degree, knot_vector, sample_points, sample_indices, eval) = spline_dimension
     (; knots_all) = knot_vector
 
-    # TODO: Preallocate or get rid of entirely
-    B_prev = zeros(degree + 1)
-
     for (l, (t, i)) in enumerate(zip(sample_points, sample_indices))
         eval[l, 1] = 1
         for k in 1:degree
-            B_prev .= eval[l, :]
-            eval[l, :] .= 0
+            B_old = eval[l, 1]
+            eval[l, 1] = 0
             for k_ in 1:k
-                B_old = B_prev[k_]
                 t_min = knots_all[i + k_ - k]
                 t_max = knots_all[i + k_]
                 Δt = t_max - t_min
                 # Additions sum to B_old => partition of unity
                 frac = B_old / Δt
                 eval[l, k_] += frac * (t_max - t)
-                eval[l, k_ + 1] += frac * (t - t_min)
+                B_old = eval[l, k_ + 1] # Value for next iteration
+                eval[l, k_ + 1] = frac * (t - t_min)
             end
         end
     end
