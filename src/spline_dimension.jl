@@ -64,7 +64,7 @@ function evaluate!(spline_dimension::SplineDimension)::Nothing
                 # Additions sum to B_old => partition of unity
                 frac = B_old / Δt
                 eval[l, k_] += frac * (t_max - t)
-                B_old = eval[l, k_ + 1]
+                B_old = eval[l, k_ + 1] # Value for next iteration
                 eval[l, k_ + 1] = frac * (t - t_min)
             end
         end
