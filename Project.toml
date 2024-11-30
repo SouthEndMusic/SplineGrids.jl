@@ -1,4 +1,5 @@
 name = "SplineGrids"
 
 [deps]
+KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
