@@ -27,13 +27,19 @@ function get_index(knot_vector::KnotVector, t, d)
         1, length(knot_vector.knots_all) - d - 1)
 end
 
-function SplineDimension(n::Integer, d::Integer, N::Integer)::SplineDimension
-    knot_vector = KnotVector(n, d)
+"""
+    SplineDimension(n_basis_functions::Integer, degree::Integer, n_sample_points::Integer; kwargs...)::SplineDimension
+
+Constructor for a SplineDimension. For now the sample points are equispaced on the extent of the knot vector.
+Key word arguments are passed to the KnotVector constructor.
+"""
+function SplineDimension(n_basis_functions::Integer, degree::Integer, n_sample_points::Integer; kwargs...)::SplineDimension
+    knot_vector = KnotVector(n_basis_functions, degree; kwargs...)
     (; knot_values) = knot_vector
-    sample_points = range(first(knot_values), last(knot_values); length = N)
-    sample_indices = get_index.(Ref(knot_vector), sample_points, d)
-    eval = zeros(N, d + 1)
-    s = SplineDimension(d, knot_vector, sample_points, sample_indices, eval)
+    sample_points = range(first(knot_values), last(knot_values); length = n_sample_points)
+    sample_indices = get_index.(Ref(knot_vector), sample_points, degree)
+    eval = zeros(n_sample_points, degree + 1)
+    s = SplineDimension(degree, knot_vector, sample_points, sample_indices, eval)
     evaluate!(s)
     s
 end

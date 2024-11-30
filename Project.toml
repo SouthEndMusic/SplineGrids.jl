@@ -1,5 +1,13 @@
 name = "SplineGrids"
+uuid = "59c446ea-fb23-41e3-bcd2-697fa0a242d6"
 
 [deps]
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+
+[extras]
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["SafeTestsets", "Test"]
