@@ -33,7 +33,8 @@ end
 Constructor for a SplineDimension. For now the sample points are equispaced on the extent of the knot vector.
 Key word arguments are passed to the KnotVector constructor.
 """
-function SplineDimension(n_basis_functions::Integer, degree::Integer, n_sample_points::Integer; kwargs...)::SplineDimension
+function SplineDimension(n_basis_functions::Integer, degree::Integer,
+        n_sample_points::Integer; kwargs...)::SplineDimension
     knot_vector = KnotVector(n_basis_functions, degree; kwargs...)
     (; knot_values) = knot_vector
     sample_points = range(first(knot_values), last(knot_values); length = n_sample_points)
