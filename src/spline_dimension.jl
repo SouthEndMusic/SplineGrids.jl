@@ -21,7 +21,7 @@ struct SplineDimension{K, M, S <: AbstractVector, I <: AbstractVector{<:Integer}
     eval::E
 end
 
-get_index(knot_vector::KnotVector, t, d) = clamp(searchsortedlast(knot_vector.knots_all, t), 1, length(knot_vector.knots_all) - d - 1)
+get_index(knot_vector::KnotVector, t, d) = clamp(searchsortedlast(knot_vector.knots_all, t), d + 1, length(knot_vector.knots_all) - d - 1)
 
 """
     SplineDimension(n_basis_functions::Integer, degree::Integer, n_sample_points::Integer; kwargs...)::SplineDimension
@@ -78,11 +78,10 @@ function evaluate!(spline_dimension::SplineDimension)::Nothing
     return nothing
 end
 
-function decompress(spline_dimension)
-    (; sample_indices, degree, knot_vector, eval) = spline_dimension
+function decompress(spline_dimension::SplineDimension)
+    (; sample_indices, degree, eval) = spline_dimension
     n_sample_points = length(sample_indices)
-    n_knots = sum(knot_vector.multiplicities)
-    n_basis_functions = n_knots - degree - 1
+    n_basis_functions = get_n_basis_functions(spline_dimension)
     out = zeros(n_sample_points, n_basis_functions)
 
     for (l,i) in enumerate(sample_indices)
@@ -91,3 +90,5 @@ function decompress(spline_dimension)
 
     out
 end
+
+get_n_basis_functions(spline_dimension::SplineDimension) = length(spline_dimension.knot_vector.knots_all) - spline_dimension.degree - 1
