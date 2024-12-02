@@ -1,5 +1,6 @@
 module SplineGrids
 
+using KernelAbstractions
 using RecipesBase
 
 include("knot_vector.jl")
