@@ -1,8 +1,7 @@
 @recipe function f(s::SplineDimension)
     data = decompress(s)
-    (; knot_vector, sample_points, degree) = s
-    (; knots_all) = knot_vector
-    n_basis_functions = length(knots_all) - degree - 1
+    (; knot_vector, sample_points) = s
+    n_basis_functions = get_n_basis_functions(s)
 
     # Plot each basis function
     for j in 1:n_basis_functions

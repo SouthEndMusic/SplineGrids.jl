@@ -5,13 +5,13 @@ Defines the set of basis functions for a single dimension, and how it is sampled
 
 ## Arguments
 
-`degree`: The degree of the piecewise polynomial basis functions.
-`knot_vector`: The knot vector on which the basis functions are defined.
-`sample_points`: The points in the domain of the basis functions where they are sampled. Must
-lie within the boundaries of the knot vector.
-`sample_indices`: The indices `i` of the sample points `t`` in the knot vector such that `knot_vector.knots[i] ≤ t < knot_vector.knots[i + 1]``
-`eval`: A matrix of shape `(length(sample_points), degree + 1)`, with per sample point the values of those basis functions
-whose support the sample point is in.
+  - `degree`: The degree of the piecewise polynomial basis functions.
+  - `knot_vector`: The knot vector on which the basis functions are defined.
+  - `sample_points`: The points in the domain of the basis functions where they are sampled. Must
+  - lie within the boundaries of the knot vector.
+  - `sample_indices`: The indices `i` of the sample points `t`` in the knot vector such that `knot_vector.knots[i] ≤ t < knot_vector.knots[i + 1]``
+  - `eval`: A matrix of shape `(length(sample_points), degree + 1)`, with per sample point the values of those basis functions
+    whose support the sample point is in.
 """
 struct SplineDimension{
     K, M, S <: AbstractVector, I <: AbstractVector{<:Integer}, E <: AbstractMatrix}
@@ -24,7 +24,7 @@ end
 
 function get_index(knot_vector::KnotVector, t, d)
     clamp(searchsortedlast(knot_vector.knots_all, t),
-        1, length(knot_vector.knots_all) - d - 1)
+        d + 1, length(knot_vector.knots_all) - d - 1)
 end
 
 """
@@ -100,11 +100,10 @@ end
 Transform `spline_dimension.eval` into a matrix of shape `(n_sample_points, n_points - degree - 1)`
 which explicitly gives the value for each basis function at each sample point.
 """
-function decompress(spline_dimension)
-    (; sample_indices, degree, knot_vector, eval) = spline_dimension
+function decompress(spline_dimension::SplineDimension)
+    (; sample_indices, degree, eval) = spline_dimension
     n_sample_points = length(sample_indices)
-    n_knots = sum(knot_vector.multiplicities)
-    n_basis_functions = n_knots - degree - 1
+    n_basis_functions = get_n_basis_functions(spline_dimension)
     out = zeros(n_sample_points, n_basis_functions)
 
     for (l, i) in enumerate(sample_indices)
@@ -112,4 +111,8 @@ function decompress(spline_dimension)
     end
 
     out
+end
+
+function get_n_basis_functions(spline_dimension::SplineDimension)
+    length(spline_dimension.knot_vector.knots_all) - spline_dimension.degree - 1
 end
