@@ -36,6 +36,10 @@ function SplineGrid(spline_dimensions::NTuple{N_in, <:SplineDimension},
     SplineGrid(spline_dimensions, control_points, weights, eval, basis_function_products)
 end
 
+function SplineGrid(spline_dimension::SplineDimension, args...; kwargs...)
+    SplineGrid((spline_dimension,), args...; kwargs...)
+end
+
 function cp_kernel_size(spline_grid::SplineGrid)
     Tuple(spline_dim.degree + 1 for spline_dim in spline_grid.spline_dimensions)
 end

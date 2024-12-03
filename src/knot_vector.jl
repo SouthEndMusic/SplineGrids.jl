@@ -48,7 +48,7 @@ other multiplicities are 1.
 function KnotVector(
         n_basis_functions::Integer, degree::Integer; extent::Tuple{Number, Number} = (0, 1),
         distribution::Symbol = :equispaced)::KnotVector
-    @assert n_basis_functions - degree + 1 ≥ 2
+    @assert n_basis_functions - degree ≥ 1
     n_knot_values = n_basis_functions - degree + 1
     if distribution == :random
         knot_values = cumsum(rand(n_knot_values))
