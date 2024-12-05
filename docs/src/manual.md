@@ -10,7 +10,7 @@ SplineGrid(::NTuple{N_in, <:SplineDimension}, ::Integer) where N_in
 
 ```@docs
 evaluate!(::SplineDimension)
-evaluate!(::SplineGrid)
+evaluate!(::SplineGrids.AbstractSplineGrid{Nin, Nout}) where {Nin, Nout}
 ```
 
 # Structs

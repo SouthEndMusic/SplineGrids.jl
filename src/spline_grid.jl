@@ -70,7 +70,8 @@ end
 
 # Get the size of the block of control points that each output of the spline
 # depends on
-function cp_kernel_size(spline_grid::SplineGrid)
+function cp_kernel_size(spline_grid::AbstractSplineGrid{Nin})::NTuple{
+        Nin, Int} where {Nin}
     Tuple(spline_dim.degree + 1 for spline_dim in spline_grid.spline_dimensions)
 end
 
@@ -80,6 +81,20 @@ function outer!(A::AbstractArray{T, N}, vs::Vararg{SubArray, N}) where {T, N}
     broadcast!(*, A, vecs...)
 end
 
+function get_linear_index(array_shape, indices)
+
+    # Calculate flat index using column-major order (Julia's default)
+    linear_idx = 1
+    offset = 1
+
+    for i in eachindex(array_shape)
+        @inbounds linear_idx += (indices[i] - 1) * offset
+        @inbounds offset *= array_shape[i]
+    end
+
+    return linear_idx
+end
+
 """
     evaluate!(spline_grid::SplineGrid)
 
@@ -87,23 +102,34 @@ Evaluate the spline grid, that is: take the evaluated basis functions for each s
 for each SplineDimension, and compute the output grid on each sample point combination
 as a linear combination of control with basis function products as coefficients.
 """
-function evaluate!(spline_grid::SplineGrid)::Nothing
+function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout})::Nothing where {Nin, Nout}
     (; basis_function_products, eval, spline_dimensions, control_points) = spline_grid
     eval .= 0
 
+    cp_indices = zeros(Int, Nin + 1)
+    control_point_kernel_size = cp_kernel_size(spline_grid)
+
     # Loop over the positions in the kernel of control points each spline evaluation depends on
-    for I in CartesianIndices(cp_kernel_size(spline_grid))
+    for I in CartesianIndices(control_point_kernel_size)
         # Compute basis function products as an outer product of the basis function values per 
         # spline dimension
         outer!(basis_function_products,
             (view(spline_dim.eval, :, i) for (i, spline_dim) in zip(
                 Tuple(I), spline_dimensions))...)
-        # Loop over all sample points to compute one one basis_function_product * control_point contribution
+        # Loop over all sample points to compute one basis_function_product * control_point contribution
         for J in CartesianIndices(basis_function_products)
-            cp_indices = (spline_dim.sample_indices[j] - spline_dim.degree - 1 + i for (i, j, spline_dim) in zip(
-                Tuple(I), Tuple(J), spline_dimensions))
-            control_point = view(control_points, cp_indices..., :)
-            @. eval[J, :] += basis_function_products[J] * control_point
+            for dim in 1:Nin
+                spline_dim = spline_dimensions[dim]
+                @inbounds cp_indices[dim] = spline_dim.sample_indices[J[dim]] -
+                                            spline_dim.degree -
+                                            1 + I[dim]
+            end
+            for dim in 1:Nout
+                cp_indices[end] = dim
+                linear_index = get_linear_index(size(control_points), cp_indices)
+                @inbounds eval[J, dim] += basis_function_products[J] *
+                                          control_points[linear_index]
+            end
         end
     end
     return nothing
