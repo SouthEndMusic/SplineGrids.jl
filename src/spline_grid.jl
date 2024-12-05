@@ -1,3 +1,5 @@
+abstract type AbstractSplineGrid{Nin, Nout} end
+
 """
 The SplineGrid is the central object of the `SplineGrids.jl` package, containing
 all information to evaluate the defined spline on the defined grid.
@@ -14,8 +16,8 @@ all information to evaluate the defined spline on the defined grid.
 """
 struct SplineGrid{
     S <: SplineDimension, C <: AbstractArray, W <: Union{AbstractArray, Nothing},
-    E <: AbstractArray, B <: AbstractArray, N_in}
-    spline_dimensions::NTuple{N_in, S}
+    E <: AbstractArray, B <: AbstractArray, Nin, Nout} <: AbstractSplineGrid{Nin, Nout}
+    spline_dimensions::NTuple{Nin, S}
     control_points::C
     weights::W
     eval::E
@@ -23,9 +25,10 @@ struct SplineGrid{
     function SplineGrid(
             spline_dimensions, control_points, weights, eval, basis_function_products)
         # TODO: Add validation of combination of control points, weights, and basis functions
-        N_in = length(spline_dimensions)
+        Nin = length(spline_dimensions)
+        Nout = size(control_points)[end]
         new{eltype(spline_dimensions), typeof(control_points), typeof(weights),
-            typeof(eval), typeof(basis_function_products), N_in}(
+            typeof(eval), typeof(basis_function_products), Nin, Nout}(
             spline_dimensions, control_points, weights, eval, basis_function_products)
     end
 end

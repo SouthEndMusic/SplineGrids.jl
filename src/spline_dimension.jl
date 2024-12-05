@@ -9,7 +9,7 @@ Defines the set of basis functions for a single dimension, and how it is sampled
   - `knot_vector`: The knot vector on which the basis functions are defined.
   - `sample_points`: The points in the domain of the basis functions where they are sampled. Must
   - lie within the boundaries of the knot vector.
-  - `sample_indices`: The indices `i` of the sample points `t`` in the knot vector such that `knot_vector.knots[i] ≤ t < knot_vector.knots[i + 1]``
+  - `sample_indices`: The indices `i` of the sample points `t` in the knot vector such that `knot_vector.knots[i] ≤ t < knot_vector.knots[i + 1]``
   - `eval`: A matrix of shape `(length(sample_points), degree + 1)`, with per sample point the values of those basis functions
     whose support the sample point is in.
 """
