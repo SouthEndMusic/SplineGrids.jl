@@ -2,6 +2,8 @@ module SplineGrids
 
 using KernelAbstractions
 using RecipesBase
+using PrettyTables
+using Subscripts
 
 include("knot_vector.jl")
 include("spline_dimension.jl")
