@@ -2,51 +2,94 @@
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Examples · SplineGrids.jl</title><meta name="title" content="Examples · SplineGrids.jl"/><meta property="og:title" content="Examples · SplineGrids.jl"/><meta property="twitter:title" content="Examples · SplineGrids.jl"/><meta name="description" content="Documentation for SplineGrids.jl."/><meta property="og:description" content="Documentation for SplineGrids.jl."/><meta property="twitter:description" content="Documentation for SplineGrids.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">SplineGrids.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">SplineGrids.jl</a></li><li class="is-active"><a class="tocitem" href>Examples</a><ul class="internal"><li><a class="tocitem" href="#1-input,-1-output"><span>1 input, 1 output</span></a></li><li><a class="tocitem" href="#1-input,-2-outputs"><span>1 input, 2 outputs</span></a></li><li><a class="tocitem" href="#1-input,-3-outputs"><span>1 input, 3 outputs</span></a></li><li><a class="tocitem" href="#1-input,-4-outputs"><span>1 input, 4 outputs</span></a></li><li><a class="tocitem" href="#2-inputs,-1-output"><span>2 inputs, 1 output</span></a></li><li><a class="tocitem" href="#2-inputs,-2-outputs"><span>2 inputs, 2 outputs</span></a></li><li><a class="tocitem" href="#2-inputs,-3-outputs"><span>2 inputs, 3 outputs</span></a></li></ul></li><li><a class="tocitem" href="../manual/">Manual</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/SouthEndMusic/SplineGrids.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/SouthEndMusic/SplineGrids.jl/blob/master/docs/src/examples.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Examples"><a class="docs-heading-anchor" href="#Examples">Examples</a><a id="Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Examples" title="Permalink"></a></h1><p>This page shows examples of spline grids of various dimensionalities via their plotting recipes.</p><h2 id="1-input,-1-output"><a class="docs-heading-anchor" href="#1-input,-1-output">1 input, 1 output</a><a id="1-input,-1-output-1"></a><a class="docs-heading-anchor-permalink" href="#1-input,-1-output" title="Permalink"></a></h2><pre><code class="language-julia hljs">using SplineGrids
 using Plots
 
+# Spline grid parameters
 n_control_points = 10
 degree = 3
 n_sample_points = 250
 dim_out = 1
 
+# Define spline grid
 spline_dimension = SplineDimension(n_control_points, degree, n_sample_points, extent=(3.0, 5.0))
 spline_grid = SplineGrid(spline_dimension, dim_out)
+
+# Set control points
 spline_grid.control_points .= [0.342, 0.633, 0.446, 0.716, 0.843, 0.171, 0.061, 0.973, 0.057, 0.671]
+
+# Evaluate spline grid
 evaluate!(spline_grid)
-plot(spline_grid)</code></pre><img src="b5415347.svg" alt="Example block output"/><h2 id="1-input,-2-outputs"><a class="docs-heading-anchor" href="#1-input,-2-outputs">1 input, 2 outputs</a><a id="1-input,-2-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#1-input,-2-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs">n_control_points = 10
+
+# Plot
+plot(spline_grid)</code></pre><img src="ac9de160.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve in ℝ¹ with the following properties per dimension:
+┌─────────────────┬────────┬───────────────────┬─────────────────┐
+│<span class="sgr1"> input_dimension │ degree │ # basis functions │ # sample points │
+├─────────────────┼────────┼───────────────────┼─────────────────┤
+│               1 │      3 │                10 │             250 │
+└─────────────────┴────────┴───────────────────┴─────────────────┘
+</span></code></pre><h2 id="1-input,-2-outputs"><a class="docs-heading-anchor" href="#1-input,-2-outputs">1 input, 2 outputs</a><a id="1-input,-2-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#1-input,-2-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Spline grid parameters
+n_control_points = 10
 degree = 2
 n_sample_points = 250
 dim_out = 2
 
+# Define spline grid
 spline_dimension = SplineDimension(n_control_points, degree, n_sample_points)
 spline_grid = SplineGrid(spline_dimension, dim_out)
 
+# Set control points
 r = 1:n_control_points
 θ = 1:n_control_points
 spline_grid.control_points[:, 1] .= @. r * cos(θ)
 spline_grid.control_points[:, 2] .= @. r * sin(θ)
+
+# Evaluate spline grid
 evaluate!(spline_grid)
-plot(spline_grid)</code></pre><img src="c0057b35.svg" alt="Example block output"/><h2 id="1-input,-3-outputs"><a class="docs-heading-anchor" href="#1-input,-3-outputs">1 input, 3 outputs</a><a id="1-input,-3-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#1-input,-3-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs">n_control_points = 10
+
+# Plot
+plot(spline_grid)</code></pre><img src="aa140e7b.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve in ℝ² with the following properties per dimension:
+┌─────────────────┬────────┬───────────────────┬─────────────────┐
+│<span class="sgr1"> input_dimension │ degree │ # basis functions │ # sample points │
+├─────────────────┼────────┼───────────────────┼─────────────────┤
+│               1 │      2 │                10 │             250 │
+└─────────────────┴────────┴───────────────────┴─────────────────┘
+</span></code></pre><h2 id="1-input,-3-outputs"><a class="docs-heading-anchor" href="#1-input,-3-outputs">1 input, 3 outputs</a><a id="1-input,-3-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#1-input,-3-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Spline grid parameters
+n_control_points = 10
 degree = 2
 n_sample_points = 250
 dim_out = 3
 
+# Define spline grid
 spline_dimension = SplineDimension(n_control_points, degree, n_sample_points)
 spline_grid = SplineGrid(spline_dimension, dim_out)
 
+# Set control points
 r = 1:n_control_points
 θ = 1:n_control_points
 z = 1:n_control_points
 spline_grid.control_points[:, 1] .= @. r * cos(θ)
 spline_grid.control_points[:, 2] .= @. r * sin(θ)
 spline_grid.control_points[:, 3] .= z
+
+# Evaluate spline grid
 evaluate!(spline_grid)
-plot(spline_grid)</code></pre><img src="ea25595c.svg" alt="Example block output"/><h2 id="1-input,-4-outputs"><a class="docs-heading-anchor" href="#1-input,-4-outputs">1 input, 4 outputs</a><a id="1-input,-4-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#1-input,-4-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs">n_control_points = 10
+
+# Plot
+plot(spline_grid)</code></pre><img src="b3387063.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve in ℝ³ with the following properties per dimension:
+┌─────────────────┬────────┬───────────────────┬─────────────────┐
+│<span class="sgr1"> input_dimension │ degree │ # basis functions │ # sample points │
+├─────────────────┼────────┼───────────────────┼─────────────────┤
+│               1 │      2 │                10 │             250 │
+└─────────────────┴────────┴───────────────────┴─────────────────┘
+</span></code></pre><h2 id="1-input,-4-outputs"><a class="docs-heading-anchor" href="#1-input,-4-outputs">1 input, 4 outputs</a><a id="1-input,-4-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#1-input,-4-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Spline grid parameters
+n_control_points = 10
 degree = 2
 n_sample_points = 250
 dim_out = 4
 
+# Define spline grid
 spline_dimension = SplineDimension(n_control_points, degree, n_sample_points)
 spline_grid = SplineGrid(spline_dimension, dim_out)
 
+# Set control points
 r = 1:n_control_points
 θ = 1:n_control_points
 z = 1:n_control_points
@@ -55,33 +98,77 @@ spline_grid.control_points[:, 1] .= @. r * cos(θ)
 spline_grid.control_points[:, 2] .= @. r * sin(θ)
 spline_grid.control_points[:, 3] .= z
 spline_grid.control_points[:, 4] .= c
+
+# Evaluate spline grid
 evaluate!(spline_grid)
-plot(spline_grid)</code></pre><img src="26a92ae0.svg" alt="Example block output"/><h2 id="2-inputs,-1-output"><a class="docs-heading-anchor" href="#2-inputs,-1-output">2 inputs, 1 output</a><a id="2-inputs,-1-output-1"></a><a class="docs-heading-anchor-permalink" href="#2-inputs,-1-output" title="Permalink"></a></h2><pre><code class="language-julia hljs">n_control_points = (5, 6)
+
+# Plot
+plot(spline_grid)</code></pre><img src="0d904b7a.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve in ℝ⁴ with the following properties per dimension:
+┌─────────────────┬────────┬───────────────────┬─────────────────┐
+│<span class="sgr1"> input_dimension │ degree │ # basis functions │ # sample points │
+├─────────────────┼────────┼───────────────────┼─────────────────┤
+│               1 │      2 │                10 │             250 │
+└─────────────────┴────────┴───────────────────┴─────────────────┘
+</span></code></pre><h2 id="2-inputs,-1-output"><a class="docs-heading-anchor" href="#2-inputs,-1-output">2 inputs, 1 output</a><a id="2-inputs,-1-output-1"></a><a class="docs-heading-anchor-permalink" href="#2-inputs,-1-output" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Spline grid parameters
+n_control_points = (5, 6)
 degree = (2, 2)
 n_sample_points = (60, 50)
 dim_out = 1
 
+# Define spline grid
 spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
 spline_grid = SplineGrid(spline_dimensions, dim_out)
+
+# Set control points
 spline_grid.control_points .= 0
 spline_grid.control_points[1:2:end] .= 1:prod(n_control_points)/2
+
+# Evaluate spline grid
 evaluate!(spline_grid)
-plot(spline_grid)</code></pre><img src="d2a19ad6.svg" alt="Example block output"/><h2 id="2-inputs,-2-outputs"><a class="docs-heading-anchor" href="#2-inputs,-2-outputs">2 inputs, 2 outputs</a><a id="2-inputs,-2-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#2-inputs,-2-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs">n_control_points = (4, 4)
+
+# Plot
+plot(spline_grid)</code></pre><img src="69501042.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid surface in ℝ¹ with the following properties per dimension:
+┌─────────────────┬────────┬───────────────────┬─────────────────┐
+│<span class="sgr1"> input_dimension │ degree │ # basis functions │ # sample points │
+├─────────────────┼────────┼───────────────────┼─────────────────┤
+│               1 │      2 │                 5 │              60 │
+│               2 │      2 │                 6 │              50 │
+└─────────────────┴────────┴───────────────────┴─────────────────┘
+</span></code></pre><h2 id="2-inputs,-2-outputs"><a class="docs-heading-anchor" href="#2-inputs,-2-outputs">2 inputs, 2 outputs</a><a id="2-inputs,-2-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#2-inputs,-2-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Spline grid parameters
+n_control_points = (4, 4)
 degree = (2, 3)
 n_sample_points = (15, 20)
 dim_out = 2
 
+# Define spline grid
 spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
 spline_grid = SplineGrid(spline_dimensions, dim_out)
+
+# Set control points
 spline_grid.control_points .= [-0.358 0.795 -0.016 -0.295; 0.923 -0.182 -0.644 0.612; -0.91 0.708 -0.426 0.412; 0.56 -0.78 0.515 0.676;;; 0.938 0.393 -0.702 -0.99; -0.578 0.305 -0.842 -0.57; 0.034 -0.813 -0.514 0.162; -0.016 -0.822 -0.261 -0.148]
+
+# Evaluate spline grid
 evaluate!(spline_grid)
-plot(spline_grid)</code></pre><img src="62ac24a4.svg" alt="Example block output"/><h2 id="2-inputs,-3-outputs"><a class="docs-heading-anchor" href="#2-inputs,-3-outputs">2 inputs, 3 outputs</a><a id="2-inputs,-3-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#2-inputs,-3-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs">n_control_points = (25, 2)
+
+# plot
+plot(spline_grid)</code></pre><img src="9990f52c.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid surface in ℝ² with the following properties per dimension:
+┌─────────────────┬────────┬───────────────────┬─────────────────┐
+│<span class="sgr1"> input_dimension │ degree │ # basis functions │ # sample points │
+├─────────────────┼────────┼───────────────────┼─────────────────┤
+│               1 │      2 │                 4 │              15 │
+│               2 │      3 │                 4 │              20 │
+└─────────────────┴────────┴───────────────────┴─────────────────┘
+</span></code></pre><h2 id="2-inputs,-3-outputs"><a class="docs-heading-anchor" href="#2-inputs,-3-outputs">2 inputs, 3 outputs</a><a id="2-inputs,-3-outputs-1"></a><a class="docs-heading-anchor-permalink" href="#2-inputs,-3-outputs" title="Permalink"></a></h2><pre><code class="language-julia hljs"># Spline grid parameters
+n_control_points = (25, 2)
 degree = (3, 1)
 n_sample_points = (100, 100)
 dim_out = 3
 
+# Define spline grid
 spline_dimension = SplineDimension.(n_control_points, degree, n_sample_points)
 spline_grid = SplineGrid(spline_dimension, dim_out)
+
+# Set control points
 spline_grid.control_points .= 0
 R = 3
 r = 1
@@ -92,5 +179,16 @@ for (i, θ) in enumerate(range(0, 2π, length=n_control_points[1]))
     spline_grid.control_points[i, :, 2] .= @. (R + ρ * cos(ϕ)) * sin(θ)
     spline_grid.control_points[i, :, 3] .= ρ * sin(ϕ)
 end
+
+# Evaluate spline grid
 evaluate!(spline_grid)
-plot(spline_grid)</code></pre><img src="4d94c055.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« SplineGrids.jl</a><a class="docs-footer-nextpage" href="../manual/">Manual »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Thursday 5 December 2024 16:18">Thursday 5 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+
+# Plot
+plot(spline_grid)</code></pre><img src="b65b36c6.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid surface in ℝ³ with the following properties per dimension:
+┌─────────────────┬────────┬───────────────────┬─────────────────┐
+│<span class="sgr1"> input_dimension │ degree │ # basis functions │ # sample points │
+├─────────────────┼────────┼───────────────────┼─────────────────┤
+│               1 │      3 │                25 │             100 │
+│               2 │      1 │                 2 │             100 │
+└─────────────────┴────────┴───────────────────┴─────────────────┘
+</span></code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« SplineGrids.jl</a><a class="docs-footer-nextpage" href="../manual/">Manual »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Thursday 5 December 2024 18:39">Thursday 5 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
