@@ -8,6 +8,8 @@ all information to evaluate the defined spline on the defined grid.
 
   - `spline_dimensions`: A SplineDimension per dimension of the spline, containing data to evaluate
     basis functions.
+  - `sample_indices`: For each global sample point, the linear index in the `control_points` array for the first dimension
+    of the first control point in the control point kernel.
   - `control points`: The points that define the shape of the spline, and in how many dimensions it is embedded.
   - `weights`: For now unsupported, will eventually be used to define NURBS.
   - `eval`: The array where the evaluated spline is stored.
@@ -15,21 +17,46 @@ all information to evaluate the defined spline on the defined grid.
     from the various spline dimensions.
 """
 struct SplineGrid{
-    S <: SplineDimension, C <: AbstractArray, W <: Union{AbstractArray, Nothing},
-    E <: AbstractArray, B <: AbstractArray, Nin, Nout} <: AbstractSplineGrid{Nin, Nout}
+    S <: SplineDimension,
+    C <: AbstractArray,
+    W <: Union{AbstractArray{<:AbstractFloat, Nin}, Nothing} where {Nin},
+    E <: AbstractArray{<:AbstractFloat},
+    I <: AbstractArray{<:Integer, Nin} where {Nin},
+    B <: AbstractArray{<:AbstractFloat},
+    Nin,
+    Nout
+} <: AbstractSplineGrid{Nin, Nout}
     spline_dimensions::NTuple{Nin, S}
     control_points::C
     weights::W
     eval::E
+    sample_indices::I
     basis_function_products::B
     function SplineGrid(
-            spline_dimensions, control_points, weights, eval, basis_function_products)
+            spline_dimensions,
+            control_points,
+            weights,
+            eval,
+            sample_indices,
+            basis_function_products
+    )
         # TODO: Add validation of combination of control points, weights, and basis functions
-        Nin = length(spline_dimensions)
-        Nout = size(control_points)[end]
-        new{eltype(spline_dimensions), typeof(control_points), typeof(weights),
-            typeof(eval), typeof(basis_function_products), Nin, Nout}(
-            spline_dimensions, control_points, weights, eval, basis_function_products)
+        new{
+            eltype(spline_dimensions),
+            typeof(control_points),
+            typeof(weights),
+            typeof(eval),
+            typeof(sample_indices),
+            typeof(basis_function_products),
+            length(spline_dimensions),
+            size(control_points)[end]}(
+            spline_dimensions,
+            control_points,
+            weights,
+            eval,
+            sample_indices,
+            basis_function_products
+        )
     end
 end
 
@@ -45,13 +72,13 @@ Define a `SplineGrid` from an NTuple of spline dimensions and the number of outp
   - `spline_dimensions`: an NTuple of spline dimensions
   - `dim_out`: The number of output dimensions. I.e. the control points and thus the spline live in ℝ^dim_out.
 """
-function SplineGrid(spline_dimensions::NTuple{N_in, <:SplineDimension},
-        dim_out::Integer)::SplineGrid where {N_in}
+function SplineGrid(spline_dimensions::NTuple{Nin, <:SplineDimension},
+        dim_out::Integer)::SplineGrid where {Nin}
     # The size of the point grid on which the spline is evaluated
-    size_eval_grid = (length(spline_dimension.sample_points) for spline_dimension in spline_dimensions)
+    size_eval_grid = ntuple(n -> length(spline_dimensions[n].sample_points), Nin)
     # The size of the grid of control points
     size_cp_grid = get_n_basis_functions.(spline_dimensions)
-    # The actual control points
+    # The control points
     control_points = zeros(size_cp_grid..., dim_out)
     set_unit_cp_grid!(control_points)
     # Preallocated memory for basis function product evaluation
@@ -60,7 +87,29 @@ function SplineGrid(spline_dimensions::NTuple{N_in, <:SplineDimension},
     eval = zeros(size_eval_grid..., dim_out)
     # NURBS are not supported yet
     weights = nothing
-    SplineGrid(spline_dimensions, control_points, weights, eval, basis_function_products)
+
+    # Linear indices for control points per global sample point
+    # Assumptions: dim_out = 0, I = (0,...,0)
+    sample_indices = zeros(Int, size_eval_grid...)
+    @show typeof(sample_indices)
+    cp_indices = zeros(Int, Nin + 1)
+    for J in CartesianIndices(size_eval_grid)
+        for dim in 1:Nin
+            spline_dim = spline_dimensions[dim]
+            cp_indices[dim] = spline_dim.sample_indices[J[dim]] -
+                              spline_dim.degree - 1
+        end
+        sample_indices[J] = get_linear_index(size(control_points), cp_indices)
+    end
+
+    SplineGrid(
+        spline_dimensions,
+        control_points,
+        weights,
+        eval,
+        sample_indices,
+        basis_function_products
+    )
 end
 
 # Support inputting a single spline dimension instead of a tuple
