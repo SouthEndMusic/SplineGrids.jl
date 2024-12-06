@@ -112,7 +112,3 @@ function decompress(spline_dimension::SplineDimension)
 
     out
 end
-
-function get_n_basis_functions(spline_dimension::SplineDimension)
-    length(spline_dimension.knot_vector.knots_all) - spline_dimension.degree - 1
-end

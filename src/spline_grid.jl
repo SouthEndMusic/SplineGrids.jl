@@ -8,11 +8,11 @@ all information to evaluate the defined spline on the defined grid.
 
   - `spline_dimensions`: A SplineDimension per dimension of the spline, containing data to evaluate
     basis functions.
-  - `sample_indices`: For each global sample point, the linear index in the `control_points` array for the first dimension
-    of the first control point in the control point kernel.
+  - `sample_indices`: For each global sample point, the linear index in the `control_points` array before it is offset
+    for a particular index in the control point kernel and output dimension.
   - `control points`: The points that define the shape of the spline, and in how many dimensions it is embedded.
   - `weights`: For now unsupported, will eventually be used to define NURBS.
-  - `eval`: The array where the evaluated spline is stored.
+  - `eval`: The array where the evaluated spline grid is stored.
   - `basis_function_products`: An array of intermediate results for evaluating the spline grids, containing products of basis functions
     from the various spline dimensions.
 """
@@ -70,37 +70,25 @@ Define a `SplineGrid` from an NTuple of spline dimensions and the number of outp
 ## Inputs
 
   - `spline_dimensions`: an NTuple of spline dimensions
-  - `dim_out`: The number of output dimensions. I.e. the control points and thus the spline live in ℝ^dim_out.
+  - `Nout`: The number of output dimensions. I.e. the control points and thus the spline live in ℝ^Nout.
 """
 function SplineGrid(spline_dimensions::NTuple{Nin, <:SplineDimension},
-        dim_out::Integer)::SplineGrid where {Nin}
+        Nout::Integer)::AbstractSplineGrid{Nin} where {Nin}
     # The size of the point grid on which the spline is evaluated
-    size_eval_grid = ntuple(n -> length(spline_dimensions[n].sample_points), Nin)
+    size_eval_grid = get_sample_grid_size(spline_dimensions)
     # The size of the grid of control points
     size_cp_grid = get_n_basis_functions.(spline_dimensions)
     # The control points
-    control_points = zeros(size_cp_grid..., dim_out)
+    control_points = zeros(size_cp_grid..., Nout)
     set_unit_cp_grid!(control_points)
     # Preallocated memory for basis function product evaluation
     basis_function_products = zeros(size_eval_grid...)
     # Preallocated memory for grid evaluation of the spline
-    eval = zeros(size_eval_grid..., dim_out)
+    eval = zeros(size_eval_grid..., Nout)
     # NURBS are not supported yet
     weights = nothing
-
     # Linear indices for control points per global sample point
-    # Assumptions: dim_out = 0, I = (0,...,0)
-    sample_indices = zeros(Int, size_eval_grid...)
-    cp_indices = zeros(Int, Nin + 1)
-    for J in CartesianIndices(size_eval_grid)
-        for dim in 1:Nin
-            spline_dim = spline_dimensions[dim]
-            cp_indices[dim] = spline_dim.sample_indices[J[dim]] -
-                              spline_dim.degree - 1
-        end
-        sample_indices[J] = get_linear_index(size(control_points), cp_indices)
-    end
-
+    sample_indices = get_global_sample_indices(spline_dimensions, control_points)
     SplineGrid(
         spline_dimensions,
         control_points,
@@ -116,47 +104,6 @@ function SplineGrid(spline_dimension::SplineDimension, args...; kwargs...)
     SplineGrid((spline_dimension,), args...; kwargs...)
 end
 
-# Get the size of the block of control points that each output of the spline
-# depends on
-function cp_kernel_size(spline_grid::AbstractSplineGrid{Nin})::NTuple{
-        Nin, Int} where {Nin}
-    Tuple(spline_dim.degree + 1 for spline_dim in spline_grid.spline_dimensions)
-end
-
-# Outer product of n vectors, with thanks to Michael Abbott
-function outer!(A::AbstractArray{T, N}, vs::Vararg{SubArray, N}) where {T, N}
-    vecs = ntuple(n -> reshape(vs[n], ntuple(Returns(1), n - 1)..., :), N)
-    broadcast!(*, A, vecs...)
-end
-
-function get_linear_index(array_shape, indices)
-
-    # Calculate flat index using column-major order (Julia's default)
-    linear_idx = 1
-    offset_local = 1
-
-    for i in eachindex(indices)
-        @inbounds linear_idx += (indices[i] - 1) * offset_local
-        @inbounds offset_local *= array_shape[i]
-    end
-
-    return linear_idx
-end
-
-function get_offset(array_shape, indices)
-
-    # Calculate flat index using column-major order (Julia's default)
-    linear_idx = 0
-    offset_local = 1
-
-    for i in eachindex(indices)
-        @inbounds linear_idx += indices[i] * offset_local
-        @inbounds offset_local *= array_shape[i]
-    end
-
-    return linear_idx
-end
-
 @kernel function spline_muladd_kernel(
         eval,
         @Const(basis_function_products),
@@ -164,10 +111,20 @@ end
         @Const(sample_indices),
         offset
 )
+    # Index of the global sample point
     J = @index(Global, Cartesian)
+
+    # Output dimensionality
     Nout = size(control_points)[end]
+
+    # The total number of control points
     cp_grid_size = prod(size(control_points)[1:(end - 1)]) # Could be done outside kernel
+
+    # The product of basis functions for the current sample point
+    # and the current control point kernel location
     basis_function_product = basis_function_products[J]
+
+    # The linear index of the required control point
     lin_cp_index_base = sample_indices[J] + offset
 
     for dim_out in 1:Nout
@@ -187,7 +144,7 @@ function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout})::Nothing where {N
     (; basis_function_products, eval, spline_dimensions, control_points, sample_indices) = spline_grid
     eval .= 0
 
-    control_point_kernel_size = cp_kernel_size(spline_grid)
+    control_point_kernel_size = get_cp_kernel_size(spline_dimensions)
     backend = get_backend(eval)
     kernel! = spline_muladd_kernel(backend)
 
