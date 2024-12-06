@@ -45,7 +45,7 @@ function SplineDimension(n_basis_functions::Integer, degree::Integer,
     s
 end
 
-@kernel function spline_dimension_kernel!(
+@kernel function spline_dimension_kernel(
         eval, @Const(knots_all), @Const(sample_points), @Const(sample_indices), degree)
     l = @index(Global, Linear)
     t = sample_points[l]
@@ -89,7 +89,7 @@ function evaluate!(spline_dimension::SplineDimension)::Nothing
     n_samples = (length(sample_points),)
 
     backend = get_backend(eval)
-    spline_dimension_kernel!(backend)(
+    spline_dimension_kernel(backend)(
         eval, knots_all, sample_points, sample_indices,
         degree, ndrange = n_samples)
     synchronize(backend)

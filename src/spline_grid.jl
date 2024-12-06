@@ -91,7 +91,6 @@ function SplineGrid(spline_dimensions::NTuple{Nin, <:SplineDimension},
     # Linear indices for control points per global sample point
     # Assumptions: dim_out = 0, I = (0,...,0)
     sample_indices = zeros(Int, size_eval_grid...)
-    @show typeof(sample_indices)
     cp_indices = zeros(Int, Nin + 1)
     for J in CartesianIndices(size_eval_grid)
         for dim in 1:Nin
@@ -134,14 +133,47 @@ function get_linear_index(array_shape, indices)
 
     # Calculate flat index using column-major order (Julia's default)
     linear_idx = 1
-    offset = 1
+    offset_local = 1
 
-    for i in eachindex(array_shape)
-        @inbounds linear_idx += (indices[i] - 1) * offset
-        @inbounds offset *= array_shape[i]
+    for i in eachindex(indices)
+        @inbounds linear_idx += (indices[i] - 1) * offset_local
+        @inbounds offset_local *= array_shape[i]
     end
 
     return linear_idx
+end
+
+function get_offset(array_shape, indices)
+
+    # Calculate flat index using column-major order (Julia's default)
+    linear_idx = 0
+    offset_local = 1
+
+    for i in eachindex(indices)
+        @inbounds linear_idx += indices[i] * offset_local
+        @inbounds offset_local *= array_shape[i]
+    end
+
+    return linear_idx
+end
+
+@kernel function spline_muladd_kernel(
+        eval,
+        @Const(basis_function_products),
+        @Const(control_points),
+        @Const(sample_indices),
+        offset
+)
+    J = @index(Global, Cartesian)
+    Nout = size(control_points)[end]
+    cp_grid_size = prod(size(control_points)[1:(end - 1)]) # Could be done outside kernel
+    basis_function_product = basis_function_products[J]
+    lin_cp_index_base = sample_indices[J] + offset
+
+    for dim_out in 1:Nout
+        lin_cp_idx = lin_cp_index_base + dim_out * cp_grid_size
+        eval[J, dim_out] += basis_function_product * control_points[lin_cp_idx]
+    end
 end
 
 """
@@ -152,11 +184,12 @@ for each SplineDimension, and compute the output grid on each sample point combi
 as a linear combination of control with basis function products as coefficients.
 """
 function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout})::Nothing where {Nin, Nout}
-    (; basis_function_products, eval, spline_dimensions, control_points) = spline_grid
+    (; basis_function_products, eval, spline_dimensions, control_points, sample_indices) = spline_grid
     eval .= 0
 
-    cp_indices = zeros(Int, Nin + 1)
     control_point_kernel_size = cp_kernel_size(spline_grid)
+    backend = get_backend(eval)
+    kernel! = spline_muladd_kernel(backend)
 
     # Loop over the positions in the kernel of control points each spline evaluation depends on
     for I in CartesianIndices(control_point_kernel_size)
@@ -165,21 +198,11 @@ function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout})::Nothing where {N
         outer!(basis_function_products,
             (view(spline_dim.eval, :, i) for (i, spline_dim) in zip(
                 Tuple(I), spline_dimensions))...)
-        # Loop over all sample points to compute one basis_function_product * control_point contribution
-        for J in CartesianIndices(basis_function_products)
-            for dim in 1:Nin
-                spline_dim = spline_dimensions[dim]
-                @inbounds cp_indices[dim] = spline_dim.sample_indices[J[dim]] -
-                                            spline_dim.degree -
-                                            1 + I[dim]
-            end
-            for dim in 1:Nout
-                cp_indices[end] = dim
-                linear_index = get_linear_index(size(control_points), cp_indices)
-                @inbounds eval[J, dim] += basis_function_products[J] *
-                                          control_points[linear_index]
-            end
-        end
+
+        # Add the 'basis function product * control point' contribution to eval
+        offset = get_offset(size(control_points), Tuple(I))
+        kernel!(eval, basis_function_products, control_points,
+            sample_indices, offset, ndrange = size(sample_indices))
     end
     return nothing
 end
