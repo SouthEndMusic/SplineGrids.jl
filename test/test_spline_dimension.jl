@@ -8,7 +8,7 @@ using SplineGrids
             s = SplineDimension(n_basis_functions, degree, n_sample_points; distribution)
             @test all(s.eval .>= 0)
             @test all(sum(s.eval, dims = 2) .≈ 1)
-            @test size(s.eval) == (n_sample_points, degree + 1)
+            @test size(s.eval) == (n_sample_points, degree + 1, 1)
         end
     end
 end
