@@ -6,16 +6,23 @@ Defines the set of basis functions for a single dimension, and how it is sampled
 ## Arguments
 
   - `degree`: The degree of the piecewise polynomial basis functions.
+  - `max_derivative_order`: The maximum derivative order of the basis functions that will be computed.
   - `knot_vector`: The knot vector on which the basis functions are defined.
   - `sample_points`: The points in the domain of the basis functions where they are sampled. Must
   - lie within the boundaries of the knot vector.
   - `sample_indices`: The indices `i` of the sample points `t` in the knot vector such that `knot_vector.knots[i] ≤ t < knot_vector.knots[i + 1]``
-  - `eval`: A matrix of shape `(length(sample_points), degree + 1)`, with per sample point the values of those basis functions
-    whose support the sample point is in.
+  - `eval`: An array of shape `(length(sample_points), degree + 1, max_derivative + 1)`, with per sample point the values of those basis functions
+    whose support the sample point is in, and the derivatives if requested.
 """
 struct SplineDimension{
-    K, M, S <: AbstractVector, I <: AbstractVector{<:Integer}, E <: AbstractMatrix}
+    K,
+    M,
+    S <: AbstractVector,
+    I <: AbstractVector{<:Integer},
+    E <: AbstractArray{<:AbstractFloat, 3}
+}
     degree::Int
+    max_derivative_order::Int
     knot_vector::KnotVector{K, M}
     sample_points::S
     sample_indices::I
@@ -30,41 +37,58 @@ end
 """
     SplineDimension(n_basis_functions::Integer, degree::Integer, n_sample_points::Integer; kwargs...)::SplineDimension
 
-Constructor for a SplineDimension. For now the sample points are equispaced on the extent of the knot vector.
+Constructor for a SplineDimension. For now the sample points are evenly spaced on the extent of the knot vector.
 Key word arguments are passed to the KnotVector constructor.
 """
 function SplineDimension(n_basis_functions::Integer, degree::Integer,
-        n_sample_points::Integer; kwargs...)::SplineDimension
+        n_sample_points::Integer; max_derivative_order = 0, kwargs...)::SplineDimension
+    @assert 0≤max_derivative_order≤degree "The max_degree must be positive and derivatives order higher than `degree` are all 0."
     knot_vector = KnotVector(n_basis_functions, degree; kwargs...)
     (; knot_values) = knot_vector
     sample_points = range(first(knot_values), last(knot_values); length = n_sample_points)
     sample_indices = get_index.(Ref(knot_vector), sample_points, degree)
-    eval = zeros(n_sample_points, degree + 1)
-    s = SplineDimension(degree, knot_vector, sample_points, sample_indices, eval)
+    eval = zeros(n_sample_points, degree + 1, max_derivative_order + 1)
+    s = SplineDimension(
+        degree, max_derivative_order, knot_vector, sample_points, sample_indices, eval)
     evaluate!(s)
     s
 end
 
 @kernel function spline_dimension_kernel(
-        eval, @Const(knots_all), @Const(sample_points), @Const(sample_indices), degree)
+        eval,
+        @Const(knots_all),
+        @Const(sample_points),
+        @Const(sample_indices),
+        degree,
+        max_derivative_order
+)
     l = @index(Global, Linear)
     t = sample_points[l]
     i = sample_indices[l]
 
-    eval[l, 1] = one(eltype(eval))
+    eval[l, 1, 1] = one(eltype(eval))
+
+    # Loop over successive degrees
     for k in 1:degree
         @print()
-        B_old = eval[l, 1]
-        eval[l, 1] = zero(eltype(eval))
+        B_old = eval[l, 1, 1]
+        eval[l, 1, 1] = zero(eltype(eval))
+
+        # Loop over successive basis functions
         for k_ in 1:k
             t_min = knots_all[i + k_ - k]
             t_max = knots_all[i + k_]
             Δt = t_max - t_min
             frac = B_old / Δt
-            B_old = eval[l, k_ + 1] # Value for next iteration
+            B_old = eval[l, k_ + 1, 1] # Value for next iteration
             # Additions sum to B_old => partition of unity
-            eval[l, k_] += frac * (t_max - t)
-            eval[l, k_ + 1] = frac * (t - t_min)
+            eval[l, k_, 1] += frac * (t_max - t)
+            eval[l, k_ + 1, 1] = frac * (t - t_min)
+
+            if k == degree && max_derivative_order == 1
+                eval[l, k_, 2] -= degree * frac
+                eval[l, k_ + 1, 2] = degree * frac
+            end
         end
     end
 end
@@ -84,14 +108,14 @@ For degree `k`, `t` is in the domain of `Bⱼₖ` which is `[tⱼ, tⱼ₊ₖ₊
   - `spline_dimension`
 """
 function evaluate!(spline_dimension::SplineDimension)::Nothing
-    (; degree, knot_vector, sample_points, sample_indices, eval) = spline_dimension
+    (; degree, max_derivative_order, knot_vector, sample_points, sample_indices, eval) = spline_dimension
     (; knots_all) = knot_vector
     n_samples = (length(sample_points),)
 
     backend = get_backend(eval)
     spline_dimension_kernel(backend)(
         eval, knots_all, sample_points, sample_indices,
-        degree, ndrange = n_samples)
+        degree, ndrange = n_samples, max_derivative_order)
     synchronize(backend)
     return nothing
 end
@@ -100,14 +124,14 @@ end
 Transform `spline_dimension.eval` into a matrix of shape `(n_sample_points, n_points - degree - 1)`
 which explicitly gives the value for each basis function at each sample point.
 """
-function decompress(spline_dimension::SplineDimension)
+function decompress(spline_dimension::SplineDimension; derivative_order = 0)
     (; sample_indices, degree, eval) = spline_dimension
     n_sample_points = length(sample_indices)
     n_basis_functions = get_n_basis_functions(spline_dimension)
     out = zeros(n_sample_points, n_basis_functions)
 
     for (l, i) in enumerate(sample_indices)
-        out[l, (i - degree):i] .= eval[l, :]
+        out[l, (i - degree):i] .= eval[l, :, derivative_order + 1]
     end
 
     out

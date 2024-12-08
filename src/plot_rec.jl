@@ -2,8 +2,8 @@ const CONTROL_POINT_COLOR = :green
 const CONTROL_POLYGON_COLOR = :orange
 const SPLINE_GRID_COLOR = :blue
 
-@recipe function f(spline_dimension::SplineDimension)
-    data = decompress(spline_dimension)
+@recipe function f(spline_dimension::SplineDimension; derivative_order = 0)
+    data = decompress(spline_dimension; derivative_order)
     (; sample_points, knot_vector) = spline_dimension
     (; knot_values) = knot_vector
     n_basis_functions = get_n_basis_functions(spline_dimension)

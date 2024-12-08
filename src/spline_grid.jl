@@ -140,8 +140,11 @@ Evaluate the spline grid, that is: take the evaluated basis functions for each s
 for each SplineDimension, and compute the output grid on each sample point combination
 as a linear combination of control with basis function products as coefficients.
 """
-function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout})::Nothing where {Nin, Nout}
+function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin)
+)::Nothing where {Nin, Nout}
     (; basis_function_products, eval, spline_dimensions, control_points, sample_indices) = spline_grid
+    validate_partial_derivatives(spline_dimensions, derivative_order)
     eval .= 0
 
     control_point_kernel_size = get_cp_kernel_size(spline_dimensions)
@@ -152,14 +155,19 @@ function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout})::Nothing where {N
     for I in CartesianIndices(control_point_kernel_size)
         # Compute basis function products as an outer product of the basis function values per 
         # spline dimension
-        outer!(basis_function_products,
-            (view(spline_dim.eval, :, i) for (i, spline_dim) in zip(
-                Tuple(I), spline_dimensions))...)
+        outer!(
+            basis_function_products,
+            (
+                view(spline_dim.eval, :, i, derivative_order_ + 1) for
+            (i, spline_dim, derivative_order_) in zip(
+                Tuple(I), spline_dimensions, derivative_order))...
+        )
 
         # Add the 'basis function product * control point' contribution to eval
         offset = get_offset(size(control_points), Tuple(I))
         kernel!(eval, basis_function_products, control_points,
             sample_indices, offset, ndrange = size(sample_indices))
+        synchronize(backend)
     end
     return nothing
 end
