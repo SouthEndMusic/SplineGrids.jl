@@ -67,10 +67,14 @@ end
     i = sample_indices[l]
 
     eval[l, 1, 1] = one(eltype(eval))
+
+    # Loop over successive degrees
     for k in 1:degree
         @print()
         B_old = eval[l, 1, 1]
         eval[l, 1, 1] = zero(eltype(eval))
+
+        # Loop over successive basis functions
         for k_ in 1:k
             t_min = knots_all[i + k_ - k]
             t_max = knots_all[i + k_]

@@ -1,4 +1,4 @@
-# Examples
+# Dimensionality examples
 
 This page shows examples of spline grids of various dimensionalities via their plotting recipes.
 
