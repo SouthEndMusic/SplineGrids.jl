@@ -66,24 +66,25 @@ end
     t = sample_points[l]
     i = sample_indices[l]
 
-    eval[l, 1] = one(eltype(eval))
+    eval[l, 1, 1] = one(eltype(eval))
     for k in 1:degree
         @print()
-        B_old = eval[l, 1]
-        eval[l, 1] = zero(eltype(eval))
+        B_old = eval[l, 1, 1]
+        eval[l, 1, 1] = zero(eltype(eval))
         for k_ in 1:k
             t_min = knots_all[i + k_ - k]
             t_max = knots_all[i + k_]
             Δt = t_max - t_min
             frac = B_old / Δt
-            B_old = eval[l, k_ + 1] # Value for next iteration
+            B_old = eval[l, k_ + 1, 1] # Value for next iteration
             # Additions sum to B_old => partition of unity
             eval[l, k_, 1] += frac * (t_max - t)
             eval[l, k_ + 1, 1] = frac * (t - t_min)
 
-            # for derivative_order in 1:(max_derivative_order + k - degree)
-            #     eval[foo, bar, derivative_order] = yeet
-            # end
+            if k == degree && max_derivative_order == 1
+                eval[l, k_, 2] -= degree * frac
+                eval[l, k_ + 1, 2] = degree * frac
+            end
         end
     end
 end
@@ -119,14 +120,14 @@ end
 Transform `spline_dimension.eval` into a matrix of shape `(n_sample_points, n_points - degree - 1)`
 which explicitly gives the value for each basis function at each sample point.
 """
-function decompress(spline_dimension::SplineDimension)
+function decompress(spline_dimension::SplineDimension; derivative_order = 0)
     (; sample_indices, degree, eval) = spline_dimension
     n_sample_points = length(sample_indices)
     n_basis_functions = get_n_basis_functions(spline_dimension)
     out = zeros(n_sample_points, n_basis_functions)
 
     for (l, i) in enumerate(sample_indices)
-        out[l, (i - degree):i] .= eval[l, :]
+        out[l, (i - degree):i] .= eval[l, :, derivative_order + 1]
     end
 
     out

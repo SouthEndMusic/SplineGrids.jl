@@ -10,12 +10,12 @@ function validate_partial_derivatives(
 
         if !(0 ≤ derivative_order_ ≤ max_derivative_order)
             errors = true
-            @error "The maximum derivative order available for spline dimension $i is $max_derivative_order, got $derivative_order_. If you want to evaluate higher order derivatives, specify this at construction as SplineDimension(...; max_derivative_order)."
+            @error "The maximum derivative order available for spline dimension $i is $max_derivative_order, got $derivative_order_."
         end
     end
 
     if errors
-        error("Invalid derivative order(s) supplied.")
+        error("Invalid derivative order(s) supplied. If you want to evaluate (higher order) derivatives, specify this at construction as SplineDimension(...; max_derivative_order).")
     end
     return nothing
 end

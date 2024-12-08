@@ -197,7 +197,6 @@ spline_dimension = SplineDimension.(n_control_points, degree, n_sample_points)
 spline_grid = SplineGrid(spline_dimension, dim_out)
 
 # Set control points
-spline_grid.control_points .= 0
 R = 3
 r = 1
 ρ = range(-r, r, length=n_control_points[2])
