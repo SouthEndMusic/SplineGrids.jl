@@ -4,7 +4,7 @@
 [![CI](https://github.com/SouthEndMusic/SplineGrids.jl/actions/workflows/Tests.yml/badge.svg?branch=master)](https://github.com/SouthEndMusic/SplineGrids.jl/actions/workflows/Tests.yml)
 
 SplineGrids.jl is designed to efficiently evaluate a broad class of spline objects on a grid in the spline's domain. The package supports:
-- Any number of input and output dimensions (see the examples [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples/))
+- Any number of input and output dimensions (see the examples [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_dimensions/))
 - Any degree of basis functions and type of knot vector
 - Any combination of partial derivatives
 - Using weights to define NURBS (coming up)
