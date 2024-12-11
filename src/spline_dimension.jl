@@ -12,6 +12,7 @@ Defines the set of basis functions for a single dimension, and how it is sampled
   - lie within the boundaries of the knot vector.
   - `sample_indices`: The indices `i` of the sample points `t` in the knot vector such that `knot_vector.knots[i] ≤ t < knot_vector.knots[i + 1]``
   - `eval`: An array of shape `(length(sample_points), degree + 1, max_derivative + 1)`, with per sample point the values of those basis functions
+  - `eval_prev`: Helper array for intermediate results in the basis function computations
     whose support the sample point is in, and the derivatives if requested.
 """
 struct SplineDimension{
@@ -27,6 +28,7 @@ struct SplineDimension{
     sample_points::S
     sample_indices::I
     eval::E
+    eval_prev::E
 end
 
 function get_index(knot_vector::KnotVector, t, d)
@@ -48,14 +50,18 @@ function SplineDimension(n_basis_functions::Integer, degree::Integer,
     sample_points = range(first(knot_values), last(knot_values); length = n_sample_points)
     sample_indices = get_index.(Ref(knot_vector), sample_points, degree)
     eval = zeros(n_sample_points, degree + 1, max_derivative_order + 1)
+    eval_prev = zeros(n_sample_points, degree + 1, max_derivative_order + 1)
     s = SplineDimension(
-        degree, max_derivative_order, knot_vector, sample_points, sample_indices, eval)
+        degree, max_derivative_order, knot_vector, sample_points, sample_indices, eval, eval_prev)
     evaluate!(s)
     s
 end
 
+# NOTE: This kernel can be further optimized; the latter 2
+# loops over CartesianIndices can be restricted
 @kernel function spline_dimension_kernel(
         eval,
+        eval_prev,
         @Const(knots_all),
         @Const(sample_points),
         @Const(sample_indices),
@@ -66,28 +72,45 @@ end
     t = sample_points[l]
     i = sample_indices[l]
 
-    eval[l, 1, 1] = one(eltype(eval))
+    # Clear the eval_prev array for this sample point
+    for I in CartesianIndices(size(eval_prev)[2:3])
+        eval_prev[l, I] = zero(eltype(eval))
+    end
+
+    # Degree 0 basis function value
+    eval[l, 1, 1] = one(eltype(eval_prev))
+    eval_prev[l, 1, 1] = one(eltype(eval_prev))
 
     # Loop over successive degrees
     for k in 1:degree
-        @print()
-        B_old = eval[l, 1, 1]
-        eval[l, 1, 1] = zero(eltype(eval))
-
+        # Clear the eval array for this sample point
+        for I in CartesianIndices(size(eval)[2:3])
+            eval[l, I] = zero(eltype(eval))
+        end
         # Loop over successive basis functions
         for k_ in 1:k
             t_min = knots_all[i + k_ - k]
             t_max = knots_all[i + k_]
             Δt = t_max - t_min
-            frac = B_old / Δt
-            B_old = eval[l, k_ + 1, 1] # Value for next iteration
-            # Additions sum to B_old => partition of unity
+            B_prev = eval_prev[l, k_, 1]
+            frac = B_prev / Δt
+            # Additions sum to B_prev => partition of unity
             eval[l, k_, 1] += frac * (t_max - t)
             eval[l, k_ + 1, 1] = frac * (t - t_min)
 
-            if k == degree && max_derivative_order == 1
-                eval[l, k_, 2] -= degree * frac
-                eval[l, k_ + 1, 2] = degree * frac
+            # Compute derivatives
+            for derivative_order in 1:(max_derivative_order + k - degree)
+                B_prev = eval_prev[l, k_, derivative_order]
+                deriv_contribution = B_prev * k / Δt
+                eval[l, k_, derivative_order + 1] -= deriv_contribution
+                eval[l, k_ + 1, derivative_order + 1] = deriv_contribution
+            end
+        end
+
+        # Copy from eval to eval_prev if this isn't the last k
+        if k != degree
+            for I in CartesianIndices(size(eval_prev)[2:3])
+                eval_prev[l, I] = eval[l, I]
             end
         end
     end
@@ -108,13 +131,13 @@ For degree `k`, `t` is in the domain of `Bⱼₖ` which is `[tⱼ, tⱼ₊ₖ₊
   - `spline_dimension`
 """
 function evaluate!(spline_dimension::SplineDimension)::Nothing
-    (; degree, max_derivative_order, knot_vector, sample_points, sample_indices, eval) = spline_dimension
+    (; degree, max_derivative_order, knot_vector, sample_points, sample_indices, eval, eval_prev) = spline_dimension
     (; knots_all) = knot_vector
     n_samples = (length(sample_points),)
 
     backend = get_backend(eval)
     spline_dimension_kernel(backend)(
-        eval, knots_all, sample_points, sample_indices,
+        eval, eval_prev, knots_all, sample_points, sample_indices,
         degree, ndrange = n_samples, max_derivative_order)
     synchronize(backend)
     return nothing
