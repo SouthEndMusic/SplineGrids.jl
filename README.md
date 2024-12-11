@@ -6,7 +6,7 @@
 SplineGrids.jl is designed to efficiently evaluate a broad class of spline objects on a grid in the spline's domain. The package supports:
 - Any number of input and output dimensions (see the examples [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples/))
 - Any degree of basis functions and type of knot vector
-- Any combination of partial derivatives (coming up)
+- Any combination of partial derivatives
 - Using weights to define NURBS (coming up)
 - Local refinement (coming up)
 - CPU and GPU backends via [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl)
