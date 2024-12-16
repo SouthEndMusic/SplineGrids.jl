@@ -140,12 +140,16 @@ Evaluate the spline grid, that is: take the evaluated basis functions for each s
 for each SplineDimension, and compute the output grid on each sample point combination
 as a linear combination of control with basis function products as coefficients.
 """
-function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout};
-        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin)
-)::Nothing where {Nin, Nout}
-    (; basis_function_products, eval, spline_dimensions, control_points, sample_indices) = spline_grid
+function evaluate!(spline_grid::AbstractSplineGrid{Nin};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
+        control_points::AbstractArray = spline_grid.control_points,
+        eval::AbstractArray = spline_grid.eval
+)::Nothing where {Nin}
+    (; basis_function_products, spline_dimensions, sample_indices) = spline_grid
     validate_partial_derivatives(spline_dimensions, derivative_order)
     eval .= 0
+    @assert size(control_points) == size(spline_grid.control_points)
+    @assert size(eval) == size(spline_grid.eval)
 
     control_point_kernel_size = get_cp_kernel_size(spline_dimensions)
     backend = get_backend(eval)

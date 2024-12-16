@@ -179,7 +179,8 @@ end
         seriestype := :heatmap
         label := "Spline surface"
         colorbar_title := "Output dimension 1"
-        spline_dimensions[1].sample_points, spline_dimensions[2].sample_points, eval[:, :]'
+        spline_dimensions[1].sample_points, spline_dimensions[2].sample_points,
+        eval[:, :, 1]'
     end
 
     # Plot knot vectors
