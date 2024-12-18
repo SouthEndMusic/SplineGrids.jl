@@ -36,7 +36,7 @@ using IterativeSolvers
 using Plots
 
 spline_grid_map = LinearMap(spline_grid)
-sol = lsqr(Matrix(spline_grid_map), vec(image_array)) # TODO: Stop requiring the matrix explicitly
+sol = lsqr(spline_grid_map, vec(image_array))
 spline_grid.control_points .= reshape(sol, size(spline_grid.control_points))
 evaluate!(spline_grid)
 plot(spline_grid)

@@ -1,5 +1,6 @@
 module SplineGrids
 
+using Atomix
 using KernelAbstractions
 using RecipesBase
 using PrettyTables
@@ -12,6 +13,6 @@ include("plot_rec.jl")
 include("utils.jl")
 include("validation.jl")
 
-export KnotVector, SplineDimension, SplineGrid, decompress, evaluate!
+export KnotVector, SplineDimension, SplineGrid, decompress, evaluate!, evaluate_adjoint!
 
 end # module SplineGrids

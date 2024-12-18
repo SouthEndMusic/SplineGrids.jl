@@ -2,10 +2,22 @@ module SplineGridsLinearMapsExt
 using SplineGrids
 using LinearMaps
 
-function LinearMaps.LinearMap(spline_grid::SplineGrid)
+function LinearMaps.LinearMap(spline_grid::SplineGrids.AbstractSplineGrid{Nin};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin)) where {Nin}
+    @assert isnothing(spline_grid.weights) "NURBS are not a linear map from control points to evaluated grid."
+
     LinearMap(
+        # In place evaluation control points -> spline grid
         (evaluation_flat, control_points_flat) -> evaluate!(
             spline_grid;
+            derivative_order,
+            control_points = reshape(control_points_flat, size(spline_grid.control_points)),
+            eval = reshape(evaluation_flat, size(spline_grid.eval))
+        ),
+        # In place evaluation spline grid -> control points (adjoint)
+        (control_points_flat, evaluation_flat) -> evaluate_adjoint!(
+            spline_grid;
+            derivative_order,
             control_points = reshape(control_points_flat, size(spline_grid.control_points)),
             eval = reshape(evaluation_flat, size(spline_grid.eval))
         ),
