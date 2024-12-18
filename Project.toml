@@ -7,6 +7,12 @@ PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Subscripts = "2b7f82d5-8785-4f63-971e-f18ddbeb808e"
 
+[weakdeps]
+LinearMaps = "7a12625a-238d-50fd-b39a-03d52299707e"
+
+[extensions]
+SplineGridsLinearMapsExt = ["LinearMaps"]
+
 [compat]
 PrettyTables = "2.4.0"
 Subscripts = "0.1.3"
