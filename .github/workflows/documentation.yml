@@ -23,11 +23,8 @@ jobs:
       - uses: julia-actions/cache@v2
       - name: Install dependencies
         run: |
-          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24'
-          julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24
-          julia --project=docs/ docs/make.jl
+        run: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --project=docs/ docs/make.jl
