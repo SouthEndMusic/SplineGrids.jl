@@ -2,10 +2,19 @@ name = "SplineGrids"
 uuid = "59c446ea-fb23-41e3-bcd2-697fa0a242d6"
 
 [deps]
+Atomix = "a9b6321e-bd34-4604-b9c9-b65b8de01458"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Subscripts = "2b7f82d5-8785-4f63-971e-f18ddbeb808e"
+
+[weakdeps]
+Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
+LinearMaps = "7a12625a-238d-50fd-b39a-03d52299707e"
+
+[extensions]
+SplineGridsEnzymeExt = ["Enzyme"]
+SplineGridsLinearMapsExt = ["LinearMaps"]
 
 [compat]
 PrettyTables = "2.4.0"

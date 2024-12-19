@@ -1,5 +1,3 @@
-abstract type AbstractSplineGrid{Nin, Nout} end
-
 """
 The SplineGrid is the central object of the `SplineGrids.jl` package, containing
 all information to evaluate the defined spline on the defined grid.
@@ -134,18 +132,28 @@ end
 end
 
 """
-    evaluate!(spline_grid::SplineGrid)
+    evaluate!spline_grid::AbstractSplineGrid{Nin};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
+        control_points::AbstractArray = spline_grid.control_points,
+        eval::AbstractArray = spline_grid.eval)
 
 Evaluate the spline grid, that is: take the evaluated basis functions for each sample point
 for each SplineDimension, and compute the output grid on each sample point combination
 as a linear combination of control with basis function products as coefficients.
+
+Uses the `control_points` and `eval` arrays from the `spline_grid` by default,
+but different arrays can be specified as a convencience for optimization algorithms.
 """
-function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout};
-        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin)
-)::Nothing where {Nin, Nout}
-    (; basis_function_products, eval, spline_dimensions, control_points, sample_indices) = spline_grid
+function evaluate!(spline_grid::AbstractSplineGrid{Nin};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
+        control_points::AbstractArray = spline_grid.control_points,
+        eval::AbstractArray = spline_grid.eval
+)::Nothing where {Nin}
+    (; basis_function_products, spline_dimensions, sample_indices) = spline_grid
     validate_partial_derivatives(spline_dimensions, derivative_order)
     eval .= 0
+    @assert size(control_points) == size(spline_grid.control_points)
+    @assert size(eval) == size(spline_grid.eval)
 
     control_point_kernel_size = get_cp_kernel_size(spline_dimensions)
     backend = get_backend(eval)
@@ -166,6 +174,82 @@ function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout};
         # Add the 'basis function product * control point' contribution to eval
         offset = get_offset(size(control_points), Tuple(I))
         kernel!(eval, basis_function_products, control_points,
+            sample_indices, offset, ndrange = size(sample_indices))
+        synchronize(backend)
+    end
+    return nothing
+end
+
+@kernel function spline_muladd_adjoint_kernel(
+        control_points,
+        @Const(eval),
+        @Const(basis_function_products),
+        @Const(sample_indices),
+        offset
+)
+    # Index of the global sample point
+    J = @index(Global, Cartesian)
+
+    # Output dimensionality
+    Nout = size(control_points)[end]
+
+    # The total number of control points
+    cp_grid_size = prod(size(control_points)[1:(end - 1)]) # Could be done outside kernel
+
+    # The product of basis functions for the current sample point
+    # and the current control point kernel location
+    basis_function_product = basis_function_products[J]
+
+    # The linear index of the required control point
+    lin_cp_index_base = sample_indices[J] + offset
+
+    for dim_out in 1:Nout
+        lin_cp_idx = lin_cp_index_base + dim_out * cp_grid_size
+        Atomix.@atomic control_points[lin_cp_idx] += basis_function_product *
+                                                     eval[J, dim_out]
+    end
+end
+
+"""
+    evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
+        control_points::AbstractArray = spline_grid.control_points,
+        eval::AbstractArray = spline_grid.eval)
+
+evaluate the adjoint of the linear mapping `control_points -> eval`. This is a computation of the form
+`eval -> control_points`. If we write `evaluate!(spline_grid)` as a matrix vector multiplication `eval = M * control_points`,
+Then the adjoint is given by `v -> M' * v`. This mapping is used in fitting algorithms.
+"""
+function evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
+        control_points::AbstractArray = spline_grid.control_points,
+        eval::AbstractArray = spline_grid.eval
+)::Nothing where {Nin}
+    (; basis_function_products, spline_dimensions, sample_indices) = spline_grid
+    validate_partial_derivatives(spline_dimensions, derivative_order)
+    control_points .= 0
+    @assert size(control_points) == size(spline_grid.control_points)
+    @assert size(eval) == size(spline_grid.eval)
+
+    control_point_kernel_size = get_cp_kernel_size(spline_dimensions)
+    backend = get_backend(eval)
+    kernel! = spline_muladd_adjoint_kernel(backend)
+
+    # Loop over the positions in the kernel of control points each spline evaluation depends on
+    for I in CartesianIndices(control_point_kernel_size)
+        # Compute basis function products as an outer product of the basis function values per 
+        # spline dimension
+        outer!(
+            basis_function_products,
+            (
+                view(spline_dim.eval, :, i, derivative_order_ + 1) for
+            (i, spline_dim, derivative_order_) in zip(
+                Tuple(I), spline_dimensions, derivative_order))...
+        )
+
+        # Add the 'basis function product * control point' contribution to eval
+        offset = get_offset(size(control_points), Tuple(I))
+        kernel!(control_points, eval, basis_function_products,
             sample_indices, offset, ndrange = size(sample_indices))
         synchronize(backend)
     end

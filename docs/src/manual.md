@@ -11,6 +11,7 @@ SplineGrid(::NTuple{N_in, <:SplineDimension}, ::Integer) where N_in
 ```@docs
 evaluate!(::SplineDimension)
 evaluate!(::SplineGrids.AbstractSplineGrid{Nin, Nout}) where {Nin, Nout}
+evaluate_adjoint!(::SplineGrids.AbstractSplineGrid{Nin, Nout}) where{Nin, Nout}
 ```
 
 # Structs
