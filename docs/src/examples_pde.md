@@ -14,6 +14,8 @@ In this section we solve the following PDE problem with a spline grid:
 
 where the domain is given by the open unit cube: $\Omega = (0,1)^3$. We assume that $g(x,y,z) = 0$ for $z \in (0,1)$ and $g(x,y,z) = f(x,y)$ for $z = 0, 1$.
 
+We solve this problem by sampling the domain and enforcing the PDE on the interior points and the boundary condition on the boundary points. 
+
 ## The residual kernel
 
 We first define the kernel which calculates the residual of a given approximation to the solution of the problem above. Note that this kernel is agnostic of the fact that the solution will come from a spline grid.
