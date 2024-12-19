@@ -21,7 +21,7 @@ struct SplineDimension{
     S <: AbstractVector,
     I <: AbstractVector{<:Integer},
     E <: AbstractArray{<:AbstractFloat, 3}
-}
+} <: AbstractSplineDimension
     degree::Int
     max_derivative_order::Int
     knot_vector::KnotVector{K, M}

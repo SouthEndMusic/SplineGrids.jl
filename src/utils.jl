@@ -15,8 +15,9 @@ function set_unit_cp_grid!(control_points::AbstractArray)::Nothing
 end
 
 # Linear indices for control points per global sample point
-function get_global_sample_indices(spline_dimensions::NTuple{
-            Nin, <:SplineDimension},
+function get_global_sample_indices(
+        spline_dimensions::NTuple{
+            Nin, <:AbstractSplineDimension},
         control_points::AbstractArray) where {Nin}
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = ntuple(n -> length(spline_dimensions[n].sample_points), Nin)
@@ -35,14 +36,14 @@ function get_global_sample_indices(spline_dimensions::NTuple{
 end
 
 # The number of basis functions in this spline dimension
-function get_n_basis_functions(spline_dimension::SplineDimension)
+function get_n_basis_functions(spline_dimension::AbstractSplineDimension)
     length(spline_dimension.knot_vector.knots_all) - spline_dimension.degree - 1
 end
 
 # Get the size of the block of control points that each output of the spline
 # depends on
 function get_cp_kernel_size(spline_dimensions::NTuple{
-        Nin, <:SplineDimension})::NTuple{
+        Nin, <:AbstractSplineDimension})::NTuple{
         Nin, Int} where {Nin}
     ntuple(n -> spline_dimensions[n].degree + 1, Nin)
 end
@@ -50,13 +51,13 @@ end
 # The size of the grid on the domain of the spline where the 
 # spline is evaluated
 function get_sample_grid_size(spline_dimensions::NTuple{
-        Nin, <:SplineDimension})::NTuple{
+        Nin, <:AbstractSplineDimension})::NTuple{
         Nin, Int} where {Nin}
     ntuple(n -> length(spline_dimensions[n].sample_points), Nin)
 end
 
 function get_control_point_grid_size(spline_dimensions::NTuple{
-        Nin, <:SplineDimension})::NTuple{
+        Nin, <:AbstractSplineDimension})::NTuple{
         Nin, Int} where {Nin}
     get_n_basis_functions.(spline_dimensions)
 end
@@ -115,6 +116,6 @@ function Base.show(
         eachindex(spline_dimensions))...)
     data = hcat(collect.(collect(data))...)
     println(
-        io, "SplineGrid $(shape_name(Nin)) in ℝ$(super(string(Nout))) with the following properties per dimension:")
+        io, "SplineGrid $(shape_name(Nin)) with outputs in ℝ$(super(string(Nout))) with the following properties per dimension:")
     pretty_table(io, data; header)
 end

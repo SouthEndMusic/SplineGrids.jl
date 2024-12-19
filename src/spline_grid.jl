@@ -1,5 +1,3 @@
-abstract type AbstractSplineGrid{Nin, Nout} end
-
 """
 The SplineGrid is the central object of the `SplineGrids.jl` package, containing
 all information to evaluate the defined spline on the defined grid.
@@ -134,7 +132,10 @@ end
 end
 
 """
-    evaluate!(spline_grid::SplineGrid)
+    evaluate!spline_grid::AbstractSplineGrid{Nin};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
+        control_points::AbstractArray = spline_grid.control_points,
+        eval::AbstractArray = spline_grid.eval)
 
 Evaluate the spline grid, that is: take the evaluated basis functions for each sample point
 for each SplineDimension, and compute the output grid on each sample point combination
@@ -209,6 +210,16 @@ end
     end
 end
 
+"""
+    evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
+        control_points::AbstractArray = spline_grid.control_points,
+        eval::AbstractArray = spline_grid.eval)
+
+evaluate the adjoint of the linear mapping `control_points -> eval`. This is a computation of the form
+`eval -> control_points`. If we write `evaluate!(spline_grid)` as a matrix vector multiplication `eval = M * control_points`,
+Then the adjoint is given by `v -> M' * v`. This mapping is used in fitting algorithms.
+"""
 function evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractArray = spline_grid.control_points,

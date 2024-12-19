@@ -9,7 +9,7 @@ makedocs(modules = [SplineGrids],
         "Examples" => [
             "Dimensionality" => "examples_dimensions.md",
             "Derivatives" => "examples_derivatives.md",
-            "Fitting" => "examples_linear_fitting.md",
+            "Linear fitting" => "examples_linear_fitting.md",
             "Control point derivatives with Enzyme" => "examples_enzyme.md"
         ],
         "Advanced examples" => [

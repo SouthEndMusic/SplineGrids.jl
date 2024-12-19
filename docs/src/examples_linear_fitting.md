@@ -22,13 +22,12 @@ dim_out = 1
 
 spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
 spline_grid = SplineGrid(spline_dimensions, dim_out)
-spline_grid.control_points .= 0
 spline_grid
 ```
 
 ## Fitting
 
-We fit the spline surface to the image by interpreting the spline grid evaluation as a linear mapping.
+We fit the spline surface to the image in a least squares sense, by interpreting the spline grid evaluation as a linear mapping.
 
 ```@example tutorial
 using LinearMaps
@@ -40,4 +39,23 @@ sol = lsqr(spline_grid_map, vec(image_array))
 spline_grid.control_points .= reshape(sol, size(spline_grid.control_points))
 evaluate!(spline_grid)
 plot(spline_grid)
+```
+
+## Matrix
+
+The least-squares fitting procedure above is matrix free, but the linear mapping can be converted into a (sparse) matrix for inspection.
+
+```@example tutorial
+using SparseArrays
+
+n_control_points = (5, 5)
+degree = (2, 2)
+n_sample_points = (15, 15)
+dim_out = 1
+
+spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
+spline_grid = SplineGrid(spline_dimensions, dim_out)
+spline_grid_map = LinearMap(spline_grid)
+M = sparse(spline_grid_map)
+heatmap(M[end:-1:1,:])
 ```
