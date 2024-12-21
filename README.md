@@ -4,6 +4,7 @@
 
 [![CI](https://github.com/SouthEndMusic/SplineGrids.jl/actions/workflows/Tests.yml/badge.svg?branch=master)](https://github.com/SouthEndMusic/SplineGrids.jl/actions/workflows/Tests.yml)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+[![codecov](https://codecov.io/gh/SouthEndMusic/SplineGrids.jl/graph/badge.svg?token=K4IMP0BI6Q)](https://codecov.io/gh/SouthEndMusic/SplineGrids.jl)
 
 SplineGrids.jl is designed to efficiently evaluate a broad class of spline objects on a grid in the spline's domain. The package supports:
 - Any number of input and output dimensions (see the examples [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_dimensions/))
