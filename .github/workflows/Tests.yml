@@ -21,6 +21,8 @@ jobs:
   tests:
     name: Julia tests ${{ matrix.julia_version }} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      JULIA_NUM_THREADS: 4
     strategy:
       fail-fast: false
       matrix:

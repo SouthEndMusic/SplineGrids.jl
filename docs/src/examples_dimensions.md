@@ -4,13 +4,6 @@ This page shows examples of spline grids of various dimensionalities via their p
 
 ## 1 input, 1 output
 
-```@setup tutorial
-using Base.Threads
-
-# Set the number of threads to the number of available CPU cores
-ENV["JULIA_NUM_THREADS"] = string(nthreads())
-```
-
 ```@example tutorial
 using SplineGrids
 using Plots

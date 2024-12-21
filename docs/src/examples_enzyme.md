@@ -6,13 +6,6 @@ To demonstrate how Enzyme can be used to incorporate a spline grid into an optim
 
 We define a spline grid with 2 input dimensions and 1 output dimension.
 
-```@setup tutorial
-using Base.Threads
-
-# Set the number of threads to the number of available CPU cores
-ENV["JULIA_NUM_THREADS"] = string(nthreads())
-```
-
 ```@example tutorial
 using SplineGrids
 

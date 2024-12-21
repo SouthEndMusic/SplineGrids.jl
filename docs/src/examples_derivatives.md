@@ -4,13 +4,6 @@ The code below shows an example of how derivatives can be used to compute the no
 
 ### Defining the surface
 
-```@setup tutorial
-using Base.Threads
-
-# Set the number of threads to the number of available CPU cores
-ENV["JULIA_NUM_THREADS"] = string(nthreads())
-```
-
 ```@example tutorial
 using SplineGrids
 

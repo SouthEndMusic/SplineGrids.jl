@@ -20,13 +20,6 @@ We solve this problem by sampling the domain and enforcing the PDE on the interi
 
 We first define the kernel which calculates the residual of a given approximation to the solution of the problem above. Note that this kernel is agnostic of the fact that the solution will come from a spline grid.
 
-```@setup tutorial
-using Base.Threads
-
-# Set the number of threads to the number of available CPU cores
-ENV["JULIA_NUM_THREADS"] = string(nthreads())
-```
-
 ```@example tutorial
 using KernelAbstractions
 

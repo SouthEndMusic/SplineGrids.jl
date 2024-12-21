@@ -9,50 +9,50 @@ using Makie.GeometryBasics # hide
 fig = Figure() # hide
 ax = Axis(fig[1,1]; xlabel = "z axis") # hide
 
-# Incoming beam
-n_rays = 10
-arrows!(ax,
-    fill(-2.0, n_rays),
-    range(-1,1, length = n_rays),
-    ones(n_rays), 
-    zeros(n_rays),
-    label = "Incoming parallel beam"
+# Incoming beam # hide
+n_rays = 10 # hide
+arrows!(ax, # hide
+    fill(-2.0, n_rays), # hide
+    range(-1,1, length = n_rays), # hide
+    ones(n_rays),  # hide
+    zeros(n_rays), # hide
+    label = "Incoming parallel beam" # hide
 ) # hide
 
-# Lens first surface
+# Lens first surface # hide
 n_points = 100  # hide
 y_lens = range(-1,1, length = n_points) # hide
 x_lens_1 = fill(-0.5, n_points) # hide
-lines!(ax,
-    x_lens_1, 
-    y_lens,
-    label = "Fixed lens surface"
+lines!(ax, # hide
+    x_lens_1,  # hide
+    y_lens, # hide
+    label = "Fixed lens surface" # hide
 ) # hide
 
-# Lens second surface
+# Lens second surface # hide
 x_lens_2 = sin.(10y_lens)/25  # hide
-lines!(ax,
-    x_lens_2,
-    y_lens,
-    label = "Lens surface to optimize",
+lines!(ax, # hide
+    x_lens_2, # hide
+    y_lens, # hide
+    label = "Lens surface to optimize", # hide
 ) # hide
 
 # Lens fill
-poly!(
-    ax,
-    [
-        Point2f.(x_lens_1, y_lens)...,
-        Point2f.(x_lens_2[end:-1:1], y_lens[end:-1:1])...
-    ],
-    color = (:blue, 0.2),
+poly!( # hide
+    ax, # hide
+    [ # hide
+        Point2f.(x_lens_1, y_lens)..., # hide
+        Point2f.(x_lens_2[end:-1:1], y_lens[end:-1:1])... # hide
+    ], # hide
+    color = (:blue, 0.2), # hide
 ) # hide
 
-# Detector screen
-lines!(
-    ax,
-    [2.0, 2.0],
-    [-3.0, 3.0],
-    label = "Detector screen"
+# Detector screen # hide
+lines!( # hide
+    ax, # hide
+    [2.0, 2.0], # hide
+    [-3.0, 3.0], # hide
+    label = "Detector screen" # hide
 ) # hide
 
 axislegend(ax, position = :lt) # hide
@@ -70,13 +70,6 @@ Here we define a kernel which computes for each sample point on the surface:
 - What the contributions of that ray to the pixel values are.
 
 The contribution of the ray is smeared out over multiple pixels in a smooth way to make the rendering differentiable.
-
-```@setup tutorial
-using Base.Threads
-
-# Set the number of threads to the number of available CPU cores
-ENV["JULIA_NUM_THREADS"] = string(nthreads())
-```
 
 ```@example tutorial
 using KernelAbstractions
