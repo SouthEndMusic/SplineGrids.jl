@@ -37,7 +37,7 @@ lines!(ax, # hide
     label = "Lens surface to optimize", # hide
 ) # hide
 
-# Lens fill
+# Lens fill # hide
 poly!( # hide
     ax, # hide
     [ # hide
