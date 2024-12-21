@@ -13,7 +13,8 @@ makedocs(modules = [SplineGrids],
             "Control point derivatives with Enzyme" => "examples_enzyme.md"
         ],
         "Advanced examples" => [
-            "Solving a PDE" => "examples_pde.md"
+            "Solving a PDE" => "examples_pde.md",
+            "Optimizing a lens surface" => "examples_optics.md"
         ],
         "Manual" => "manual.md"])
 
