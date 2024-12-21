@@ -163,7 +163,7 @@ end
     return nothing
 end
 
-@recipe function f(spline_grid::AbstractSplineGrid{2, 1})
+@recipe function f(spline_grid::AbstractSplineGrid{2, 1}; plot_knots = true)
     (; spline_dimensions, eval) = spline_grid
 
     xlabel --> "Input dimension 1"
@@ -184,23 +184,25 @@ end
     end
 
     # Plot knot vectors
-    for (i, knot_value) in enumerate(knot_values_1)
-        @series begin
-            seriestype := :line
-            label := (i == 1) ? "Knots dimension 1" : ""
-            color := :gray
-            ls := :dash
-            [knot_value, knot_value], extent_2
+    if plot_knots
+        for (i, knot_value) in enumerate(knot_values_1)
+            @series begin
+                seriestype := :line
+                label := (i == 1) ? "Knots dimension 1" : ""
+                color := :gray
+                ls := :dash
+                [knot_value, knot_value], extent_2
+            end
         end
-    end
 
-    for (i, knot_value) in enumerate(knot_values_2)
-        @series begin
-            seriestype := :line
-            label := (i == 1) ? "Knots dimension 2" : ""
-            color := :black
-            ls := :dash
-            extent_1, [knot_value, knot_value]
+        for (i, knot_value) in enumerate(knot_values_2)
+            @series begin
+                seriestype := :line
+                label := (i == 1) ? "Knots dimension 2" : ""
+                color := :black
+                ls := :dash
+                extent_1, [knot_value, knot_value]
+            end
         end
     end
 end
