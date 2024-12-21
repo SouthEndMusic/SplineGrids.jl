@@ -11,6 +11,13 @@ image = load(normpath(@__DIR__, "julia_logo.png"))
 
 We define a spline grid with 2 input dimensions, 1 output dimension and a sample grid which matches the image resolution.
 
+```@setup tutorial
+using Base.Threads
+
+# Set the number of threads to the number of available CPU cores
+ENV["JULIA_NUM_THREADS"] = string(nthreads())
+```
+
 ```@example tutorial
 using SplineGrids
 

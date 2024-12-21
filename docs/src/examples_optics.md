@@ -71,6 +71,13 @@ Here we define a kernel which computes for each sample point on the surface:
 
 The contribution of the ray is smeared out over multiple pixels in a smooth way to make the rendering differentiable.
 
+```@setup tutorial
+using Base.Threads
+
+# Set the number of threads to the number of available CPU cores
+ENV["JULIA_NUM_THREADS"] = string(nthreads())
+```
+
 ```@example tutorial
 using KernelAbstractions
 using Atomix
