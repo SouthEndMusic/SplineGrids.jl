@@ -4,4 +4,5 @@ using SafeTestsets
 @safetestset "SplineDimension" include("test_spline_dimension.jl")
 @safetestset "SplineGrid" include("test_spline_grid.jl")
 @safetestset "LinearMaps" include("test_LinearMapsExt.jl")
+@safetestset "Enzyme" include("test_EnzymeExt.jl")
 @safetestset "Aqua" include("aqua.jl")
