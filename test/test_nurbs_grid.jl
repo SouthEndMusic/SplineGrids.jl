@@ -29,5 +29,5 @@ using SplineGrids
     evaluate!(nurbs_grid)
     points_on_circle = eachrow(nurbs_grid.eval)
     @test allunique(points_on_circle[2:end])
-    @test !any(point -> !(norm(point) ≈ 1), points_on_circle)
+    @test all(point -> point[1]^2 + point[2]^2 ≈ 1, points_on_circle)
 end
