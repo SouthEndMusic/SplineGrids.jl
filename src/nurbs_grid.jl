@@ -1,5 +1,3 @@
-const AbstractNURBSGrid = AbstractSplineGrid{Nin, Nout, true} where {Nin, Nout}
-
 function NURBSGrid(spline_dimensions::NTuple{Nin, <:SplineDimension},
         Nout::Integer)::AbstractSplineGrid{Nin} where {Nin}
     # The size of the point grid on which the spline is evaluated

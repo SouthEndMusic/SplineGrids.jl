@@ -8,6 +8,7 @@ using Subscripts
 
 abstract type AbstractSplineDimension end
 abstract type AbstractSplineGrid{Nin, Nout, HasWeights} end
+const AbstractNURBSGrid = AbstractSplineGrid{Nin, Nout, true} where {Nin, Nout}
 
 include("utils.jl")
 include("knot_vector.jl")

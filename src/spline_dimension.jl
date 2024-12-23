@@ -54,7 +54,7 @@ function SplineDimension(
         degree::Integer,
         n_sample_points::Integer;
         max_derivative_order::Integer = 0,
-        knot_vector::Union{Nothing, KnotVector},
+        knot_vector::Union{Nothing, KnotVector} = nothing,
         kwargs...
 )::SplineDimension
     @assert 0≤max_derivative_order≤degree "The max_degree must be positive and derivatives order higher than `degree` are all 0."
