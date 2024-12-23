@@ -37,15 +37,32 @@ function get_index(knot_vector::KnotVector, t, d)
 end
 
 """
-    SplineDimension(n_basis_functions::Integer, degree::Integer, n_sample_points::Integer; kwargs...)::SplineDimension
+    SplineDimension(
+        n_basis_functions::Integer,
+        degree::Integer,
+        n_sample_points::Integer;
+        max_derivative_order::Integer = 0,
+        knot_vector::Union{Nothing, KnotVector},
+        kwargs...)
 
-Constructor for a SplineDimension. For now the sample points are evenly spaced on the extent of the knot vector.
+Constructor for a SplineDimension. Optionally a `knot_vector` kwarg can be passed, otherwise a default knot vector is generated.
+For now by default the sample points are evenly spaced on the extent of the knot vector.
 Key word arguments are passed to the KnotVector constructor.
 """
-function SplineDimension(n_basis_functions::Integer, degree::Integer,
-        n_sample_points::Integer; max_derivative_order = 0, kwargs...)::SplineDimension
+function SplineDimension(
+        n_basis_functions::Integer,
+        degree::Integer,
+        n_sample_points::Integer;
+        max_derivative_order::Integer = 0,
+        knot_vector::Union{Nothing, KnotVector},
+        kwargs...
+)::SplineDimension
     @assert 0≤max_derivative_order≤degree "The max_degree must be positive and derivatives order higher than `degree` are all 0."
-    knot_vector = KnotVector(n_basis_functions, degree; kwargs...)
+    # TODO: In else, check whether the number of basis functions and the degree are compatible with 
+    # the passed knot vector.
+    if isnothing(knot_vector)
+        knot_vector = KnotVector(n_basis_functions, degree; kwargs...)
+    end
     (; knot_values) = knot_vector
     sample_points = range(first(knot_values), last(knot_values); length = n_sample_points)
     sample_indices = get_index.(Ref(knot_vector), sample_points, degree)

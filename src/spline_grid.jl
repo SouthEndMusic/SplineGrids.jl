@@ -6,26 +6,30 @@ all information to evaluate the defined spline on the defined grid.
 
   - `spline_dimensions`: A SplineDimension per dimension of the spline, containing data to evaluate
     basis functions.
+  - `control points`: The points that define the shape of the spline, and in how many dimensions it is embedded.
+  - `denominator`: An optional array of intermediate results to evaluate the denominator of NURBS.
+  - `weights`: Control point weights to define NURBS.
+  - `eval`: The array where the evaluated spline grid is stored.
   - `sample_indices`: For each global sample point, the linear index in the `control_points` array before it is offset
     for a particular index in the control point kernel and output dimension.
-  - `control points`: The points that define the shape of the spline, and in how many dimensions it is embedded.
-  - `weights`: For now unsupported, will eventually be used to define NURBS.
-  - `eval`: The array where the evaluated spline grid is stored.
   - `basis_function_products`: An array of intermediate results for evaluating the spline grids, containing products of basis functions
     from the various spline dimensions.
 """
 struct SplineGrid{
     S <: SplineDimension,
     C <: AbstractArray,
+    D <: Union{AbstractArray{<:AbstractFloat, Nin}, Nothing} where {Nin},
     W <: Union{AbstractArray{<:AbstractFloat, Nin}, Nothing} where {Nin},
     E <: AbstractArray{<:AbstractFloat},
     I <: AbstractArray{<:Integer, Nin} where {Nin},
     B <: AbstractArray{<:AbstractFloat},
     Nin,
-    Nout
-} <: AbstractSplineGrid{Nin, Nout}
+    Nout,
+    HasWeights
+} <: AbstractSplineGrid{Nin, Nout, HasWeights}
     spline_dimensions::NTuple{Nin, S}
     control_points::C
+    denominator::D
     weights::W
     eval::E
     sample_indices::I
@@ -33,23 +37,26 @@ struct SplineGrid{
     function SplineGrid(
             spline_dimensions,
             control_points,
-            weights,
             eval,
             sample_indices,
-            basis_function_products
-    )
+            basis_function_products;
+            denominator = nothing,
+            weights = nothing)
         # TODO: Add validation of combination of control points, weights, and basis functions
         new{
             eltype(spline_dimensions),
             typeof(control_points),
+            typeof(denominator),
             typeof(weights),
             typeof(eval),
             typeof(sample_indices),
             typeof(basis_function_products),
             length(spline_dimensions),
-            size(control_points)[end]}(
+            size(control_points)[end],
+            isa(weights, AbstractArray)}(
             spline_dimensions,
             control_points,
+            denominator,
             weights,
             eval,
             sample_indices,
@@ -83,14 +90,11 @@ function SplineGrid(spline_dimensions::NTuple{Nin, <:SplineDimension},
     basis_function_products = zeros(size_eval_grid...)
     # Preallocated memory for grid evaluation of the spline
     eval = zeros(size_eval_grid..., Nout)
-    # NURBS are not supported yet
-    weights = nothing
     # Linear indices for control points per global sample point
     sample_indices = get_global_sample_indices(spline_dimensions, control_points)
     SplineGrid(
         spline_dimensions,
         control_points,
-        weights,
         eval,
         sample_indices,
         basis_function_products
@@ -125,6 +129,7 @@ end
     # The linear index of the required control point
     lin_cp_index_base = sample_indices[J] + offset
 
+    # The contribution of the required control point
     for dim_out in 1:Nout
         lin_cp_idx = lin_cp_index_base + dim_out * cp_grid_size
         eval[J, dim_out] += basis_function_product * control_points[lin_cp_idx]
@@ -132,7 +137,7 @@ end
 end
 
 """
-    evaluate!spline_grid::AbstractSplineGrid{Nin};
+    evaluate!(spline_grid::AbstractSplineGrid{Nin};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractArray = spline_grid.control_points,
         eval::AbstractArray = spline_grid.eval)
@@ -142,7 +147,7 @@ for each SplineDimension, and compute the output grid on each sample point combi
 as a linear combination of control with basis function products as coefficients.
 
 Uses the `control_points` and `eval` arrays from the `spline_grid` by default,
-but different arrays can be specified as a convencience for optimization algorithms.
+but different arrays can be specified as a convenience for optimization algorithms.
 """
 function evaluate!(spline_grid::AbstractSplineGrid{Nin};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
@@ -173,8 +178,13 @@ function evaluate!(spline_grid::AbstractSplineGrid{Nin};
 
         # Add the 'basis function product * control point' contribution to eval
         offset = get_offset(size(control_points), Tuple(I))
-        kernel!(eval, basis_function_products, control_points,
-            sample_indices, offset, ndrange = size(sample_indices))
+        kernel!(
+            eval,
+            basis_function_products,
+            control_points,
+            sample_indices,
+            offset,
+            ndrange = size(sample_indices))
         synchronize(backend)
     end
     return nothing
