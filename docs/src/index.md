@@ -3,12 +3,12 @@
 SplineGrids.jl is designed to efficiently evaluate a broad class of spline objects on a grid in the spline's domain. The package supports:
 - Any number of input and output dimensions (see the examples [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_dimensions/))
 - Any degree of basis functions and type of knot vector
-- Any combination of partial derivatives
-- Using weights to define NURBS (coming up)
+- Using weights to define NURBS
+- Any combination of partial derivatives (not for NURBS)
 - Local refinement (coming up)
 - CPU and GPU backends via [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl)
 
-The intended use case of this package is to be integrated into the [SciML ecosystem](https://sciml.ai/), for easy and efficient incorporation of spline geometries in problems of fitting, optimization, differential equation solving and machine learning. Since SplineGrids.jl makes heavy use of in-place computations, the recommended automatic differentiation framework to use with SplineGrids.jl is [Enzyme](https://github.com/EnzymeAD/Enzyme.jl).
+The intended use case of this package is to be integrated into the [SciML ecosystem](https://sciml.ai/), for easy and efficient incorporation of spline geometries in problems of [fitting](https://southendmusic.github.io/SplineGrids.jl/dev/examples_linear_fitting/), [optimization](https://southendmusic.github.io/SplineGrids.jl/dev/examples_optics/), [differential equation solving](https://southendmusic.github.io/SplineGrids.jl/dev/examples_pde/) and machine learning. Since SplineGrids.jl makes heavy use of in-place computations, the recommended automatic differentiation framework to use with SplineGrids.jl is [Enzyme](https://github.com/EnzymeAD/Enzyme.jl).
 
 ## API
 
