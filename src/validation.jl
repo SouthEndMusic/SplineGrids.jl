@@ -19,3 +19,19 @@ function validate_partial_derivatives(
     end
     return nothing
 end
+
+function validate_partial_derivatives(
+        spline_grid::AbstractSplineGrid,
+        derivative_order::NTuple{Nin, <:Integer}
+)::Nothing where {Nin}
+    validate_partial_derivatives(spline_grid.spline_dimensions, derivative_order)
+end
+
+function validate_partial_derivatives(
+        ::AbstractNURBSGrid,
+        derivative_order::NTuple{Nin, <:Integer}
+)::Nothing where {Nin}
+    if any(!iszero, derivative_order)
+        error("Computing derivatives of NURBS is currently not supported.")
+    end
+end

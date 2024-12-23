@@ -5,7 +5,8 @@ using LinearMaps
 function LinearMaps.LinearMap(spline_grid::SplineGrids.AbstractSplineGrid{Nin};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin)) where {Nin}
     SplineGrids.validate_partial_derivatives(
-        spline_grid.spline_dimensions, derivative_order)
+        spline_grid, derivative_order
+    )
 
     LinearMap(
         # In place evaluation control points -> spline grid

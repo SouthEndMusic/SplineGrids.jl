@@ -95,17 +95,19 @@ but different arrays can be specified as a convenience for optimization algorith
 
 NOTE: At the moment computing derivatives of NURBS grids is not supported.
 """
-function evaluate!(spline_grid::AbstractNURBSGrid;
-        control_points::AbstractArray = spline_grid.control_points,
-        weights::AbstractArray = spline_grid.weights,
-        eval::AbstractArray = spline_grid.eval
-)::Nothing
-    (; basis_function_products, spline_dimensions, sample_indices, denominator) = spline_grid
+function evaluate!(nurbs_grid::AbstractNURBSGrid{Nin};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
+        control_points::AbstractArray = nurbs_grid.control_points,
+        weights::AbstractArray = nurbs_grid.weights,
+        eval::AbstractArray = nurbs_grid.eval
+)::Nothing where {Nin}
+    (; basis_function_products, spline_dimensions, sample_indices, denominator) = nurbs_grid
+    validate_partial_derivatives(nurbs_grid, derivative_order)
     eval .= 0
     denominator .= 0
 
-    @assert size(control_points) == size(spline_grid.control_points)
-    @assert size(eval) == size(spline_grid.eval)
+    @assert size(control_points) == size(nurbs_grid.control_points)
+    @assert size(eval) == size(nurbs_grid.eval)
 
     control_point_kernel_size = get_cp_kernel_size(spline_dimensions)
     backend = get_backend(eval)

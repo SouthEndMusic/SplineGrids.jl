@@ -1,5 +1,19 @@
 using SplineGrids
 
+@testset "Validation" begin
+    n_control_points = 4
+    degree = 2
+    n_sample_points = 100
+    dim_out = 1
+    max_derivative_order = 1
+
+    spline_dimension = SplineDimension(
+        n_control_points, degree, n_sample_points; max_derivative_order)
+    nurbs_grid = NURBSGrid(spline_dimension, dim_out)
+    @test_throws "Computing derivatives of NURBS is currently not supported." evaluate!(
+        nurbs_grid; derivative_order = (1,))
+end
+
 @testset "Circle" begin
     using SplineGrids
     using Plots
