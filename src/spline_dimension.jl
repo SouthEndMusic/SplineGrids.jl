@@ -58,10 +58,10 @@ function SplineDimension(
         kwargs...
 )::SplineDimension
     @assert 0≤max_derivative_order≤degree "The max_degree must be positive and derivatives order higher than `degree` are all 0."
-    # TODO: In else, check whether the number of basis functions and the degree are compatible with 
-    # the passed knot vector.
     if isnothing(knot_vector)
         knot_vector = KnotVector(n_basis_functions, degree; kwargs...)
+    else
+        @assert length(knot_vector.knots_all)==n_basis_functions + degree + 1 "Incompatible knot vector supplied."
     end
     (; knot_values) = knot_vector
     sample_points = range(first(knot_values), last(knot_values); length = n_sample_points)
