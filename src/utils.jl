@@ -123,3 +123,6 @@ function Base.show(
         io, "$(base_name(spline_grid)) $(shape_name(Nin)) with outputs in ℝ$(super(string(Nout))) with the following properties per dimension:")
     pretty_table(io, data; header)
 end
+
+is_nurbs(::Any) = false
+is_nurbs(::AbstractNURBSGrid) = true

@@ -8,6 +8,7 @@ makedocs(modules = [SplineGrids],
     pages = ["index.md",
         "Examples" => [
             "Dimensionality" => "examples_dimensions.md",
+            "NURBS" => "examples_nurbs.md",
             "Derivatives" => "examples_derivatives.md",
             "Linear fitting" => "examples_linear_fitting.md",
             "Control point derivatives with Enzyme" => "examples_enzyme.md"
