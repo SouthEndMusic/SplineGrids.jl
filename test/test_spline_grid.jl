@@ -30,6 +30,8 @@ end
 end
 
 @testset "Derivative order validation" begin
+    using Logging
+
     n_control_points = (5, 6)
     degree = (3, 2)
     n_sample_points = (7, 9)
@@ -40,6 +42,14 @@ end
         n_control_points, degree, n_sample_points; max_derivative_order)
     spline_grid = SplineGrid(spline_dimensions, Nout)
 
-    @test_throws "Invalid derivative order(s) supplied. If you want to evaluate (higher order) derivatives, specify this at construction as SplineDimension(...; max_derivative_order)." evaluate!(
-        spline_grid; derivative_order = (2, 1))
+    logger = TestLogger()
+    with_logger(logger) do
+        @test_throws "Invalid derivative order(s) supplied. If you want to evaluate (higher order) derivatives, specify this at construction as SplineDimension(...; max_derivative_order)." evaluate!(
+            spline_grid; derivative_order = (2, 1))
+    end
+
+    @test length(logger.logs) == 1
+    @test logger.logs[1].level == Error
+    @test logger.logs[1].message ==
+          "The maximum derivative order available for spline dimension 1 is 1, got 2."
 end

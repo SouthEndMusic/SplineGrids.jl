@@ -39,5 +39,13 @@ for (Nin, Nout) in dimensionalities
         catch
             false
         end
+
+        nurbs_grid = NURBSGrid(spline_dimensions[1:Nin], Nout)
+        @test try
+            plot(nurbs_grid)
+            true
+        catch
+            false
+        end
     end
 end

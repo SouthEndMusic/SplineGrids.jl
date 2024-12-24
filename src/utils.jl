@@ -104,6 +104,9 @@ function shape_name(Nin::Integer)::String
     return "hyper ($Nin) volume"
 end
 
+base_name(::AbstractSplineGrid) = "SplineGrid"
+base_name(::AbstractNURBSGrid) = "NURBSGrid"
+
 function Base.show(
         io::IO, mime::MIME"text/plain",
         spline_grid::AbstractSplineGrid{Nin, Nout}) where {Nin, Nout}
@@ -115,7 +118,11 @@ function Base.show(
             length(spline_dimensions[n].sample_points)),
         eachindex(spline_dimensions))...)
     data = hcat(collect.(collect(data))...)
+
     println(
-        io, "SplineGrid $(shape_name(Nin)) with outputs in ℝ$(super(string(Nout))) with the following properties per dimension:")
+        io, "$(base_name(spline_grid)) $(shape_name(Nin)) with outputs in ℝ$(super(string(Nout))) with the following properties per dimension:")
     pretty_table(io, data; header)
 end
+
+is_nurbs(::Any) = false
+is_nurbs(::AbstractNURBSGrid) = true

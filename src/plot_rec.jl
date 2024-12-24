@@ -88,7 +88,11 @@ end
     @series begin
         seriestype := :scatter
         label := "Control points"
-        c := CONTROL_POINT_COLOR
+        if is_nurbs(spline_grid)
+            zcolor := vec(spline_grid.weights)
+        else
+            c := CONTROL_POINT_COLOR
+        end
         spline_grid.control_points[:, 1], spline_grid.control_points[:, 2]
     end
 end
@@ -112,7 +116,11 @@ end
     @series begin
         seriestype := :scatter
         label := "Control points"
-        c := CONTROL_POINT_COLOR
+        if is_nurbs(spline_grid)
+            zcolor := vec(spline_grid.weights)
+        else
+            c := CONTROL_POINT_COLOR
+        end
         control_points[:, 1], control_points[:, 2], control_points[:, 3]
     end
 
@@ -146,7 +154,11 @@ end
     @series begin
         seriestype := :scatter
         label := "Control points"
-        c := CONTROL_POINT_COLOR
+        if is_nurbs(spline_grid)
+            zcolor := vec(spline_grid.weights)
+        else
+            c := CONTROL_POINT_COLOR
+        end
         control_points[:, 1], control_points[:, 2], control_points[:, 3]
     end
 
@@ -259,7 +271,11 @@ end
     # # Plot the control points
     # @series begin
     #     seriestype := :scatter
-    #     color := CONTROL_POINT_COLOR
+    #     if is_nurbs(spline_grid)
+    #        zcolor := spline_grid.weights
+    #     else
+    #        c := CONTROL_POINT_COLOR
+    #     end
     #     control_points[:, :, 1], control_points[:, :, 2], control_points[:, :, 3]
     # end
 
