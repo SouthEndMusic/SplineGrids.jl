@@ -124,5 +124,17 @@ function Base.show(
     pretty_table(io, data; header)
 end
 
+function reset_sample_indices!(spline_dimension::AbstractSplineDimension)::Nothing
+    (; knot_vector, degree, sample_points, sample_indices) = spline_dimension
+    map!(sample_point -> get_index(
+            knot_vector,
+            sample_point,
+            degree),
+        sample_indices,
+        sample_points
+    )
+    return nothing
+end
+
 is_nurbs(::Any) = false
 is_nurbs(::AbstractNURBSGrid) = true
