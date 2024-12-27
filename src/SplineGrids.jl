@@ -2,10 +2,17 @@ module SplineGrids
 
 using Atomix
 using KernelAbstractions
+
+# Needed for pretty printing
 using PrettyTables
-using RecipesBase
-using SparseArrays
 using Subscripts
+
+# Needed for plotting
+using RecipesBase
+
+# Needed for refinement
+using SparseArrays
+using LinearAlgebra
 
 abstract type AbstractSplineDimension end
 abstract type AbstractSplineGrid{Nin, Nout, HasWeights} end

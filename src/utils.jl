@@ -14,6 +14,23 @@ function set_unit_cp_grid!(control_points::AbstractArray)::Nothing
     return nothing
 end
 
+function set_global_sample_indices!(
+        sample_indices::AbstractArray{<:Integer},
+        spline_dimensions::NTuple{
+            Nin, <:AbstractSplineDimension},
+        control_points::AbstractArray)::Nothing where {Nin}
+    cp_indices = zeros(Int, Nin + 1)
+    for J in CartesianIndices(sample_indices)
+        for dim in 1:Nin
+            spline_dim = spline_dimensions[dim]
+            cp_indices[dim] = spline_dim.sample_indices[J[dim]] -
+                              spline_dim.degree - 1
+        end
+        sample_indices[J] = get_linear_index(size(control_points), cp_indices)
+    end
+    return nothing
+end
+
 # Linear indices for control points per global sample point
 function get_global_sample_indices(
         spline_dimensions::NTuple{
@@ -23,15 +40,7 @@ function get_global_sample_indices(
     size_eval_grid = ntuple(n -> length(spline_dimensions[n].sample_points), Nin)
     # Assumptions: dim_out = 0, I = (0,...,0)
     sample_indices = zeros(Int, size_eval_grid...)
-    cp_indices = zeros(Int, Nin + 1)
-    for J in CartesianIndices(size_eval_grid)
-        for dim in 1:Nin
-            spline_dim = spline_dimensions[dim]
-            cp_indices[dim] = spline_dim.sample_indices[J[dim]] -
-                              spline_dim.degree - 1
-        end
-        sample_indices[J] = get_linear_index(size(control_points), cp_indices)
-    end
+    set_global_sample_indices!(sample_indices, spline_dimensions, control_points)
     sample_indices
 end
 

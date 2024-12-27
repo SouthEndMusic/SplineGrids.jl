@@ -5,7 +5,7 @@ const SPLINE_GRID_COLOR = :blue
 @recipe function f(spline_dimension::SplineDimension; derivative_order = 0)
     data = decompress(spline_dimension; derivative_order)
     (; sample_points, knot_vector) = spline_dimension
-    (; knot_values) = knot_vector
+    (; knot_values, multiplicities) = knot_vector
     n_basis_functions = get_n_basis_functions(spline_dimension)
 
     # Plot each basis function
@@ -28,6 +28,9 @@ const SPLINE_GRID_COLOR = :blue
     @series begin
         seriestype := :scatter
         label := "knots"
+        zcolor := multiplicities
+        color := :jet
+        colorbartitle := "Knot multiplicities"
         knot_values, zero(knot_values)
     end
 end
@@ -90,6 +93,7 @@ end
         label := "Control points"
         if is_nurbs(spline_grid)
             zcolor := vec(spline_grid.weights)
+            colorbartitle := "Weights"
         else
             c := CONTROL_POINT_COLOR
         end
@@ -118,6 +122,7 @@ end
         label := "Control points"
         if is_nurbs(spline_grid)
             zcolor := vec(spline_grid.weights)
+            colorbartitle := "Weights"
         else
             c := CONTROL_POINT_COLOR
         end
@@ -156,6 +161,7 @@ end
         label := "Control points"
         if is_nurbs(spline_grid)
             zcolor := vec(spline_grid.weights)
+            colorbartitle := "Weights"
         else
             c := CONTROL_POINT_COLOR
         end
@@ -273,6 +279,7 @@ end
     #     seriestype := :scatter
     #     if is_nurbs(spline_grid)
     #        zcolor := spline_grid.weights
+    #        colorbartitle := "Weights"
     #     else
     #        c := CONTROL_POINT_COLOR
     #     end
