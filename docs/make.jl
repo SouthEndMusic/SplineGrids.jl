@@ -6,6 +6,9 @@ makedocs(modules = [SplineGrids],
     clean = true,
     linkcheck = true,
     pages = ["index.md",
+        "Theory" => [
+            "Refinement" => "theory_refinement.md"
+        ],
         "Examples" => [
             "Dimensionality" => "examples_dimensions.md",
             "NURBS" => "examples_nurbs.md",

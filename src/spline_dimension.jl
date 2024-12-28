@@ -31,6 +31,8 @@ struct SplineDimension{
     eval_prev::E
 end
 
+# Get the index i of a sample point t in the knot vector such 
+# such that t ∈ [knots_all[i], knots_all[i + 1])
 function get_index(knot_vector::KnotVector, t, d)
     clamp(searchsortedlast(knot_vector.knots_all, t),
         d + 1, length(knot_vector.knots_all) - d - 1)
