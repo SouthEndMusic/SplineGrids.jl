@@ -31,7 +31,7 @@ plot(spline_dimension, title = "Original basis")
 
 ```@example tutorial
 spline_grid_new = deepcopy(spline_grid)
-spline_grid_new, refinement_matrix = insert_knot!(spline_grid_new, 0.25, 1)
+spline_grid_new, refinement_matrix = insert_knot!(spline_grid_new, 1, 0.25)
 spline_dimension_new = only(spline_grid_new.spline_dimensions)
 plot(spline_dimension_new, title = "Basis after knot insertion")
 ```

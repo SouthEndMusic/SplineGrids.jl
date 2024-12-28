@@ -11,10 +11,13 @@ function build_refinement_matrix(
 
     for i in 1:(n_basis_functions - 1)
         if i ≤ knot_new_index - degree - 2
+            # Basis functions left of the knot insertion that remain the same
             refinement_matrix[i, i] = 1
         elseif i ≥ knot_new_index
+            # Basis functions right of the knot insertion that remain the same
             refinement_matrix[i + 1, i] = 1
         else
+            # Basis functions whose support contains the new knot
             refinement_matrix[i, i] = (knot_new -
                                        knots_all[i]) /
                                       (knots_all[i + degree + 1] -
@@ -36,6 +39,9 @@ function refine_control_points!(
         dim_refinement::Integer
 )::Nothing
     size_control_points = size(control_points)
+
+    # The refinement matrix has to be applied for every index in every dimension apart from
+    # the refinement dimension
     refinement_indices = ntuple(
         dim_in -> dim_in == dim_refinement ? 1 : size_control_points[dim_in], ndims(control_points))
 
@@ -96,7 +102,8 @@ end
     insert_knot!(
             spline_dimension::SplineDimension,
             knot_new::AbstractFloat;
-            recompute_sample_indices = true)::SparseMatrixCSC
+            recompute_sample_indices::Bool = true,
+            evaluate::Bool = true)::SparseMatrixCSC
 
 Add a new knot to the knot vector underlying the spline dimension.
 
@@ -116,7 +123,7 @@ Add a new knot to the knot vector underlying the spline dimension.
 function insert_knot!(
         spline_dimension::SplineDimension,
         knot_new::AbstractFloat;
-        recompute_sample_indices = true,
+        recompute_sample_indices::Bool = true,
         evaluate::Bool = true
 )::SparseMatrixCSC
     (; knot_vector) = spline_dimension
@@ -136,12 +143,40 @@ function insert_knot!(
     refinement_matrix
 end
 
+"""
+    insert_knot!(
+    spline_grid::AbstractSplineGrid{Nin, Nout},
+    knot_new::AbstractFloat,
+    dim_refinement::Integer;
+    evaluate_spline_dimension::Bool = true,
+    recompute_global_sample_indices = true
+    )::Tuple{AbstractSplineGrid, SparseMatrixCSC} where {Nin, Nout}
+
+Add a new knot to the knot vector underlying the indicated spline dimension.
+NOTE: A new `SplineGrid` object is created, with the same memory for all underlying data
+except for the control points.
+
+## Inputs
+
+  - `spline_grid`: The spline grid to which the new knot will be added
+  - `knot_new`: The value of the knot to be added
+  - `dim_refinement`: The index of the spline dimension to which the knot will be added
+  - `evaluate_spline_dimension`: Whether the spline dimension to which the knot is added should be evaluated.
+    Defaults to `true`.
+  - `recompute_global_sample_indices`: Whether the global sample indices should be recomputed after the knot insertion.
+    Defaults to `true`.
+
+## Outputs
+
+  - `spline_grid_new`: The newly created spline grid with all the same underlying memory except for the control points.
+  - `refinement_matrix`: The sparse matrix which expresses the basis functions from before the knot insertion in terms of
+    the basis functions after the knot insertion for the knot insertion dimension.
+"""
 function insert_knot!(
         spline_grid::AbstractSplineGrid{Nin, Nout},
-        knot_new::AbstractFloat,
-        dim_refinement::Integer;
+        dim_refinement::Integer,
+        knot_new::AbstractFloat;
         evaluate_spline_dimension::Bool = true,
-        recompute_sample_indices_spline_dimension::Bool = true,
         recompute_global_sample_indices = true
 )::Tuple{AbstractSplineGrid, SparseMatrixCSC} where {Nin, Nout}
     (; spline_dimensions, control_points, sample_indices) = spline_grid
@@ -152,7 +187,6 @@ function insert_knot!(
     refinement_matrix = insert_knot!(
         spline_dimension,
         knot_new;
-        recompute_sample_indices = recompute_sample_indices_spline_dimension,
         evaluate = evaluate_spline_dimension)
 
     # Refine control points
@@ -171,7 +205,10 @@ function insert_knot!(
         dim_refinement)
 
     if recompute_global_sample_indices
-        set_global_sample_indices!(sample_indices, spline_dimensions, control_points_new)
+        set_global_sample_indices!(
+            sample_indices,
+            spline_dimensions,
+            control_points_new)
     end
 
     spline_grid_new = SplineGrid(
@@ -201,8 +238,10 @@ Add multiple knots at once to the knot vector underlying the spline dimension.
   - `refinement_matrix`: The sparse matrix which expresses the basis functions from before the refinement in terms of
     the basis functions after the refinement.
 """
-function refine!(spline_dimension::SplineDimension;
-        knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing)::SparseMatrixCSC
+function refine!(
+        spline_dimension::SplineDimension;
+        knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing
+)::SparseMatrixCSC
     (; knot_values) = spline_dimension.knot_vector
 
     # Default new knots: midpoints of knot spans
@@ -225,7 +264,35 @@ function refine!(spline_dimension::SplineDimension;
     refinement_matrix
 end
 
-function refine!(spline_grid::AbstractSplineGrid,
+"""
+    refine!(
+    spline_grid::AbstractSplineGrid{Nin, Nout},
+    dim_refinement::Integer;
+    knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing,
+    recompute_global_sample_indices = true
+    )::Tuple{AbstractSplineGrid, SparseMatrixCSC} where {Nin, Nout}
+
+Add multiple knots to the knot vector underlying the indicated spline dimension.
+NOTE: A new `SplineGrid` object is created, with the same memory for all underlying data
+except for the control points.
+
+## Inputs
+
+  - `spline_grid`: The spline grid from which one of the knot vectors will be refined
+  - `dim_refinement`: The index of the spline dimension whose knot vector will be refined
+  - `knots_new`: The knots that will be added. Defaults to `nothing`, which internally is translated to all midpoints of the
+    non-trivial knot spans of the knot vector that will be refined.
+  - `recompute_global_sample_indices`: Whether the global sample indices should be recomputed after the knot refinement.
+    Defaults to `true`.
+
+## Outputs
+
+  - `spline_grid_new`: The newly created spline grid with all the same underlying memory except for the control points.
+  - `refinement_matrix`: The sparse matrix which expresses the basis functions from before the knot insertion in terms of
+    the basis functions after the knot insertion for the knot insertion dimension.
+"""
+function refine!(
+        spline_grid::AbstractSplineGrid,
         dim_refinement::Integer;
         knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing,
         recompute_global_sample_indices::Bool = true
@@ -235,8 +302,10 @@ function refine!(spline_grid::AbstractSplineGrid,
     refinement_matrix = refine!(spline_dimension; knots_new)
     evaluate!(spline_dimension)
 
+    # The number of control points added in the refinement dimension
     n_cp_new = size(refinement_matrix)[1] - size(refinement_matrix)[2]
 
+    # Refine the control points
     size_cp_grid = size(control_points)
     size_cp_grid_new = ntuple(
         dim_in -> dim_in == dim_refinement ? size_cp_grid[dim_in] + n_cp_new :

@@ -20,8 +20,9 @@ evaluate_adjoint!(::SplineGrids.AbstractSplineGrid{Nin, Nout}) where{Nin, Nout}
 ```@docs
 insert_knot!(::KnotVector, ::AbstractFloat)
 insert_knot!(::SplineDimension, ::AbstractFloat)
-insert_knot!(::AbstractSplineGrid, ::AbstractFloat)
-refine!
+insert_knot!(::SplineGrids.AbstractSplineGrid{Nin, Nout}, ::Integer, ::AbstractFloat) where {Nin, Nout}
+refine!(::SplineDimension)
+refine!(::SplineGrids.AbstractSplineGrid, ::Integer)
 ```
 
 # Structs
