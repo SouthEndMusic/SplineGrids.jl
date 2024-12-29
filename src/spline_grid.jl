@@ -84,9 +84,6 @@ function SplineGrid(
         Nout::Integer
 )::AbstractSplineGrid{Nin} where {Nin, T}
     backend = get_backend(first(spline_dimensions))
-    # TODO: Then do the same for NURBSGrid
-    # TODO: Then look for other places where arrays are allocated with zeros/ones 
-
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
     # The size of the grid of control points

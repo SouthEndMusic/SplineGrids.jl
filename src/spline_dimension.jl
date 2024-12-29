@@ -228,12 +228,15 @@ end
 Transform `spline_dimension.eval` into a matrix of shape `(n_sample_points, n_points - degree - 1)`
 which explicitly gives the value for each basis function at each sample point.
 """
-function decompress(spline_dimension::SplineDimension; derivative_order = 0)
+function decompress(
+        spline_dimension::AbstractSplineDimension{T}; derivative_order = 0) where {T}
+    backend = get_backend(spline_dimension)
+
     (; sample_indices, degree, eval, max_derivative_order) = spline_dimension
     @assert derivative_order ≤ max_derivative_order
     n_sample_points = length(sample_indices)
     n_basis_functions = get_n_basis_functions(spline_dimension)
-    out = zeros(n_sample_points, n_basis_functions)
+    out = allocate(backend, T, n_sample_points, n_basis_functions)
 
     for (l, i) in enumerate(sample_indices)
         out[l, (i - degree):i] .= eval[l, :, derivative_order + 1]

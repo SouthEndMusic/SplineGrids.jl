@@ -178,7 +178,7 @@ nonlinear_function = NonlinearFunction(
 )
 
 # Initial guess
-x0 = zeros(length(spline_grid.control_points))
+x0 = zeros(Float32, length(spline_grid.control_points))
 
 problem = NonlinearProblem(
     nonlinear_function,

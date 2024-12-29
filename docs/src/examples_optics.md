@@ -239,7 +239,7 @@ p_render = (;
     screen_res=(250, 250)
 )
 
-render = zeros(p_render.screen_res)
+render = zeros(Float32, p_render.screen_res)
 
 trace_rays!(render, vec(spline_grid.control_points), p_render)
 
@@ -276,7 +276,7 @@ function image_loss(control_points_flat, target, render, p_render)
     Euclidean()(render, target)
 end
 
-render = zeros(p_render.screen_res...)
+render = zeros(Float32, p_render.screen_res...)
 
 image_loss(
     vec(spline_grid.control_points),
