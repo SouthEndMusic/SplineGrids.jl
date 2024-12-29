@@ -3,7 +3,7 @@
 ```@docs
 KnotVector(::Integer, ::Integer)
 SplineDimension(::Integer, ::Integer, ::Integer)
-SplineGrid(::NTuple{N_in, <:SplineDimension}, ::Integer) where N_in
+SplineGrid(::NTuple{Nin, <:SplineDimension}, ::Integer) where Nin
 ```
 
 # Evaluation

@@ -1,5 +1,5 @@
 """
-    SplineDimension(degree, knot_vector, sample_points, sample_indices)
+    SplineDimension(degree, max_derivative_order, knot_vector, sample_points, sample_indices, eval, eval_prev)
 
 Defines the set of basis functions for a single dimension, and how it is sampled.
 
@@ -16,19 +16,44 @@ Defines the set of basis functions for a single dimension, and how it is sampled
     whose support the sample point is in, and the derivatives if requested.
 """
 struct SplineDimension{
-    K,
-    M,
-    S <: AbstractVector,
+    K <: AbstractKnotVector{T} where {T},
+    S <: AbstractVector{T} where {T},
     I <: AbstractVector{<:Integer},
-    E <: AbstractArray{<:AbstractFloat, 3}
-} <: AbstractSplineDimension
+    E <: AbstractArray{T, 3} where {T},
+    T <: AbstractFloat
+} <: AbstractSplineDimension{T}
     degree::Int
     max_derivative_order::Int
-    knot_vector::KnotVector{K, M}
+    knot_vector::K
     sample_points::S
     sample_indices::I
     eval::E
     eval_prev::E
+    function SplineDimension(
+            degree,
+            max_derivative_order,
+            knot_vector,
+            sample_points,
+            sample_indices,
+            eval,
+            eval_prev
+    )
+        new{
+            typeof(knot_vector),
+            typeof(sample_points),
+            typeof(sample_indices),
+            typeof(eval),
+            eltype(eval)
+        }(
+            degree,
+            max_derivative_order,
+            knot_vector,
+            sample_points,
+            sample_indices,
+            eval,
+            eval_prev
+        )
+    end
 end
 
 # Get the index i of a sample point t in the knot vector such 
@@ -57,21 +82,58 @@ function SplineDimension(
         n_sample_points::Integer;
         max_derivative_order::Integer = 0,
         knot_vector::Union{Nothing, KnotVector} = nothing,
+        backend = CPU(),
+        float_type::Type{T} = Float32,
         kwargs...
-)::SplineDimension
+)::SplineDimension where {T <: AbstractFloat}
     @assert 0≤max_derivative_order≤degree "The max_degree must be positive and derivatives order higher than `degree` are all 0."
     if isnothing(knot_vector)
-        knot_vector = KnotVector(n_basis_functions, degree; kwargs...)
+        knot_vector = KnotVector(
+            n_basis_functions,
+            degree;
+            backend,
+            float_type,
+            kwargs...)
     else
         @assert length(knot_vector.knots_all)==n_basis_functions + degree + 1 "Incompatible knot vector supplied."
+        backend = get_backend(knot_vector.knot_values)
     end
     (; knot_values) = knot_vector
-    sample_points = range(first(knot_values), last(knot_values); length = n_sample_points)
-    sample_indices = get_index.(Ref(knot_vector), sample_points, degree)
-    eval = zeros(n_sample_points, degree + 1, max_derivative_order + 1)
-    eval_prev = zeros(n_sample_points, degree + 1, max_derivative_order + 1)
+
+    sample_points = adapt(
+        backend,
+        float_type.(
+            range(
+            first(knot_values),
+            last(knot_values);
+            length = n_sample_points
+        )
+        )
+    )
+    sample_indices = get_index.(
+        Ref(knot_vector),
+        sample_points,
+        degree
+    )
+
+    eval = allocate(
+        backend,
+        float_type,
+        n_sample_points,
+        degree + 1,
+        max_derivative_order + 1
+    )
+    eval_prev = similar(eval)
+
     s = SplineDimension(
-        degree, max_derivative_order, knot_vector, sample_points, sample_indices, eval, eval_prev)
+        degree,
+        max_derivative_order,
+        knot_vector,
+        sample_points,
+        sample_indices,
+        eval,
+        eval_prev
+    )
     evaluate!(s)
     s
 end

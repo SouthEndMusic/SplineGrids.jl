@@ -20,7 +20,7 @@ end
     n_sample_points = 5000
 
     spline_dimension = SplineDimension(
-        n_control_points, degree, n_sample_points; max_derivative_order = 2)
+        n_control_points, degree, n_sample_points; max_derivative_order = 2, float_type = Float64)
 
     (; sample_points) = spline_dimension
     Δt = diff(sample_points)

@@ -6,12 +6,12 @@ Random.seed!(1)
 n_control_points = (5, 8, 6)
 degree = (4, 2, 3)
 n_sample_points = (15, 20, 25)
-N_out = 2
+Nout = 2
 
 spline_dimensions = SplineDimension.(
     n_control_points, degree, n_sample_points; distribution = :random)
-spline_grid_ = SplineGrid(spline_dimensions, N_out)
-spline_grid_.control_points .= rand(n_control_points..., N_out)
+spline_grid_ = SplineGrid(spline_dimensions, Nout)
+spline_grid_.control_points .= rand(n_control_points..., Nout)
 evaluate!(spline_grid_)
 
 @testset "Knot insertion" begin

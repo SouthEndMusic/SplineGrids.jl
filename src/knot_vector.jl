@@ -8,7 +8,11 @@ Defines a knot vector.
   - `knot_values`: The values in the knot vector. Must be strictly increasing.
   - `multiplicities`: The multiplicity of each knot in `knots`.
 """
-struct KnotVector{K <: AbstractVector{<:Number}, M <: AbstractVector{<:Integer}}
+struct KnotVector{
+    K <: AbstractVector{T} where {T},
+    M <: AbstractVector{<:Integer},
+    T <: AbstractFloat
+} <: AbstractKnotVector{T}
     knot_values::K
     multiplicities::M
     knots_all::K
@@ -24,7 +28,7 @@ struct KnotVector{K <: AbstractVector{<:Number}, M <: AbstractVector{<:Integer}}
             knots_all[i:(i + multiplicity - 1)] .= knot_value
             i += multiplicity
         end
-        new{typeof(knot_values), typeof(multiplicities)}(
+        new{typeof(knot_values), typeof(multiplicities), eltype(knot_values)}(
             knot_values, multiplicities, knots_all)
     end
 end
@@ -46,18 +50,30 @@ other multiplicities are 1.
   - `distribution`: The distribution of the internal knots. The options are :equispaced or :random
 """
 function KnotVector(
-        n_basis_functions::Integer, degree::Integer; extent::Tuple{Number, Number} = (0, 1),
-        distribution::Symbol = :equispaced)::KnotVector
+        n_basis_functions::Integer,
+        degree::Integer;
+        extent::Tuple{Number, Number} = (0, 1),
+        distribution::Symbol = :equispaced,
+        backend = CPU(),
+        float_type::Type{T} = Float32
+)::KnotVector where {T <: AbstractFloat}
     @assert n_basis_functions - degree ≥ 1
     n_knot_values = n_basis_functions - degree + 1
+
     if distribution == :random
-        knot_values = cumsum(rand(n_knot_values))
+        knot_values = cumsum(rand(float_type, n_knot_values))
         knot_values .-= knot_values[1]
         knot_values ./= knot_values[end] - knot_values[1]
         knot_values .*= extent[2] - extent[1]
         knot_values .+= extent[1]
+
     elseif distribution == :equispaced
-        knot_values = collect(range(extent..., length = n_knot_values))
+        knot_values = float_type.(
+            collect(
+            range(extent...,
+            length = n_knot_values)
+        )
+        )
     else
         error("Unsupported knot distribution type $distribution.")
     end
@@ -66,5 +82,8 @@ function KnotVector(
     multiplicities = ones(Int, n_knot_values)
     multiplicities[1] = degree + 1
     multiplicities[end] = degree + 1
-    KnotVector(knot_values, multiplicities)
+    KnotVector(
+        adapt(backend, knot_values),
+        adapt(backend, multiplicities)
+    )
 end

@@ -1,0 +1,15 @@
+name = "gpu_backend"
+uuid = "86216b6b-3aa8-4fad-adf0-0998695d85d9"
+
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+SplineGrids = "59c446ea-fb23-41e3-bcd2-697fa0a242d6"
+
+[extras]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
+SplineGrids = "59c446ea-fb23-41e3-bcd2-697fa0a242d6"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["CUDA", "SafeTestsets", "SplineGrids", "Test"]

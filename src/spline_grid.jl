@@ -16,17 +16,18 @@ all information to evaluate the defined spline on the defined grid.
     from the various spline dimensions.
 """
 struct SplineGrid{
-    S <: SplineDimension,
-    C <: AbstractArray,
-    D <: Union{AbstractArray{<:AbstractFloat, Nin}, Nothing} where {Nin},
-    W <: Union{AbstractArray{<:AbstractFloat, Nin}, Nothing} where {Nin},
-    E <: AbstractArray{<:AbstractFloat},
+    S <: AbstractSplineDimension{T} where {T},
+    C <: AbstractArray{T} where {T}, # N = Nin + 1
+    D <: Union{AbstractArray{T, Nin}, Nothing} where {T, Nin},
+    W <: Union{AbstractArray{T, Nin}, Nothing} where {T, Nin},
+    E <: AbstractArray{T} where {T},
     I <: AbstractArray{<:Integer, Nin} where {Nin},
-    B <: AbstractArray{<:AbstractFloat},
+    B <: AbstractArray{T} where {T},
     Nin,
     Nout,
-    HasWeights
-} <: AbstractSplineGrid{Nin, Nout, HasWeights}
+    HasWeights,
+    T <: AbstractFloat
+} <: AbstractSplineGrid{Nin, Nout, HasWeights, T}
     spline_dimensions::NTuple{Nin, S}
     control_points::C
     denominator::D
@@ -53,7 +54,8 @@ struct SplineGrid{
             typeof(basis_function_products),
             length(spline_dimensions),
             size(control_points)[end],
-            isa(weights, AbstractArray)}(
+            isa(weights, AbstractArray),
+            eltype(control_points)}(
             spline_dimensions,
             control_points,
             denominator,
@@ -68,7 +70,7 @@ end
 # TODO: Add indexing functionality such that indexing a spline_grid implies indexing spline_grid.eval
 
 """
-    SplineGrid(spline_dimensions::NTuple{N_in, <:SplineDimension}, dim_out::Integer)
+    SplineGrid(spline_dimensions::NTuple{Nin, <:SplineDimension}, Nout::Integer)
 
 Define a `SplineGrid` from an NTuple of spline dimensions and the number of output dimensions.
 
@@ -77,19 +79,25 @@ Define a `SplineGrid` from an NTuple of spline dimensions and the number of outp
   - `spline_dimensions`: an NTuple of spline dimensions
   - `Nout`: The number of output dimensions. I.e. the control points and thus the spline live in ℝ^Nout.
 """
-function SplineGrid(spline_dimensions::NTuple{Nin, <:SplineDimension},
-        Nout::Integer)::AbstractSplineGrid{Nin} where {Nin}
+function SplineGrid(
+        spline_dimensions::NTuple{Nin, <:AbstractSplineDimension{T}},
+        Nout::Integer
+)::AbstractSplineGrid{Nin} where {Nin, T}
+    backend = get_backend(first(spline_dimensions))
+    # TODO: Then do the same for NURBSGrid
+    # TODO: Then look for other places where arrays are allocated with zeros/ones 
+
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
     # The size of the grid of control points
     size_cp_grid = get_n_basis_functions.(spline_dimensions)
     # The control points
-    control_points = zeros(size_cp_grid..., Nout)
+    control_points = allocate(backend, T, size_cp_grid..., Nout)
     set_unit_cp_grid!(control_points)
     # Preallocated memory for basis function product evaluation
-    basis_function_products = zeros(size_eval_grid...)
+    basis_function_products = allocate(backend, T, size_eval_grid...)
     # Preallocated memory for grid evaluation of the spline
-    eval = zeros(size_eval_grid..., Nout)
+    eval = allocate(backend, T, size_eval_grid..., Nout)
     # Linear indices for control points per global sample point
     sample_indices = get_global_sample_indices(spline_dimensions, control_points)
     SplineGrid(
