@@ -236,7 +236,7 @@ function decompress(
     @assert derivative_order ≤ max_derivative_order
     n_sample_points = length(sample_indices)
     n_basis_functions = get_n_basis_functions(spline_dimension)
-    out = allocate(backend, T, n_sample_points, n_basis_functions)
+    out = KernelAbstractions.zeros(backend, T, n_sample_points, n_basis_functions)
 
     for (l, i) in enumerate(sample_indices)
         out[l, (i - degree):i] .= eval[l, :, derivative_order + 1]
