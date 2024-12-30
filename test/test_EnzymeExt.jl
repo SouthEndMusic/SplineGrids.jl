@@ -48,7 +48,9 @@ end
             dspline_grid
         )
         true
-    catch
+    catch e
+        println("Error: $e")
+        Base.show_backtrace(stderr, catch_backtrace())
         false
     end
 
@@ -58,7 +60,9 @@ end
     @test try
         make_zero!(dspline_grid.dval)
         true
-    catch
+    catch e
+        println("Error: $e")
+        Base.show_backtrace(stderr, catch_backtrace())
         false
     end
 end

@@ -63,13 +63,6 @@ struct SplineDimension{
     end
 end
 
-# Get the index i of a sample point t in the knot vector such 
-# such that t ∈ [knots_all[i], knots_all[i + 1])
-function get_index(knot_vector::KnotVector, t, d)
-    clamp(searchsortedlast(knot_vector.knots_all, t),
-        d + 1, length(knot_vector.knots_all) - d - 1)
-end
-
 """
     SplineDimension(
         n_basis_functions::Integer,
@@ -120,25 +113,22 @@ function SplineDimension(
         @assert length(knot_vector.knots_all)==n_basis_functions + degree + 1 "Incompatible knot vector supplied."
         backend = get_backend(knot_vector.knot_values)
     end
-    (; knot_values) = knot_vector
 
     sample_points = adapt(
         backend,
         float_type.(
-            range(
-            first(knot_values),
-            last(knot_values);
+            range(knot_vector.extent...;
             length = n_sample_points
         )
         )
     )
-    sample_indices = get_index.(
-        Ref(knot_vector),
-        sample_points,
-        degree
+    sample_indices = KernelAbstractions.zeros(
+        backend,
+        Int,
+        n_sample_points
     )
 
-    eval = allocate(
+    eval = KernelAbstractions.zeros(
         backend,
         float_type,
         n_sample_points,
@@ -156,6 +146,7 @@ function SplineDimension(
         eval,
         eval_prev
     )
+    set_sample_indices!(s)
     evaluate!(s)
     s
 end
@@ -260,9 +251,14 @@ function decompress(
     n_basis_functions = get_n_basis_functions(spline_dimension)
     out = KernelAbstractions.zeros(backend, T, n_sample_points, n_basis_functions)
 
-    for (l, i) in enumerate(sample_indices)
-        out[l, (i - degree):i] .= eval[l, :, derivative_order + 1]
-    end
+    decompress_basis_function_eval_kernel(backend)(
+        out,
+        eval,
+        sample_indices,
+        degree,
+        derivative_order,
+        ndrange = size(sample_indices)
+    )
 
     out
 end

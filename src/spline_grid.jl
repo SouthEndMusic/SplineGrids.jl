@@ -55,7 +55,8 @@ struct SplineGrid{
             length(spline_dimensions),
             size(control_points)[end],
             isa(weights, AbstractArray),
-            eltype(control_points)}(
+            eltype(control_points)
+        }(
             spline_dimensions,
             control_points,
             denominator,
@@ -89,14 +90,15 @@ function SplineGrid(
     # The size of the grid of control points
     size_cp_grid = get_n_basis_functions.(spline_dimensions)
     # The control points
-    control_points = allocate(backend, T, size_cp_grid..., Nout)
+    control_points = KernelAbstractions.zeros(CPU(), T, size_cp_grid..., Nout)
     set_unit_cp_grid!(control_points)
+    control_points = adapt(backend, control_points)
     # Preallocated memory for basis function product evaluation
-    basis_function_products = allocate(backend, T, size_eval_grid...)
+    basis_function_products = KernelAbstractions.zeros(backend, T, size_eval_grid...)
     # Preallocated memory for grid evaluation of the spline
-    eval = allocate(backend, T, size_eval_grid..., Nout)
+    eval = KernelAbstractions.zeros(backend, T, size_eval_grid..., Nout)
     # Linear indices for control points per global sample point
-    sample_indices = get_global_sample_indices(spline_dimensions, control_points)
+    sample_indices = get_global_sample_indices(spline_dimensions, Nout)
     SplineGrid(
         spline_dimensions,
         control_points,

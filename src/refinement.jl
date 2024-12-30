@@ -136,7 +136,7 @@ function insert_knot!(
 
     # Recompute the sample indices
     if recompute_sample_indices
-        reset_sample_indices!(spline_dimension)
+        set_sample_indices!(spline_dimension)
         evaluate && evaluate!(spline_dimension)
     end
 
@@ -208,7 +208,7 @@ function insert_knot!(
         set_global_sample_indices!(
             sample_indices,
             spline_dimensions,
-            control_points_new)
+            Nout)
     end
 
     spline_grid_new = SplineGrid(
@@ -259,7 +259,7 @@ function refine!(
         refinement_matrix = refinement_matrix_knot * refinement_matrix
     end
 
-    reset_sample_indices!(spline_dimension)
+    set_sample_indices!(spline_dimension)
 
     refinement_matrix
 end
@@ -292,11 +292,11 @@ except for the control points.
     the basis functions after the knot insertion for the knot insertion dimension.
 """
 function refine!(
-        spline_grid::AbstractSplineGrid,
+        spline_grid::AbstractSplineGrid{Nin, Nout},
         dim_refinement::Integer;
         knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing,
         recompute_global_sample_indices::Bool = true
-)::Tuple{AbstractSplineGrid, SparseMatrixCSC}
+)::Tuple{AbstractSplineGrid, SparseMatrixCSC} where {Nin, Nout}
     (; spline_dimensions, control_points, sample_indices) = spline_grid
     spline_dimension = spline_dimensions[dim_refinement]
     refinement_matrix = refine!(spline_dimension; knots_new)
@@ -328,7 +328,7 @@ function refine!(
     )
 
     if recompute_global_sample_indices
-        set_global_sample_indices!(sample_indices, spline_dimensions, control_points_new)
+        set_global_sample_indices!(sample_indices, spline_dimensions, Nout)
     end
 
     spline_grid_new, refinement_matrix

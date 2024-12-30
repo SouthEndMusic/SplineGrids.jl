@@ -3,6 +3,7 @@ const CONTROL_POLYGON_COLOR = :orange
 const SPLINE_GRID_COLOR = :blue
 
 @recipe function f(spline_dimension::SplineDimension; derivative_order = 0)
+    spline_dimension = adapt(CPU(), spline_dimension)
     data = decompress(spline_dimension; derivative_order)
     (; sample_points, knot_vector) = spline_dimension
     (; knot_values, multiplicities) = knot_vector
@@ -36,6 +37,7 @@ const SPLINE_GRID_COLOR = :blue
 end
 
 @recipe function f(spline_grid::AbstractSplineGrid{1, 1})
+    spline_grid = adapt(CPU(), spline_grid)
     (; eval, spline_dimensions) = spline_grid
     (; sample_points, knot_vector) = only(spline_dimensions)
     (; knot_values) = knot_vector
@@ -66,6 +68,7 @@ end
 end
 
 @recipe function f(spline_grid::AbstractSplineGrid{1, 2})
+    spline_grid = adapt(CPU(), spline_grid)
     (; eval, control_points) = spline_grid
 
     xlabel --> "Output dimension 1"
@@ -102,6 +105,7 @@ end
 end
 
 @recipe function f(spline_grid::AbstractSplineGrid{1, 3})
+    spline_grid = adapt(CPU(), spline_grid)
     (; eval, control_points) = spline_grid
 
     xlabel --> "Output dimension 1"
@@ -141,6 +145,7 @@ end
 end
 
 @recipe function f(spline_grid::AbstractSplineGrid{1, 4})
+    spline_grid = adapt(CPU(), spline_grid)
     (; eval, control_points) = spline_grid
 
     xlabel --> "Output dimension 1"
@@ -182,6 +187,7 @@ end
 end
 
 @recipe function f(spline_grid::AbstractSplineGrid{2, 1}; plot_knots = true)
+    spline_grid = adapt(CPU(), spline_grid)
     (; spline_dimensions, eval) = spline_grid
 
     xlabel --> "Input dimension 1"
@@ -226,6 +232,7 @@ end
 end
 
 @recipe function f(spline_grid::AbstractSplineGrid{2, 2})
+    spline_grid = adapt(CPU(), spline_grid)
     (; eval, spline_dimensions) = spline_grid
 
     xlabel --> "Input dimension 1"
@@ -260,6 +267,7 @@ end
 end
 
 @recipe function f(spline_grid::AbstractSplineGrid{2, 3})
+    spline_grid = adapt(CPU(), spline_grid)
     (; eval) = spline_grid
 
     xlabel --> "Output dimension 1"
