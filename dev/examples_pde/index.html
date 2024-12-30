@@ -137,14 +137,14 @@ nonlinear_function = NonlinearFunction(
 )
 
 # Initial guess
-x0 = zeros(length(spline_grid.control_points))
+x0 = zeros(Float32, length(spline_grid.control_points))
 
 problem = NonlinearProblem(
     nonlinear_function,
     x0,
     meta_p
-)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr38_2" style="color:#56b6c2">NonlinearProblem</span> with uType <span class="sgr38_2" style="color:#56b6c2">Vector{Float64}</span>. In-place: <span class="sgr38_2" style="color:#56b6c2">true</span>
-u0: 15625-element Vector{Float64}:
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi"><span class="sgr38_2" style="color:#56b6c2">NonlinearProblem</span> with uType <span class="sgr38_2" style="color:#56b6c2">Vector{Float32}</span>. In-place: <span class="sgr38_2" style="color:#56b6c2">true</span>
+u0: 15625-element Vector{Float32}:
  0.0
  0.0
  0.0
@@ -164,30 +164,30 @@ u0: 15625-element Vector{Float64}:
  0.0
  0.0
  0.0
- 0.0</code></pre><h2 id="Solving-the-problem"><a class="docs-heading-anchor" href="#Solving-the-problem">Solving the problem</a><a id="Solving-the-problem-1"></a><a class="docs-heading-anchor-permalink" href="#Solving-the-problem" title="Permalink"></a></h2><pre><code class="language-julia hljs">sol = solve(problem, NewtonRaphson(linsolve = KrylovJL_GMRES()))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">retcode: Stalled
-u: 15625-element Vector{Float64}:
- 7.20303245392988e-5
- 0.00012909446928386828
- 0.0008853430848237588
- 0.004786118180146121
- 0.020288758918517304
- 0.06699368540979901
- 0.17124011342114692
- 0.33741596661256457
- 0.5123629178849235
- 0.6007664146566513
+ 0.0</code></pre><h2 id="Solving-the-problem"><a class="docs-heading-anchor" href="#Solving-the-problem">Solving the problem</a><a id="Solving-the-problem-1"></a><a class="docs-heading-anchor-permalink" href="#Solving-the-problem" title="Permalink"></a></h2><pre><code class="language-julia hljs">sol = solve(problem, NewtonRaphson(linsolve = KrylovJL_GMRES()))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">retcode: MaxIters
+u: 15625-element Vector{Float32}:
+ 7.203033f-5
+ 0.00012896715
+ 0.00088540546
+ 0.004786132
+ 0.020288704
+ 0.06699376
+ 0.17124008
+ 0.33741593
+ 0.512363
+ 0.6007665
  ⋮
- 0.0013418606350264802
- 0.00020977437523084854
- 3.479318074026165e-5
- 1.1663263155292223e-5
- 6.214290638421521e-6
- 2.9831642444072026e-6
- 1.130408744639914e-6
- 3.347391031631308e-7
- 2.0612346818895728e-7</code></pre><h2 id="Viewing-the-solution"><a class="docs-heading-anchor" href="#Viewing-the-solution">Viewing the solution</a><a id="Viewing-the-solution-1"></a><a class="docs-heading-anchor-permalink" href="#Viewing-the-solution" title="Permalink"></a></h2><pre><code class="language-julia hljs">spline_grid.control_points .= reshape(sol.u, size(spline_grid.control_points))
+ 0.0013418678
+ 0.00020978265
+ 3.4804158f-5
+ 1.1672109f-5
+ 6.2266195f-6
+ 2.9949101f-6
+ 1.1428368f-6
+ 3.4744426f-7
+ 2.0612349f-7</code></pre><h2 id="Viewing-the-solution"><a class="docs-heading-anchor" href="#Viewing-the-solution">Viewing the solution</a><a id="Viewing-the-solution-1"></a><a class="docs-heading-anchor-permalink" href="#Viewing-the-solution" title="Permalink"></a></h2><pre><code class="language-julia hljs">spline_grid.control_points .= reshape(sol.u, size(spline_grid.control_points))
 evaluate!(spline_grid)
 fig = Figure()
 ax, plt = volume(fig[1,1], log.(spline_grid.eval[:, :, :, 1] .+ 1))
 Colorbar(fig[1,2], plt; label = L&quot;\log(u + 1)&quot;)
-fig</code></pre><img src="399bf5f4.png" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_enzyme/">« Control point derivatives with Enzyme</a><a class="docs-footer-nextpage" href="../examples_optics/">Optimizing a lens surface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Saturday 28 December 2024 15:56">Saturday 28 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fig</code></pre><img src="2582080d.png" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_enzyme/">« Control point derivatives with Enzyme</a><a class="docs-footer-nextpage" href="../examples_optics/">Optimizing a lens surface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Monday 30 December 2024 08:33">Monday 30 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

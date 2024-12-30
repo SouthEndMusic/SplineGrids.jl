@@ -150,11 +150,11 @@ p_render = (;
     screen_res=(250, 250)
 )
 
-render = zeros(p_render.screen_res)
+render = zeros(Float32, p_render.screen_res)
 
 trace_rays!(render, vec(spline_grid.control_points), p_render)
 
-heatmap(render, aspect_ratio=:equal)</code></pre><img src="fd4d723b.svg" alt="Example block output"/><h2 id="Defining-the-target-distribution"><a class="docs-heading-anchor" href="#Defining-the-target-distribution">Defining the target distribution</a><a id="Defining-the-target-distribution-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-the-target-distribution" title="Permalink"></a></h2><p>We define a normalized target distribution, which we will compare to normalized renders.</p><pre><code class="language-julia hljs">using LinearAlgebra
+heatmap(render, aspect_ratio=:equal)</code></pre><img src="63b3ed91.svg" alt="Example block output"/><h2 id="Defining-the-target-distribution"><a class="docs-heading-anchor" href="#Defining-the-target-distribution">Defining the target distribution</a><a id="Defining-the-target-distribution-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-the-target-distribution" title="Permalink"></a></h2><p>We define a normalized target distribution, which we will compare to normalized renders.</p><pre><code class="language-julia hljs">using LinearAlgebra
 
 target = [
     exp(-(x.^2 + y.^2)^2) for
@@ -164,7 +164,7 @@ target = [
 
 normalize!(target)
 
-heatmap(target, aspect_ratio=:equal)</code></pre><img src="5dfedfe2.svg" alt="Example block output"/><h2 id="The-loss-function"><a class="docs-heading-anchor" href="#The-loss-function">The loss function</a><a id="The-loss-function-1"></a><a class="docs-heading-anchor-permalink" href="#The-loss-function" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Distances
+heatmap(target, aspect_ratio=:equal)</code></pre><img src="20bbecce.svg" alt="Example block output"/><h2 id="The-loss-function"><a class="docs-heading-anchor" href="#The-loss-function">The loss function</a><a id="The-loss-function-1"></a><a class="docs-heading-anchor-permalink" href="#The-loss-function" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Distances
 
 function image_loss(control_points_flat, target, render, p_render)
 
@@ -173,14 +173,14 @@ function image_loss(control_points_flat, target, render, p_render)
     Euclidean()(render, target)
 end
 
-render = zeros(p_render.screen_res...)
+render = zeros(Float32, p_render.screen_res...)
 
 image_loss(
     vec(spline_grid.control_points),
     target,
     render,
     p_render,
-)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.42417153182181083</code></pre><h2 id="Gradients-w.r.t.-control-points"><a class="docs-heading-anchor" href="#Gradients-w.r.t.-control-points">Gradients w.r.t. control points</a><a id="Gradients-w.r.t.-control-points-1"></a><a class="docs-heading-anchor-permalink" href="#Gradients-w.r.t.-control-points" title="Permalink"></a></h2><p>We can now compute the gradient of the loss function with respect to the control points. Let&#39;s have a look at it.</p><pre><code class="language-julia hljs">using Enzyme
+)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">0.4241715266185774</code></pre><h2 id="Gradients-w.r.t.-control-points"><a class="docs-heading-anchor" href="#Gradients-w.r.t.-control-points">Gradients w.r.t. control points</a><a id="Gradients-w.r.t.-control-points-1"></a><a class="docs-heading-anchor-permalink" href="#Gradients-w.r.t.-control-points" title="Permalink"></a></h2><p>We can now compute the gradient of the loss function with respect to the control points. Let&#39;s have a look at it.</p><pre><code class="language-julia hljs">using Enzyme
 
 G = make_zero(vec(spline_grid.control_points))
 drender = make_zero(render)
@@ -196,7 +196,7 @@ autodiff(
     DuplicatedNoNeed(p_render, dp_render),
 )
 
-heatmap(reshape(G, n_control_points), aspect_ratio=:equal)</code></pre><img src="3b0dddf0.svg" alt="Example block output"/><h2 id="Optimizing-the-surface"><a class="docs-heading-anchor" href="#Optimizing-the-surface">Optimizing the surface</a><a id="Optimizing-the-surface-1"></a><a class="docs-heading-anchor-permalink" href="#Optimizing-the-surface" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Optimization
+heatmap(reshape(G, n_control_points), aspect_ratio=:equal)</code></pre><img src="042c8377.svg" alt="Example block output"/><h2 id="Optimizing-the-surface"><a class="docs-heading-anchor" href="#Optimizing-the-surface">Optimizing the surface</a><a id="Optimizing-the-surface-1"></a><a class="docs-heading-anchor-permalink" href="#Optimizing-the-surface" title="Permalink"></a></h2><pre><code class="language-julia hljs">using Optimization
 using OptimizationOptimJL: BFGS
 
 function image_loss_grad!(G, control_points_flat, meta_p)::Nothing
@@ -240,30 +240,30 @@ prob = OptimizationProblem(
 )
 
 sol = solve(prob, BFGS(); maxiters = 50)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">retcode: Failure
-u: 2500-element Vector{Float64}:
- 0.025411832126451584
- 0.020912715664454552
- 0.024981354641295604
- 0.026270270561444917
- 0.03759047549460235
- 0.03340072040976191
- 0.03407931644829938
- 0.03225715086781632
- 0.03290651700284977
- 0.03371618714401006
+u: 2500-element Vector{Float32}:
+ 0.025407244
+ 0.020908892
+ 0.024977012
+ 0.026265284
+ 0.037583444
+ 0.033395354
+ 0.034072172
+ 0.03225107
+ 0.03290098
+ 0.033711813
  ⋮
- 0.03290651700284928
- 0.03225715086781523
- 0.03407931644830024
- 0.03340072040976014
- 0.03759047549460255
- 0.026270270561444535
- 0.024981354641294924
- 0.020912715664454653
- 0.02541183212645147</code></pre><h2 id="Viewing-the-optimization-result"><a class="docs-heading-anchor" href="#Viewing-the-optimization-result">Viewing the optimization result</a><a id="Viewing-the-optimization-result-1"></a><a class="docs-heading-anchor-permalink" href="#Viewing-the-optimization-result" title="Permalink"></a></h2><p>The final render looks like this:</p><pre><code class="language-julia hljs">trace_rays!(render, sol.u, p_render)
-heatmap(render, aspect_ratio=:equal)</code></pre><img src="3bcb9c90.svg" alt="Example block output"/><p>And the lens surface looks like this:</p><pre><code class="language-julia hljs">spline_grid.control_points .= reshape(sol.u, size(spline_grid.control_points))
+ 0.03290075
+ 0.032250915
+ 0.03407196
+ 0.0333957
+ 0.037583064
+ 0.026265236
+ 0.024976807
+ 0.020909034
+ 0.025407327</code></pre><h2 id="Viewing-the-optimization-result"><a class="docs-heading-anchor" href="#Viewing-the-optimization-result">Viewing the optimization result</a><a id="Viewing-the-optimization-result-1"></a><a class="docs-heading-anchor-permalink" href="#Viewing-the-optimization-result" title="Permalink"></a></h2><p>The final render looks like this:</p><pre><code class="language-julia hljs">trace_rays!(render, sol.u, p_render)
+heatmap(render, aspect_ratio=:equal)</code></pre><img src="1a4afce7.svg" alt="Example block output"/><p>And the lens surface looks like this:</p><pre><code class="language-julia hljs">spline_grid.control_points .= reshape(sol.u, size(spline_grid.control_points))
 evaluate!(spline_grid)
-plot(spline_grid; plot_knots = false, aspect_ratio=:equal)</code></pre><img src="a24c8df4.svg" alt="Example block output"/><h2 id="A-peek-into-upcoming-features"><a class="docs-heading-anchor" href="#A-peek-into-upcoming-features">A peek into upcoming features</a><a id="A-peek-into-upcoming-features-1"></a><a class="docs-heading-anchor-permalink" href="#A-peek-into-upcoming-features" title="Permalink"></a></h2><p>One of the neat things we can do with this setup is look at all sorts of gradients. We are most interested in the gradient of the loss with respect to the partial derivatives of the surface, since those are the most important for the rendering result. In particular, we look at the sum of the absolute values of these gradients. This shows which regions of the lens surface the loss is most sensitive to, and thus where the surface might need more degrees of freedom.</p><pre><code class="language-julia hljs">function loss_from_grid(render, u, ∂₁u, ∂₂u, spline_grid, target, p_render)
+plot(spline_grid; plot_knots = false, aspect_ratio=:equal)</code></pre><img src="a1c4dc00.svg" alt="Example block output"/><h2 id="A-peek-into-upcoming-features"><a class="docs-heading-anchor" href="#A-peek-into-upcoming-features">A peek into upcoming features</a><a id="A-peek-into-upcoming-features-1"></a><a class="docs-heading-anchor-permalink" href="#A-peek-into-upcoming-features" title="Permalink"></a></h2><p>One of the neat things we can do with this setup is look at all sorts of gradients. We are most interested in the gradient of the loss with respect to the partial derivatives of the surface, since those are the most important for the rendering result. In particular, we look at the sum of the absolute values of these gradients. This shows which regions of the lens surface the loss is most sensitive to, and thus where the surface might need more degrees of freedom.</p><pre><code class="language-julia hljs">function loss_from_grid(render, u, ∂₁u, ∂₂u, spline_grid, target, p_render)
     ray_tracing_kernel(get_backend(u))(
         render,
         u,
@@ -299,4 +299,4 @@ autodiff(
 heatmap(
     abs.(meta_p.p_render_duplicated.dval.∂₁u[:,:,1]) +
     abs.(meta_p.p_render_duplicated.dval.∂₂u[:,:,1]),
-    aspect_ratio=:equal)</code></pre><img src="1b65b665.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_pde/">« Solving a PDE</a><a class="docs-footer-nextpage" href="../manual/">Manual »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Saturday 28 December 2024 15:56">Saturday 28 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+    aspect_ratio=:equal)</code></pre><img src="6707f084.svg" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_pde/">« Solving a PDE</a><a class="docs-footer-nextpage" href="../manual/">Manual »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Monday 30 December 2024 08:33">Monday 30 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
