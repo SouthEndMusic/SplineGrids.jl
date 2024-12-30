@@ -20,6 +20,7 @@ The intended use case of this package is to be integrated into the [SciML ecosys
 
 ```julia
 using SplineGrids
+using CUDA: CUDABackend
 
 # Parameters per input dimension
 n_control_points = (10, 10, 5)
@@ -29,8 +30,11 @@ n_sample_points = (50, 50, 25)
 # The number of output dimensions
 Nout = 4
 
+# The chosen backend (CPU() by default)
+backend = CUDABackend()
+
 # Defining the spline grid
-spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
+spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; backend)
 spline_grid = SplineGrid(spline_dimensions, Nout)
 
 # Set the desired control points
