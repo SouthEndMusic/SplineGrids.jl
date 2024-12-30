@@ -1,15 +1,15 @@
 function set_unit_cp_grid!(control_points::AbstractArray)::Nothing
-    N_in = ndims(control_points) - 1
-    N_out = size(control_points)[end]
+    Nin = ndims(control_points) - 1
+    Nout = size(control_points)[end]
     cp_grid_size = size(control_points)
-    indices = ntuple(_ -> :, N_in)
-    for n in 1:min(N_in, N_out)
+    indices = ntuple(_ -> :, Nin)
+    for n in 1:min(Nin, Nout)
         n_coordinates = cp_grid_size[n]
         coordinates = collect(range(0, 1, length = n_coordinates))
         coordinates = reshape(
-            coordinates, ntuple(i -> i == n ? cp_grid_size[i] : 1, N_in))
+            coordinates, ntuple(i -> i == n ? cp_grid_size[i] : 1, Nin))
         control_points[indices..., n] .= repeat(
-            coordinates, inner = ntuple(i -> i == n ? 1 : cp_grid_size[i], N_in))
+            coordinates, inner = ntuple(i -> i == n ? 1 : cp_grid_size[i], Nin))
     end
     return nothing
 end
@@ -19,7 +19,8 @@ function set_global_sample_indices!(
         spline_dimensions::NTuple{
             Nin, <:AbstractSplineDimension},
         control_points::AbstractArray)::Nothing where {Nin}
-    cp_indices = zeros(Int, Nin + 1)
+    backend = get_backend(first(spline_dimensions))
+    cp_indices = KernelAbstractions.zeros(backend, Int, Nin + 1)
     for J in CartesianIndices(sample_indices)
         for dim in 1:Nin
             spline_dim = spline_dimensions[dim]
@@ -36,10 +37,11 @@ function get_global_sample_indices(
         spline_dimensions::NTuple{
             Nin, <:AbstractSplineDimension},
         control_points::AbstractArray) where {Nin}
+    backend = get_backend(first(spline_dimensions))
     # The size of the point grid on which the spline is evaluated
-    size_eval_grid = ntuple(n -> length(spline_dimensions[n].sample_points), Nin)
+    size_eval_grid = get_sample_grid_size(spline_dimensions)
     # Assumptions: dim_out = 0, I = (0,...,0)
-    sample_indices = zeros(Int, size_eval_grid...)
+    sample_indices = allocate(backend, Int, size_eval_grid...)
     set_global_sample_indices!(sample_indices, spline_dimensions, control_points)
     sample_indices
 end
@@ -147,3 +149,7 @@ end
 
 is_nurbs(::Any) = false
 is_nurbs(::AbstractNURBSGrid) = true
+
+function KernelAbstractions.get_backend(spline_dimension::AbstractSplineDimension)
+    get_backend(spline_dimension.eval)
+end

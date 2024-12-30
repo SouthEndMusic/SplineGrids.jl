@@ -1,19 +1,22 @@
-function NURBSGrid(spline_dimensions::NTuple{Nin, <:SplineDimension},
-        Nout::Integer)::AbstractSplineGrid{Nin} where {Nin}
+function NURBSGrid(
+        spline_dimensions::NTuple{Nin, <:AbstractSplineDimension{T}},
+        Nout::Integer
+)::AbstractSplineGrid{Nin} where {Nin, T}
+    backend = get_backend(first(spline_dimensions))
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
     # The size of the grid of control points
     size_cp_grid = get_n_basis_functions.(spline_dimensions)
     # The control points
-    control_points = zeros(size_cp_grid..., Nout)
+    control_points = allocate(backend, T, size_cp_grid..., Nout)
     set_unit_cp_grid!(control_points)
     # The weights and denominator
-    weights = ones(size_cp_grid...)
-    denominator = zeros(size_eval_grid...)
+    weights = KernelAbstractions.ones(backend, T, size_cp_grid...)
+    denominator = allocate(backend, T, size_eval_grid...)
     # Preallocated memory for basis function product evaluation
-    basis_function_products = zeros(size_eval_grid...)
+    basis_function_products = allocate(backend, T, size_eval_grid...)
     # Preallocated memory for grid evaluation of the spline
-    eval = zeros(size_eval_grid..., Nout)
+    eval = allocate(backend, T, size_eval_grid..., Nout)
     # Linear indices for control points per global sample point
     sample_indices = get_global_sample_indices(spline_dimensions, control_points)
     SplineGrid(
