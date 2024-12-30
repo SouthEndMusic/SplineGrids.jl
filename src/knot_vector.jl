@@ -26,7 +26,7 @@ struct KnotVector{
 
         # Construct explicit knot vector
         knots_all = similar(knot_values, sum(multiplicities))
-        expand_knot_kernel(get_backend(knot_values))(
+        expand_knot_vector_kernel(get_backend(knot_values))(
             knots_all,
             knot_values,
             multiplicities,

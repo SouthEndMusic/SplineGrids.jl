@@ -23,7 +23,7 @@ spline_dimensions = SplineDimension.(
     backend
 )
 spline_grid_ = SplineGrid(spline_dimensions, Nout)
-spline_grid_.control_points .= rand(n_control_points..., Nout)
+copy!(spline_grid_.control_points, rand(n_control_points..., Nout))
 evaluate!(spline_grid_)
 
 @testset "Knot insertion" begin

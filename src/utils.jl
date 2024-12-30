@@ -89,7 +89,7 @@ function get_control_point_grid_size(spline_dimensions::NTuple{
 end
 
 # Outer product of n vectors, with thanks to Michael Abbott
-function outer!(A::AbstractArray{T, N}, vs::Vararg{SubArray, N}) where {T, N}
+function outer!(A::AbstractArray{T, N}, vs::Vararg{AbstractArray, N}) where {T, N}
     vecs = ntuple(n -> reshape(vs[n], ntuple(Returns(1), n - 1)..., :), N)
     broadcast!(*, A, vecs...)
 end

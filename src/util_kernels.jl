@@ -1,4 +1,4 @@
-@kernel function expand_knot_kernel(
+@kernel function expand_knot_vector_kernel(
         knots_all,
         @Const(knot_values),
         @Const(multiplicities)
@@ -46,4 +46,22 @@ end
     )
 
     sample_indices[i] = sample_index
+end
+
+@kernel function decompress_basis_function_eval_kernel(
+        decompressed_basis_functions,
+        @Const(eval),
+        @Const(sample_indices),
+        degree,
+        derivative_order
+)
+    i = @index(Global, Linear)
+    l = sample_indices[i]
+
+    idx_start = l - degree
+    j = 0
+    for k in idx_start:l
+        j += 1
+        decompressed_basis_functions[i, k] = eval[i, j, derivative_order + 1]
+    end
 end

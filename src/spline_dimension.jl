@@ -251,9 +251,14 @@ function decompress(
     n_basis_functions = get_n_basis_functions(spline_dimension)
     out = KernelAbstractions.zeros(backend, T, n_sample_points, n_basis_functions)
 
-    for (l, i) in enumerate(sample_indices)
-        out[l, (i - degree):i] .= eval[l, :, derivative_order + 1]
-    end
+    decompress_basis_function_eval_kernel(backend)(
+        out,
+        eval,
+        sample_indices,
+        degree,
+        derivative_order,
+        ndrange = size(sample_indices)
+    )
 
     out
 end
