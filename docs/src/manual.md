@@ -22,7 +22,7 @@ insert_knot!(::KnotVector, ::AbstractFloat)
 insert_knot!(::SplineDimension, ::AbstractFloat)
 insert_knot!(::SplineGrids.AbstractSplineGrid{Nin, Nout}, ::Integer, ::AbstractFloat) where {Nin, Nout}
 refine!(::SplineDimension)
-refine!(::SplineGrids.AbstractSplineGrid, ::Integer)
+refine!(::SplineGrids.AbstractSplineGrid{Nin, Nout}, ::Integer) where {Nin, Nout}
 ```
 
 # Structs
