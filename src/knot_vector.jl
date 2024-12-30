@@ -16,20 +16,32 @@ struct KnotVector{
     knot_values::K
     multiplicities::M
     knots_all::K
+    extent::Tuple{T, T}
     function KnotVector(knot_values, multiplicities)
         @assert length(knot_values)==length(multiplicities) "knot_values and multiplicities must be of the same length."
         @assert knot_values==sort(knot_values) "knot_values must be sorted."
-        @assert allunique(knot_values) "knot_values must be unique."
+        # allunique cannot be performed efficiently with a CuArray
+        knot_values_cpu = adapt(CPU(), knot_values)
+        @assert allunique(knot_values_cpu) "knot_values must be unique."
 
         # Construct explicit knot vector
         knots_all = similar(knot_values, sum(multiplicities))
-        i = 1
-        for (knot_value, multiplicity) in zip(knot_values, multiplicities)
-            knots_all[i:(i + multiplicity - 1)] .= knot_value
-            i += multiplicity
-        end
-        new{typeof(knot_values), typeof(multiplicities), eltype(knot_values)}(
-            knot_values, multiplicities, knots_all)
+        expand_knot_kernel(get_backend(knot_values))(
+            knots_all,
+            knot_values,
+            multiplicities,
+            ndrange = size(knot_values)
+        )
+        new{
+            typeof(knot_values),
+            typeof(multiplicities),
+            eltype(knot_values)
+        }(
+            knot_values,
+            multiplicities,
+            knots_all,
+            (first(knot_values_cpu), last(knot_values_cpu))
+        )
     end
 end
 

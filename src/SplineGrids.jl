@@ -26,6 +26,7 @@ abstract type AbstractSplineDimension{T <: AbstractFloat} end
 abstract type AbstractSplineGrid{Nin, Nout, HasWeights, T <: AbstractFloat} end
 const AbstractNURBSGrid = AbstractSplineGrid{Nin, Nout, true, T} where {Nin, Nout, T}
 
+include("util_kernels.jl")
 include("utils.jl")
 include("knot_vector.jl")
 include("spline_dimension.jl")

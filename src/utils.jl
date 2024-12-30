@@ -14,36 +14,51 @@ function set_unit_cp_grid!(control_points::AbstractArray)::Nothing
     return nothing
 end
 
+# Get the index i of each sample point t in the knot vector such 
+# such that t ∈ [knots_all[i], knots_all[i + 1])
+function set_sample_indices!(spline_dimension::AbstractSplineDimension)::Nothing
+    set_sample_indices_kernel(get_backend(spline_dimension))(
+        spline_dimension.sample_indices,
+        spline_dimension.sample_points,
+        spline_dimension.knot_vector.knots_all,
+        spline_dimension.degree,
+        ndrange = size(spline_dimension.sample_indices)
+    )
+end
+
 function set_global_sample_indices!(
         sample_indices::AbstractArray{<:Integer},
         spline_dimensions::NTuple{
             Nin, <:AbstractSplineDimension},
-        control_points::AbstractArray)::Nothing where {Nin}
-    backend = get_backend(first(spline_dimensions))
-    cp_indices = KernelAbstractions.zeros(backend, Int, Nin + 1)
+        Nout::Integer)::Nothing where {Nin}
+    cp_array_size = (get_control_point_grid_size(spline_dimensions)..., Nout)
+    cp_indices = zeros(Int, Nin + 1)
+    sample_indices_dims = [adapt(CPU(), spline_dim.sample_indices)
+                           for spline_dim in spline_dimensions]
     for J in CartesianIndices(sample_indices)
         for dim in 1:Nin
             spline_dim = spline_dimensions[dim]
-            cp_indices[dim] = spline_dim.sample_indices[J[dim]] -
+            cp_indices[dim] = sample_indices_dims[dim][J[dim]] -
                               spline_dim.degree - 1
         end
-        sample_indices[J] = get_linear_index(size(control_points), cp_indices)
+        sample_indices[J] = get_linear_index(cp_array_size, cp_indices)
     end
     return nothing
 end
 
 # Linear indices for control points per global sample point
+# (Computed on CPU)
 function get_global_sample_indices(
         spline_dimensions::NTuple{
-            Nin, <:AbstractSplineDimension},
-        control_points::AbstractArray) where {Nin}
+            <:Any, <:AbstractSplineDimension},
+        Nout::Integer)
     backend = get_backend(first(spline_dimensions))
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
     # Assumptions: dim_out = 0, I = (0,...,0)
-    sample_indices = allocate(backend, Int, size_eval_grid...)
-    set_global_sample_indices!(sample_indices, spline_dimensions, control_points)
-    sample_indices
+    sample_indices = allocate(CPU(), Int, size_eval_grid...)
+    set_global_sample_indices!(sample_indices, spline_dimensions, Nout)
+    adapt(backend, sample_indices)
 end
 
 # The number of basis functions in this spline dimension

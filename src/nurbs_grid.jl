@@ -18,7 +18,7 @@ function NURBSGrid(
     # Preallocated memory for grid evaluation of the spline
     eval = allocate(backend, T, size_eval_grid..., Nout)
     # Linear indices for control points per global sample point
-    sample_indices = get_global_sample_indices(spline_dimensions, control_points)
+    sample_indices = get_global_sample_indices(spline_dimensions, Nout)
     SplineGrid(
         spline_dimensions,
         control_points,
