@@ -1,6 +1,14 @@
 using SplineGrids
 using Enzyme
 using Random
+using KernelAbstractions
+using Adapt
+
+if "--gpu_backend" ∈ ARGS
+    backend = CUDABackend()
+else
+    backend = CPU()
+end
 
 @testset "Enzyme" begin
     Random.seed!(1)
@@ -10,7 +18,7 @@ using Random
     n_sample_points = (50, 50)
     Nout = 2
 
-    spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
+    spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; backend)
     spline_grid = SplineGrid(spline_dimensions, Nout)
 
     function loss(control_points_flat, spline_grid)
@@ -20,7 +28,13 @@ using Random
         return sum(spline_grid.eval)
     end
 
-    control_points_flat = rand(length(spline_grid.control_points))
+    control_points_flat = adapt(
+        backend,
+        rand(
+            Float32,
+            length(spline_grid.control_points)
+        )
+    )
 
     dcontrol_points_flat = Duplicated(control_points_flat, make_zero(control_points_flat))
     dspline_grid = Duplicated(spline_grid, make_zero(spline_grid))

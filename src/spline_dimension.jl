@@ -82,7 +82,7 @@ function SplineDimension(
         n_sample_points::Integer;
         max_derivative_order::Integer = 0,
         knot_vector::Union{Nothing, KnotVector} = nothing,
-        backend = CPU(),
+        backend::Backend = CPU(),
         float_type::Type{T} = Float32,
         kwargs...
 )::SplineDimension where {T <: AbstractFloat}

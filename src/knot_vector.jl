@@ -54,7 +54,7 @@ function KnotVector(
         degree::Integer;
         extent::Tuple{Number, Number} = (0, 1),
         distribution::Symbol = :equispaced,
-        backend = CPU(),
+        backend::Backend = CPU(),
         float_type::Type{T} = Float32
 )::KnotVector where {T <: AbstractFloat}
     @assert n_basis_functions - degree ≥ 1

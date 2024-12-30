@@ -2,6 +2,14 @@ using SplineGrids
 using LinearMaps
 using IterativeSolvers
 using Random
+using KernelAbstractions
+using Adapt
+
+if "--gpu_backend" ∈ ARGS
+    backend = CUDABackend()
+else
+    backend = CPU()
+end
 
 @testset "Least squares fitting" begin
     Random.seed!(1)
@@ -11,9 +19,12 @@ using Random
     n_sample_points = (26, 73)
     Nout = 3
 
-    spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
+    spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; backend)
     spline_grid = SplineGrid(spline_dimensions, Nout)
-    spline_grid.control_points .= rand(size(spline_grid.control_points)...)
+    spline_grid.control_points .= adapt(
+        backend,
+        rand(size(spline_grid.control_points)...)
+    )
     evaluate!(spline_grid)
 
     spline_grid_map = LinearMap(spline_grid)

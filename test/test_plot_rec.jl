@@ -1,4 +1,15 @@
 using SplineGrids
+using KernelAbstractions
+
+if "--gpu_backend" ∈ ARGS
+    backend = CUDABackend()
+else
+    backend = CPU()
+end
+
+# Avoid conflict with Plots.backend
+backend_ = backend
+
 using Plots
 
 n_control_points = (5, 6)
@@ -7,7 +18,12 @@ n_sample_points = (32, 55)
 max_derivative_order = 1
 
 spline_dimensions = SplineDimension.(
-    n_control_points, degree, n_sample_points; max_derivative_order)
+    n_control_points,
+    degree,
+    n_sample_points;
+    max_derivative_order,
+    backend = backend_
+)
 
 @testset "Plot spline dimension" begin
     @test try

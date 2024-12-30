@@ -1,5 +1,12 @@
 using SplineGrids
 using Random
+using KernelAbstractions
+
+if "--gpu_backend" ∈ ARGS
+    backend = CUDABackend()
+else
+    backend = CPU()
+end
 
 Random.seed!(1)
 
@@ -9,7 +16,12 @@ n_sample_points = (15, 20, 25)
 Nout = 2
 
 spline_dimensions = SplineDimension.(
-    n_control_points, degree, n_sample_points; distribution = :random)
+    n_control_points,
+    degree,
+    n_sample_points;
+    distribution = :random,
+    backend
+)
 spline_grid_ = SplineGrid(spline_dimensions, Nout)
 spline_grid_.control_points .= rand(n_control_points..., Nout)
 evaluate!(spline_grid_)

@@ -1,15 +1,29 @@
 using SplineGrids
+using KernelAbstractions
+
+if "--gpu_backend" ∈ ARGS
+    backend = CUDABackend()
+else
+    backend = CPU()
+end
 
 @testset "Partition of unity" begin
     n_sample_points = 500
     n_basis_functions = 25
     for degree in 0:5
         for distribution in [:equispaced, :random]
-            s = SplineDimension(n_basis_functions, degree, n_sample_points; distribution)
+            s = SplineDimension(
+                n_basis_functions,
+                degree,
+                n_sample_points;
+                distribution,
+                backend
+            )
             B = s.eval[:, :, 1]
             @test all(B .>= 0)
             @test all(sum(B, dims = 2) .≈ 1)
             @test size(B) == (n_sample_points, degree + 1)
+            @test get_backend(B) == backend
         end
     end
 end
@@ -20,7 +34,13 @@ end
     n_sample_points = 5000
 
     spline_dimension = SplineDimension(
-        n_control_points, degree, n_sample_points; max_derivative_order = 2, float_type = Float64)
+        n_control_points,
+        degree,
+        n_sample_points;
+        max_derivative_order = 2,
+        float_type = Float64,
+        backend
+    )
 
     (; sample_points) = spline_dimension
     Δt = diff(sample_points)

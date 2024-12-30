@@ -1,11 +1,23 @@
 using SplineGrids
+using KernelAbstractions
+
+if "--gpu_backend" ∈ ARGS
+    backend = CUDABackend()
+else
+    backend = CPU()
+end
 
 n_control_points = (5, 6)
 degree = (3, 2)
 n_sample_points = (7, 9)
 Nout = 2
 
-spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
+spline_dimensions = SplineDimension.(
+    n_control_points,
+    degree,
+    n_sample_points;
+    backend
+)
 spline_grid = SplineGrid(spline_dimensions, Nout)
 
 @testset "Control point grid size" begin
