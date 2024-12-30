@@ -56,7 +56,7 @@ function get_global_sample_indices(
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
     # Assumptions: dim_out = 0, I = (0,...,0)
-    sample_indices = allocate(CPU(), Int, size_eval_grid...)
+    sample_indices = KernelAbstractions.zeros(CPU(), Int, size_eval_grid...)
     set_global_sample_indices!(sample_indices, spline_dimensions, Nout)
     adapt(backend, sample_indices)
 end
@@ -150,21 +150,46 @@ function Base.show(
     pretty_table(io, data; header)
 end
 
-function reset_sample_indices!(spline_dimension::AbstractSplineDimension)::Nothing
-    (; knot_vector, degree, sample_points, sample_indices) = spline_dimension
-    map!(sample_point -> get_index(
-            knot_vector,
-            sample_point,
-            degree),
-        sample_indices,
-        sample_points
-    )
-    return nothing
-end
-
 is_nurbs(::Any) = false
 is_nurbs(::AbstractNURBSGrid) = true
 
 function KernelAbstractions.get_backend(spline_dimension::AbstractSplineDimension)
     get_backend(spline_dimension.eval)
+end
+
+function Adapt.adapt(backend::Backend,
+        knot_vector::AbstractKnotVector{T})::AbstractKnotVector{T} where {T}
+    KnotVector(
+        adapt(backend, knot_vector.knot_values),
+        adapt(backend, knot_vector.multiplicities)
+    )
+end
+
+function Adapt.adapt(backend::Backend,
+        spline_dimension::AbstractSplineDimension{T})::AbstractSplineDimension{T} where {T}
+    SplineDimension(
+        spline_dimension.degree,
+        spline_dimension.max_derivative_order,
+        adapt(backend, spline_dimension.knot_vector),
+        adapt(backend, spline_dimension.sample_points),
+        adapt(backend, spline_dimension.sample_indices),
+        adapt(backend, spline_dimension.eval),
+        adapt(backend, spline_dimension.eval_prev)
+    )
+end
+
+function Adapt.adapt(backend::Backend,
+        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, T}
+)::AbstractSplineGrid{
+        Nin, Nout, HasWeights, T} where {Nin, Nout, HasWeights, T}
+    (; spline_dimensions) = spline_grid
+    SplineGrid(
+        ntuple(i -> adapt(backend, spline_dimensions[i]), length(spline_dimensions)),
+        adapt(backend, spline_grid.control_points),
+        adapt(backend, spline_grid.eval),
+        adapt(backend, spline_grid.sample_indices),
+        adapt(backend, spline_grid.basis_function_products);
+        denominator = adapt(backend, spline_grid.denominator),
+        weights = adapt(backend, spline_grid.weights)
+    )
 end

@@ -21,11 +21,7 @@ end
 
     spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; backend)
     spline_grid = SplineGrid(spline_dimensions, Nout)
-    spline_grid.control_points .= adapt(
-        backend,
-        rand(size(spline_grid.control_points)...)
-    )
-    evaluate!(spline_grid)
+    copyto!(spline_grid.control_points, rand(size(spline_grid.control_points)...))
 
     spline_grid_map = LinearMap(spline_grid)
     fit = lsqr(spline_grid_map, vec(spline_grid.eval))

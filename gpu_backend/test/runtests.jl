@@ -12,7 +12,7 @@ test_data = [("Utilities", "test_utils.jl")
              ("Refinement", "test_refinement.jl")
              ("NURBSGrid", "test_nurbs_grid.jl")
              ("Plotting", "test_plot_rec.jl")
-             ("LinearMapsExt", "test_LinearMapsExt.jl")
+             ("LinearMapsExt", "test_LinearMapsExt.jl") # Not supported for CUDA backend?
              ("EnzymeExt", "test_EnzymeExt.jl")]
 
 for (test_name, test_file) in test_data

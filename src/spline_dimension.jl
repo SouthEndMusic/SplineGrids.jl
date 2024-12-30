@@ -122,13 +122,13 @@ function SplineDimension(
         )
         )
     )
-    sample_indices = allocate(
+    sample_indices = KernelAbstractions.zeros(
         backend,
         Int,
         n_sample_points
     )
 
-    eval = allocate(
+    eval = KernelAbstractions.zeros(
         backend,
         float_type,
         n_sample_points,

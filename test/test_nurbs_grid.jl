@@ -39,17 +39,17 @@ end
         n_control_points, degree, n_sample_points; knot_vector)
     nurbs_grid = NURBSGrid(spline_dimension, dim_out)
     nurbs_grid.weights[2:2:end] .= 1 / sqrt(2)
-    nurbs_grid.control_points .= [1 0;
-                                  1 1;
-                                  0 1;
-                                  -1 1;
-                                  -1 0;
-                                  -1 -1;
-                                  0 -1;
-                                  1 -1;
-                                  1 0]
+    copyto!(nurbs_grid.control_points, [1 0;
+                                        1 1;
+                                        0 1;
+                                        -1 1;
+                                        -1 0;
+                                        -1 -1;
+                                        0 -1;
+                                        1 -1;
+                                        1 0])
     evaluate!(nurbs_grid)
-    points_on_circle = eachrow(nurbs_grid.eval)
+    points_on_circle = eachrow(adapt(CPU(), nurbs_grid.eval))
     @test allunique(points_on_circle[2:end])
     @test all(point -> point[1]^2 + point[2]^2 ≈ 1, points_on_circle)
 end

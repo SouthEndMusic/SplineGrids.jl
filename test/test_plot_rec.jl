@@ -29,14 +29,18 @@ spline_dimensions = SplineDimension.(
     @test try
         plot(spline_dimensions[1])
         true
-    catch
+    catch e
+        println("Error: $e")
+        Base.show_backtrace(stderr, catch_backtrace())
         false
     end
 
     @test try
         plot(spline_dimensions[1]; derivative_order = 1)
         true
-    catch
+    catch e
+        println("Error: $e")
+        Base.show_backtrace(stderr, catch_backtrace())
         false
     end
 end
@@ -52,7 +56,9 @@ for (Nin, Nout) in dimensionalities
         @test try
             plot(spline_grid)
             true
-        catch
+        catch e
+            println("Error: $e")
+            Base.show_backtrace(stderr, catch_backtrace())
             false
         end
 
@@ -60,7 +66,9 @@ for (Nin, Nout) in dimensionalities
         @test try
             plot(nurbs_grid)
             true
-        catch
+        catch e
+            println("Error: $e")
+            Base.show_backtrace(stderr, catch_backtrace())
             false
         end
     end
