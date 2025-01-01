@@ -17,7 +17,8 @@ end
 # Get the index i of each sample point t in the knot vector such 
 # such that t ∈ [knots_all[i], knots_all[i + 1])
 function set_sample_indices!(spline_dimension::AbstractSplineDimension)::Nothing
-    set_sample_indices_kernel(get_backend(spline_dimension))(
+    backend = get_backend(spline_dimension)
+    set_sample_indices_kernel(backend)(
         spline_dimension.sample_indices,
         spline_dimension.sample_points,
         spline_dimension.knot_vector.knots_all,
