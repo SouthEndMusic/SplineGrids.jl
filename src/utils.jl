@@ -24,6 +24,7 @@ function set_sample_indices!(spline_dimension::AbstractSplineDimension)::Nothing
         spline_dimension.degree,
         ndrange = size(spline_dimension.sample_indices)
     )
+    synchronize(backend)
 end
 
 function set_global_sample_indices!(

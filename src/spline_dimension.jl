@@ -259,6 +259,7 @@ function decompress(
         derivative_order,
         ndrange = size(sample_indices)
     )
+    synchronize(backend)
 
     out
 end

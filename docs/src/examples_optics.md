@@ -192,7 +192,9 @@ function trace_rays!(render, control_points_flat, p)::Nothing
     evaluate!(spline_grid; control_points, eval=∂₂u, derivative_order=(0, 1))
 
     render .= 0.0
-    ray_tracing_kernel(get_backend(u))(
+    backend = get_backend(u)
+
+    ray_tracing_kernel(backend)(
         render,
         u,
         ∂₁u,
@@ -205,6 +207,7 @@ function trace_rays!(render, control_points_flat, p)::Nothing
         p.ray_kernel_size,
         ndrange=size(u)
     )
+    synchronize(backend)
     return nothing
 end
 ```
@@ -382,7 +385,8 @@ One of the neat things we can do with this setup is look at all sorts of gradien
 
 ```@example tutorial
 function loss_from_grid(render, u, ∂₁u, ∂₂u, spline_grid, target, p_render)
-    ray_tracing_kernel(get_backend(u))(
+    backend = get_backend(u)
+    ray_tracing_kernel(backend)(
         render,
         u,
         ∂₁u,
@@ -395,6 +399,7 @@ function loss_from_grid(render, u, ∂₁u, ∂₂u, spline_grid, target, p_rend
         p_render.ray_kernel_size,
         ndrange=size(u)
     )
+    synchronize(backend)
     Euclidean()(render, target)
 end
 
