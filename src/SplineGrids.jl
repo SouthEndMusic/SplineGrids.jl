@@ -12,9 +12,8 @@ using Subscripts
 # Needed for plotting
 using RecipesBase
 
-# Needed for refinement
-using SparseArrays
-using LinearAlgebra
+# Needed for updating objects
+using Accessors
 
 # Type parameters:
 # - Nin: Number of input parameters
@@ -40,6 +39,6 @@ include("plot_rec.jl")
 include("validation.jl")
 
 export KnotVector, SplineDimension, SplineGrid, NURBSGrid, decompress, evaluate!,
-       evaluate_adjoint!, insert_knot!, refine!, RefinementMatrix
+       evaluate_adjoint!, insert_knot, refine, RefinementMatrix
 
 end # module SplineGrids

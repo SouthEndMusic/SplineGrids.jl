@@ -38,6 +38,7 @@ struct RefinementMatrix{
             row_pointer,
             column_start,
             length(nzval),
+            n,
             ndrange = size(valid_row)
         )
         synchronize(backend)
@@ -51,6 +52,28 @@ struct RefinementMatrix{
             eltype(row_pointer)
         }(
             m, n, row_pointer, column_start, nzval
+        )
+    end
+end
+
+Base.size(A::AbstractRefinementMatrix) = (A.m, A.n)
+Base.length(A::AbstractRefinementMatrix) = A.m * A.n
+
+function Base.:(==)(A::AbstractRefinementMatrix{Tv, Ti},
+        B::AbstractRefinementMatrix{Tv, Ti}) where {Tv, Ti}
+    (size(A) == size(B)) && (A.row_pointer == B.row_pointer) &&
+        (A.column_start == B.column_start) && (A.nzval == B.nzval)
+end
+
+function Adapt.adapt(backend::Backend, A::AbstractRefinementMatrix)
+    if backend == get_backend(A.nzval)
+        A
+    else
+        RefinementMatrix(
+            size(A)...,
+            adapt(backend, A.row_pointer),
+            adapt(backend, A.column_start),
+            adapt(backend, A.nzval)
         )
     end
 end
@@ -81,14 +104,19 @@ function get_column_range(
     column_start_, column_end
 end
 
-# Validate:
-# 1. That the non-zeros of the columns are consecutive
-# 2. That every row and column has at least one nonzero
+# Validate for each row:
+# 1. There is at least one nonzero
+# 2. The non-zeros fit within the matrix width
+# 3. The start of this row is between the start of the
+#    previous row and the column after the end of the previous row
+# 4. The end of this row is at least at the end of
+#    the previous row
 @kernel function validate_refinement_matrix_kernel(
         valid_row,
         @Const(row_pointer),
         @Const(column_start),
-        n_nzval
+        n_nzval,
+        n_columns
 )
     # Row index
     i = @index(Global, Linear)
@@ -97,29 +125,39 @@ end
         row_pointer, column_start, n_nzval, i)
 
     # Validate that there is at least one nonzero in this row
-    if column_end ≥ column_start_
-        if (i == 1)
-            valid_row[i] = true
-        else
-            column_start_prev, column_end_prev = get_column_range(
-                row_pointer, column_start, n_nzval, i - 1
-            )
+    row_is_valid = (column_end ≥ column_start_)
 
-            # Validate that the start of this row is between the start of the
-            # previous row and the column after th end of the previous row
-            condition_left_boundary = (column_start_prev ≤ column_start_ ≤
-                                       column_end_prev + 1)
-
-            # Validate that the end of this row is at least at the end of
-            # the previous row
-            if condition_left_boundary
-                condition_right_boundary = (column_end ≥ column_end_prev)
-                if condition_right_boundary
-                    valid_row[i] = true
-                end
-            end
-        end
+    # Validate that the non-zeros in this row fit within the matrix width
+    if row_is_valid
+        row_is_valid = (column_start_ ≥ 1) && (column_end ≤ n_columns)
     end
+
+    is_first_row = (i == 1)
+
+    # Validate that the non-zeros of the first row start at the first column
+    # and at the first index of nzval
+    if is_first_row
+        row_is_valid = (column_start_ == 1) && (row_pointer[i] == 1)
+    end
+
+    # Validate that the start of this row is between the start of the
+    # previous row and the column after the end of the previous row
+    if row_is_valid && !is_first_row
+        column_start_prev, column_end_prev = get_column_range(
+            row_pointer, column_start, n_nzval, i - 1
+        )
+
+        row_is_valid = (column_start_prev ≤ column_start_ ≤
+                        column_end_prev + 1)
+    end
+
+    # Validate that the end of this row is at least at the end of
+    # the previous row
+    if row_is_valid && !is_first_row
+        row_is_valid = (column_end ≥ column_end_prev)
+    end
+
+    valid_row[i] = row_is_valid
 end
 
 # Compute the non-zeros of the refinement matrix product C = A * B
@@ -171,7 +209,7 @@ end
 
 # Compute for the refinement matrix product C = A * B
 # per row the number of non-zeros and the column of the first nonzero
-@kernel function refinement_matrix_mult_nonzeros_kernel(
+@kernel function refinement_matrix_mul_nonzeros_kernel(
         n_nonzero_C,
         column_start_C,
         @Const(row_pointer_A),
@@ -232,7 +270,7 @@ function Base.:*(
         B.column_start
     )
 
-    refinement_matrix_mult_nonzeros_kernel(backend)(
+    refinement_matrix_mul_nonzeros_kernel(backend)(
         n_nonzero_C,
         column_start_C,
         AB_args...,
@@ -304,6 +342,80 @@ function Base.collect(A::AbstractRefinementMatrix{Tv}) where {Tv}
     out
 end
 
+@kernel function refinement_matrix_array_mul_kernel(
+        control_points_new,
+        @Const(control_points),
+        @Const(row_pointer),
+        @Const(column_start),
+        @Const(nzval),
+        dim_refinement
+)
+    I = @index(Global, Cartesian)
+
+    # i: refinement matrix row index
+    i = I[dim_refinement]
+
+    Ndim = ndims(control_points)
+    column_start_, column_end = get_column_range(
+        row_pointer, column_start, length(nzval), i)
+    nzval_pointer = row_pointer[i]
+
+    out = zero(eltype(control_points_new))
+
+    # j: refinement_matrix column index
+    for j in column_start_:column_end
+        control_point_indices = ntuple(
+            dim -> (dim == dim_refinement) ? j : I[dim], Ndim)
+        out += nzval[nzval_pointer] * control_points[control_point_indices...]
+        nzval_pointer += 1
+    end
+
+    control_points_new[I] = out
+end
+
+function mul!(
+        control_points_new::A,
+        refinement_matrix::AbstractRefinementMatrix{Tv},
+        control_points::A,
+        dim_refinement::Integer
+)::Nothing where {Tv, A <: AbstractArray{Tv}}
+    backend = get_backend(control_points)
+    size_control_points = size(control_points)
+    size_control_points_new = size(control_points_new)
+    for (dim, (dimsize, dimsize_new)) in enumerate(zip(
+        size_control_points, size_control_points_new))
+        if dim == dim_refinement
+            if !((refinement_matrix.m == size_control_points_new[dim]) &&
+                 (refinement_matrix.n == size_control_points[dim]))
+                error("Refinement matrix size does not match `control_points` and `control_points_new` along refinement dimension $dim.")
+            end
+        else
+            (dimsize != dimsize_new) &&
+                error("`control_points` and `control_points_new` don't have the same size along dimension $dim.")
+        end
+    end
+    refinement_matrix_array_mul_kernel(backend)(
+        control_points_new,
+        control_points,
+        refinement_matrix.row_pointer,
+        refinement_matrix.column_start,
+        refinement_matrix.nzval,
+        dim_refinement,
+        ndrange = size_control_points_new
+    )
+    synchronize(backend)
+    return nothing
+end
+
+function rmeye(
+        n::Integer; backend::Backend = CPU(), Tv::Type{T} = Float32)::RefinementMatrix where {T}
+    row_pointer = collect(1:n)
+    column_start = collect(1:n)
+    nzval = ones(Tv, n)
+    eye = RefinementMatrix(n, n, row_pointer, column_start, nzval)
+    adapt(backend, eye)
+end
+
 function RefinementMatrix(A::Matrix{Tv}) where {Tv}
     row_pointer = Int[]
     column_start = Int[]
@@ -317,6 +429,7 @@ function RefinementMatrix(A::Matrix{Tv}) where {Tv}
         push!(row_pointer, pointer)
 
         if isnothing(idx_first)
+            # Causes refinement matrix validation to fail
             push!(column_start, 0)
         else
             push!(column_start, idx_first)
@@ -330,23 +443,5 @@ function RefinementMatrix(A::Matrix{Tv}) where {Tv}
         row_pointer,
         column_start,
         nzval
-    )
-end
-
-Base.size(A::AbstractRefinementMatrix) = (A.m, A.n)
-Base.length(A::AbstractRefinementMatrix) = A.m * A.n
-
-function Base.:(==)(A::AbstractRefinementMatrix{Tv, Ti},
-        B::AbstractRefinementMatrix{Tv, Ti}) where {Tv, Ti}
-    (size(A) == size(B)) && (A.row_pointer == B.row_pointer) &&
-        (A.column_start == B.column_start) && (A.nzval == B.nzval)
-end
-
-function Adapt.adapt(backend::Backend, A::AbstractRefinementMatrix)
-    RefinementMatrix(
-        size(A)...,
-        adapt(backend, A.row_pointer),
-        adapt(backend, A.column_start),
-        adapt(backend, A.nzval)
     )
 end
