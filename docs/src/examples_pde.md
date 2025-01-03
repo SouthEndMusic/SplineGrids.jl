@@ -71,7 +71,8 @@ function pde_residual!(residual, control_points_flat, p)::Nothing
     evaluate!(spline_grid; control_points, eval=∂₂²u, derivative_order=(0, 2, 0))
     evaluate!(spline_grid; control_points, eval=∂₃²u, derivative_order=(0, 0, 2))
 
-    pde_residual_kernel(get_backend(u))(
+    backend = get_backend(u)
+    pde_residual_kernel(backend)(
         reshape(residual, size(u)),
         f,
         u,
@@ -80,7 +81,7 @@ function pde_residual!(residual, control_points_flat, p)::Nothing
         ∂₃²u,
         ndrange=size(u)
     )
-
+    synchronize(backend)
     return nothing
 end
 ```

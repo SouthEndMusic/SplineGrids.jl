@@ -65,3 +65,15 @@ end
         decompressed_basis_functions[i, k] = eval[i, j, derivative_order + 1]
     end
 end
+
+@kernel function insert_kernel(out, @Const(v), i_insert, x)
+    i = @index(Global, Linear)
+
+    if i < i_insert
+        out[i] = v[i]
+    elseif i > i_insert
+        out[i] = v[i - 1]
+    else
+        out[i] = x
+    end
+end

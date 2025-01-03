@@ -31,7 +31,7 @@ evaluate!(spline_grid_)
     @test spline_grid_.eval !== spline_grid.eval # Make sure that these are different arrays
 
     for dim_refinement in eachindex(n_control_points)
-        spline_grid, refinement_matrix = insert_knot!(spline_grid, dim_refinement, 0.25)
+        spline_grid, refinement_matrix = insert_knot(spline_grid, dim_refinement, 0.25)
         evaluate!(spline_grid)
         @test spline_grid_.eval ≈ spline_grid.eval # Knot insertion didn't change geometry
         size_cp_grid = size(spline_grid.control_points)
@@ -47,7 +47,8 @@ end
     size_cp_grid_old = size(spline_grid_.control_points)
 
     for dim_refinement in eachindex(n_control_points)
-        spline_grid, refinement_matrix = refine!(spline_grid, dim_refinement)
+        spline_grid, refinement_matrix = refine(
+            spline_grid, dim_refinement)
         evaluate!(spline_grid)
         @test spline_grid_.eval ≈ spline_grid.eval # Knot insertion didn't change geometry
         size_cp_grid = size(spline_grid.control_points)

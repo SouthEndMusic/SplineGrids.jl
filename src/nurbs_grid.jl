@@ -23,11 +23,11 @@ function NURBSGrid(
     SplineGrid(
         spline_dimensions,
         control_points,
+        denominator,
+        weights,
         eval,
         sample_indices,
-        basis_function_products;
-        weights,
-        denominator
+        basis_function_products
     )
 end
 
