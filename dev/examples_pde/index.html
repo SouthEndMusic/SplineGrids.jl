@@ -47,7 +47,8 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
     evaluate!(spline_grid; control_points, eval=∂₂²u, derivative_order=(0, 2, 0))
     evaluate!(spline_grid; control_points, eval=∂₃²u, derivative_order=(0, 0, 2))
 
-    pde_residual_kernel(get_backend(u))(
+    backend = get_backend(u)
+    pde_residual_kernel(backend)(
         reshape(residual, size(u)),
         f,
         u,
@@ -56,7 +57,7 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
         ∂₃²u,
         ndrange=size(u)
     )
-
+    synchronize(backend)
     return nothing
 end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">pde_residual! (generic function with 1 method)</code></pre><h2 id="Defining-the-spline-grid"><a class="docs-heading-anchor" href="#Defining-the-spline-grid">Defining the spline grid</a><a id="Defining-the-spline-grid-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-the-spline-grid" title="Permalink"></a></h2><p>We would like to define a residual function <span>$\mathbb{R}^N \rightarrow \mathbb{R}^N$</span>, i.e. the number of sample points must equal the number of control points. For each dimension the maximum derivative order is 2, to evaluate the result of the Laplacian operator on the spline.</p><pre><code class="language-julia hljs">using SplineGrids
 
@@ -190,4 +191,4 @@ evaluate!(spline_grid)
 fig = Figure()
 ax, plt = volume(fig[1,1], log.(spline_grid.eval[:, :, :, 1] .+ 1))
 Colorbar(fig[1,2], plt; label = L&quot;\log(u + 1)&quot;)
-fig</code></pre><img src="2582080d.png" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_enzyme/">« Control point derivatives with Enzyme</a><a class="docs-footer-nextpage" href="../examples_optics/">Optimizing a lens surface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Monday 30 December 2024 20:49">Monday 30 December 2024</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fig</code></pre><img src="2582080d.png" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_enzyme/">« Control point derivatives with Enzyme</a><a class="docs-footer-nextpage" href="../examples_optics/">Optimizing a lens surface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Saturday 4 January 2025 15:07">Saturday 4 January 2025</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
