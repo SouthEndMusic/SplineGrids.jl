@@ -15,8 +15,15 @@ end
 
 @testset "Unit matrix" begin
     N = 100
-    M = RefinementMatrix(collect(Float64.(I(N))))
-    M = adapt(backend, M)
+    M = rmeye(N; backend)
+
+    if backend == CPU()
+        @test M[25, 25] == 1
+        @test M[25, 26] == 0
+        @test_throws "Index (101, 1) out of bounds for refinement matrix of size (100, 100)." M[
+            N + 1, 1]
+    end
+
     M_squared = M * M
     @test M_squared isa RefinementMatrix
     @test M_squared.m == M.m
