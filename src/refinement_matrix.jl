@@ -6,14 +6,14 @@ The refinement matrix is a sparse matrix encoding for matrices which:
  1. Have consecutive non-zeros in all rows and columns
  2. Have at least 1 nonzero in every row and column
 
-The nonzeros are stored in a dense vector per row.
+The non-zeros are stored in a dense vector per row.
 
 ## Fields
 
   - `m`: The number of rows of the matrix
   - `n`: The number of columns of the matrix
   - `row_pointer`: `row_pointer[i]` indicates where in `nzval` the data for the `i`-th row starts
-  - `column_start`: `column_start[i]` indicates at which column index the first non-zero for the `i`-th row is
+  - `column_start`: `column_start[i]` indicates at which column the first nonzero for the `i`-th row is
   - `nzval`: The nonzero values in the matrix
 """
 struct RefinementMatrix{
@@ -59,10 +59,31 @@ end
 Base.size(A::AbstractRefinementMatrix) = (A.m, A.n)
 Base.length(A::AbstractRefinementMatrix) = A.m * A.n
 
-function Base.:(==)(A::AbstractRefinementMatrix{Tv, Ti},
-        B::AbstractRefinementMatrix{Tv, Ti}) where {Tv, Ti}
-    (size(A) == size(B)) && (A.row_pointer == B.row_pointer) &&
-        (A.column_start == B.column_start) && (A.nzval == B.nzval)
+function Base.:(==)(
+        A::AbstractRefinementMatrix{Tv, Ti},
+        B::AbstractRefinementMatrix{Tv, Ti}
+) where {Tv, Ti}
+    (size(A) == size(B)) &&
+        (A.row_pointer == B.row_pointer) &&
+        (A.column_start == B.column_start) &&
+        (A.nzval == B.nzval)
+end
+
+function Base.getindex(
+        refinement_matrix::AbstractRefinementMatrix{Tv}, i::Integer, j::Integer
+)::Tv where {Tv}
+    (; m, n, row_pointer, column_start, nzval) = refinement_matrix
+    if !((1 ≤ i ≤ m) && (1 ≤ j ≤ n))
+        error("Index ($i, $j) out of bounds for refinement matrix of size ($m, $n).")
+    end
+    column_start_, column_end = get_column_range(
+        row_pointer, column_start, length(nzval), i)
+    if column_start_ ≤ j ≤ column_end
+        nzval[row_pointer[i] + j - column_start_
+        ]
+    else
+        zero(Tv)
+    end
 end
 
 function Adapt.adapt(backend::Backend, A::AbstractRefinementMatrix)
@@ -373,7 +394,23 @@ end
     control_points_new[I] = out
 end
 
-function mul!(
+"""
+    mult!(
+            control_points_new::A,
+            refinement_matrix::AbstractRefinementMatrix{Tv},
+            control_points::A,
+            dim_refinement::Integer)::Nothing where {Tv, A <: AbstractArray{Tv}}
+
+Multiply each 'sub-vector' of `control_points` along the refinement dimension by the refinement matrix in-place.
+
+## Inputs
+
+  - `control_points_new`: The target array of the multiplication
+  - `refinement_matrix`: The matrix each 'sub-vector' will be multiplied by
+  - `control_points`: The array that will be multiplied by the refinement matrix
+  - `dim_refinement`: The dimension along which the refinement matrix multiplication will take place
+"""
+function mult!(
         control_points_new::A,
         refinement_matrix::AbstractRefinementMatrix{Tv},
         control_points::A,
@@ -407,10 +444,30 @@ function mul!(
     return nothing
 end
 
+"""
+    rmeye(
+        n::Integer;
+        backend::Backend = CPU(),
+        Tv::Type{V} = Float32,
+        Ti::Type{I} = Int)::AbstractRefinementMatrix{V, I} where {V, I <: Integer}
+
+Construct an identity refinement matrix.
+
+## Input
+
+  - `n`: The size of the identity matrix is n×n
+  - `backend`: The KernelAbstractions backend of the matrix data
+  - `Tv`: The value type of the matrix data
+  - `Ti`: The integer type of the matrix data
+"""
 function rmeye(
-        n::Integer; backend::Backend = CPU(), Tv::Type{T} = Float32)::RefinementMatrix where {T}
-    row_pointer = collect(1:n)
-    column_start = collect(1:n)
+        n::Integer;
+        backend::Backend = CPU(),
+        Tv::Type{V} = Float32,
+        Ti::Type{I} = Int
+)::AbstractRefinementMatrix{V, I} where {V, I <: Integer}
+    row_pointer = Ti.(collect(1:n))
+    column_start = Ti.(collect(1:n))
     nzval = ones(Tv, n)
     eye = RefinementMatrix(n, n, row_pointer, column_start, nzval)
     adapt(backend, eye)

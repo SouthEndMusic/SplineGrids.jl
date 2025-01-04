@@ -1,3 +1,5 @@
+# Build a refinement matrix per row given a knot vector
+# and a to be added new knot
 @kernel function build_refinement_matrix_kernel(
         row_pointer,
         column_start,
@@ -10,9 +12,11 @@
     i = @index(Global, Linear)
 
     if i ≤ knot_span_index - degree
+        # Unaffected basis functions left of the inserted knot
         row_pointer[i] = i
         column_start[i] = i
     elseif i ≤ knot_span_index
+        # Linear combinations of affected basis functions
         α = (knot_new -
              knots_all_old[i]) /
             (knots_all_old[i + degree] -
@@ -23,16 +27,33 @@
         nzval[row_pointer_] = 1 - α
         nzval[row_pointer_ + 1] = α
     else
+        # Unaffected basis functions right of the inserted knot
+        # (with shifted index)
         row_pointer_ = i + degree
         row_pointer[i] = row_pointer_
         column_start[i] = i - 1
     end
 end
 
-function RefinementMatrix(
+"""
+    RefinementMatrix(
         spline_dimension::AbstractSplineDimension{Tv},
         knot_span_index::Ti,
         knot_new
+        )::AbstractRefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
+
+Build a refinement matrix per row given a knot vector and a to be added new knot.
+
+## Inputs
+
+  - `spline_dimension`: The spline dimension whose knot vector the new knot is to be added to
+  - `knot_span_index`: The index such that `knots_all[knot_span_index] ≤ knot_new < knots_all[knot_span_index + 1]`
+  - `knot_new`: The value of the new knot
+"""
+function RefinementMatrix(
+        spline_dimension::AbstractSplineDimension{Tv},
+        knot_span_index::Ti,
+        knot_new::Any
 )::AbstractRefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
     (; degree, knot_vector) = spline_dimension
 
@@ -68,7 +89,8 @@ end
 
 """
     insert_knot(
-    knot_vector::KnotVector, knot_new::AbstractFloat)::Tuple{KnotVector, Integer}
+    knot_vector::KnotVector, 
+    knot_new::AbstractFloat)::Tuple{KnotVector, Integer}
 
 Create a new knot vector with the new knot of multiplicity 1.
 
@@ -80,10 +102,11 @@ Create a new knot vector with the new knot of multiplicity 1.
 ## Outputs
 
   - `knot_vector_new`: The newly created knot vector with the added knot
-  - `knot_span_index`: The index of the old knot vector knot span which contains the new knot
+  - `knot_span_index`: The index such that `knots_all[knot_span_index] ≤ knot_new < knots_all[knot_span_index + 1]`
 """
 function insert_knot(
-        knot_vector::KnotVector, knot_new::AbstractFloat
+        knot_vector::KnotVector,
+        knot_new::AbstractFloat
 )::Tuple{KnotVector, Integer}
     (; knot_values, multiplicities) = knot_vector
     @assert !any(knot_new .== knot_values)
@@ -261,11 +284,11 @@ end
 
 """
     refine(
-    spline_grid::AbstractSplineGrid{Nin, Nout, T},
-    dim_refinement::Integer;
-    knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing,
-    recompute_global_sample_indices = true
-    )::Tuple{SplineGrid, RefinementMatrix} where {Nin, Nout, T}
+        spline_grid::AbstractSplineGrid{Nin, Nout, T},
+        dim_refinement::Integer;
+        knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing,
+        recompute_global_sample_indices = true
+        )::Tuple{SplineGrid, RefinementMatrix} where {Nin, Nout, T}
 
 Create a new spline grid where multiple knots are added to the knot vector underlying the indicated spline dimension.
 
@@ -311,6 +334,16 @@ function refine(
     )
 end
 
+"""
+    refine(
+        spline_grid::AbstractSplineGrid{Nin, Nout, false, T},
+        spline_dimension_new::AbstractSplineDimension{T},
+        dim_refinement::Integer,
+        refinement_matrix::RefinementMatrix;
+        recompute_global_sample_indices::Bool = true) where {Nin, Nout, T}
+
+Update the spline grid with a refined spline dimension in the specified dimension with the associated refinement matrix.
+"""
 function refine(
         spline_grid::AbstractSplineGrid{Nin, Nout, false, T},
         spline_dimension_new::AbstractSplineDimension{T},
@@ -337,7 +370,7 @@ function refine(
         size_cp_grid_new...
     )
 
-    mul!(
+    mult!(
         control_points_new,
         refinement_matrix,
         control_points,

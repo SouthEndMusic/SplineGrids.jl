@@ -39,6 +39,6 @@ include("plot_rec.jl")
 include("validation.jl")
 
 export KnotVector, SplineDimension, SplineGrid, NURBSGrid, decompress, evaluate!,
-       evaluate_adjoint!, insert_knot, refine, RefinementMatrix
+       evaluate_adjoint!, insert_knot, refine, RefinementMatrix, rmeye, mult!
 
 end # module SplineGrids
