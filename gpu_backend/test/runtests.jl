@@ -6,11 +6,11 @@ push!(ARGS, "--gpu_backend")
 test_dir = normpath(@__DIR__, "../../test")
 
 test_data = [
-    # ("Utilities", "test_utils.jl"),
-    # ("KnotVector", "test_knot_vector.jl"),
-    # ("SplineDimension", "test_spline_dimension.jl"),
-    # ("SplineGrid", "test_spline_grid.jl"),
-    # ("NURBSGrid", "test_nurbs_grid.jl"),
+    ("Utilities", "test_utils.jl"),
+    ("KnotVector", "test_knot_vector.jl"),
+    ("SplineDimension", "test_spline_dimension.jl"),
+    ("SplineGrid", "test_spline_grid.jl"),
+    ("NURBSGrid", "test_nurbs_grid.jl"),
     ("RefinementMatrix", "test_refinement_matrix.jl"),
     ("Refinement", "test_refinement.jl"),
     ("Plotting", "test_plot_rec.jl"),

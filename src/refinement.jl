@@ -191,7 +191,7 @@ function insert_knot(
         evaluate_spline_dimension::Bool = true,
         recompute_global_sample_indices = true
 )::Tuple{SplineGrid, RefinementMatrix} where {Nin, Nout, HasWeights, T}
-    (; spline_dimensions, control_points, sample_indices) = spline_grid
+    (; spline_dimensions) = spline_grid
 
     @assert !is_nurbs(spline_grid) "Knot insertion not supported for NURBS"
 
@@ -202,41 +202,13 @@ function insert_knot(
         evaluate = evaluate_spline_dimension
     )
 
-    # Refine control points
-    size_cp_grid = size(control_points)
-    size_cp_grid_new = ntuple(
-        dim -> (dim == dim_refinement) ? size_cp_grid[dim] + 1 :
-               size_cp_grid[dim],
-        ndims(control_points))
-
-    backend = get_backend(spline_dimension)
-    control_points_new = allocate(
-        backend,
-        T,
-        size_cp_grid_new...
+    refine(
+        spline_grid,
+        spline_dimension_new,
+        dim_refinement,
+        refinement_matrix;
+        recompute_global_sample_indices
     )
-
-    mul!(
-        control_points_new,
-        refinement_matrix,
-        control_points,
-        dim_refinement
-    )
-
-    spline_dimensions_new = ntuple(
-        dim -> (dim == dim_refinement) ? spline_dimension_new : spline_dimensions[dim], Nin)
-
-    if recompute_global_sample_indices
-        set_global_sample_indices!(
-            sample_indices,
-            spline_dimensions_new,
-            Nout)
-    end
-
-    spline_grid_new = @set spline_grid.control_points = control_points_new
-    spline_grid_new = @set spline_grid_new.spline_dimensions = spline_dimensions_new
-
-    spline_grid_new, refinement_matrix
 end
 
 """
@@ -319,7 +291,7 @@ function refine(
         knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing,
         recompute_global_sample_indices::Bool = true
 )::Tuple{SplineGrid, RefinementMatrix} where {Nin, Nout, HasWeights, T}
-    (; spline_dimensions, control_points, sample_indices) = spline_grid
+    (; spline_dimensions) = spline_grid
 
     @assert !is_nurbs(spline_grid) "Knot insertion not supported for NURBS"
 
@@ -329,6 +301,24 @@ function refine(
         knots_new
     )
     evaluate!(spline_dimension_new)
+
+    refine(
+        spline_grid,
+        spline_dimension_new,
+        dim_refinement,
+        refinement_matrix;
+        recompute_global_sample_indices
+    )
+end
+
+function refine(
+        spline_grid::AbstractSplineGrid{Nin, Nout, false, T},
+        spline_dimension_new::AbstractSplineDimension{T},
+        dim_refinement::Integer,
+        refinement_matrix::RefinementMatrix;
+        recompute_global_sample_indices::Bool = true
+) where {Nin, Nout, T}
+    (; spline_dimensions, control_points, sample_indices) = spline_grid
 
     # The number of control points added in the refinement dimension
     n_cp_new = size(refinement_matrix)[1] - size(refinement_matrix)[2]
@@ -340,7 +330,7 @@ function refine(
                size_cp_grid[dim],
         ndims(control_points))
 
-    backend = get_backend(spline_dimension)
+    backend = get_backend(spline_dimension_new)
     control_points_new = allocate(
         backend,
         T,
@@ -358,12 +348,16 @@ function refine(
         dim -> (dim == dim_refinement) ? spline_dimension_new : spline_dimensions[dim], Nin)
 
     if recompute_global_sample_indices
+        sample_indices_cpu = adapt(CPU(), sample_indices)
         set_global_sample_indices!(
-            sample_indices,
+            sample_indices_cpu,
             spline_dimensions_new,
-            Nout
-        )
+            Nout)
+        copyto!(sample_indices, sample_indices_cpu)
     end
+
+    spline_dimensions_new = ntuple(
+        dim -> (dim == dim_refinement) ? spline_dimension_new : spline_dimensions[dim], Nin)
 
     spline_grid_new = @set spline_grid.control_points = control_points_new
     spline_grid_new = @set spline_grid_new.spline_dimensions = spline_dimensions_new
