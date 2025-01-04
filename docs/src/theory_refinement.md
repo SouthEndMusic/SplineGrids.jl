@@ -26,14 +26,14 @@ for (i,θ) in enumerate(range(3π, 0, length = n_control_points))
     spline_grid.control_points[i, 2] = r * sin(θ)
 end
 
-plot(spline_dimension, title = "Original basis")
+plot(spline_dimension, title = "Original basis", legend=:topright)
 ```
 
 ```@example tutorial
 spline_grid_new = deepcopy(spline_grid)
-spline_grid_new, refinement_matrix = insert_knot!(spline_grid_new, 1, 0.25)
+spline_grid_new, refinement_matrix = insert_knot(spline_grid_new, 1, 0.25)
 spline_dimension_new = only(spline_grid_new.spline_dimensions)
-plot(spline_dimension_new, title = "Basis after knot insertion")
+plot(spline_dimension_new, title = "Basis after knot insertion", legend=:topright)
 ```
 
 Using the refinement matrix, we can for instance express the original basis function 3 in terms of the new basis functions 3 and 4.
@@ -70,9 +70,27 @@ ylims!(-10, 20)
 We can also add multiple knots at a time, which is called _knot refinement_. A set of new knots can be supplied, but the default refinement behavior is to bisect each (non trivial) knot span.
 
 ```@example tutorial
-spline_grid_new, refinement_matrix = refine!(spline_grid_new, 1)
+spline_grid_new, refinement_matrix = refine(spline_grid_new, 1)
 evaluate!(spline_grid_new)
 plot(spline_grid_new; title = "Curve with basis after knot refinement")
 xlims!(-20, 15)
 ylims!(-10, 20)
+```
+
+## The refinement matrix
+
+The linear combinations that express the old basis functions in terms of the new ones can be combined into a _refinement matrix_ $R$. This matrix can be used to express the new control points $\mathbf{Q}$ in terms of the old control points $\mathbf{P}$:
+
+$$
+    \mathbf{Q} = \mathbf{P} \otimes_n R
+$$
+
+where $\otimes_n$ is the n-th mode tensor product, where $n$ is the input dimension that was refined.
+
+The matrix $R$ is sparse with a particular pattern: the non-zeros in each row and column are consecutive, and each row and column has at least one non-zero. This is taken advantage of with a specialized sparse matrix encoding for efficient multiplications. For more details on this see the [manual](https://southendmusic.github.io/SplineGrids.jl/dev/manual/).
+
+For the knot refinement performed above the refinement matrix looks like this:
+
+```@example tutorial
+heatmap(collect(refinement_matrix)[end:-1:1,:])
 ```

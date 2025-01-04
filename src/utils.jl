@@ -17,13 +17,15 @@ end
 # Get the index i of each sample point t in the knot vector such 
 # such that t ∈ [knots_all[i], knots_all[i + 1])
 function set_sample_indices!(spline_dimension::AbstractSplineDimension)::Nothing
-    set_sample_indices_kernel(get_backend(spline_dimension))(
+    backend = get_backend(spline_dimension)
+    set_sample_indices_kernel(backend)(
         spline_dimension.sample_indices,
         spline_dimension.sample_points,
         spline_dimension.knot_vector.knots_all,
         spline_dimension.degree,
         ndrange = size(spline_dimension.sample_indices)
     )
+    synchronize(backend)
 end
 
 function set_global_sample_indices!(
@@ -123,6 +125,14 @@ function get_offset(array_shape, indices)
     return linear_idx
 end
 
+function insert(v::AbstractVector{T}, i::Integer, x) where {T}
+    backend = get_backend(v)
+    out = allocate(backend, T, length(v) + 1)
+    insert_kernel(backend)(out, v, i, x, ndrange = size(out))
+    synchronize(backend)
+    out
+end
+
 function shape_name(Nin::Integer)::String
     Nin == 1 && return "curve"
     Nin == 2 && return "surface"
@@ -186,10 +196,10 @@ function Adapt.adapt(backend::Backend,
     SplineGrid(
         ntuple(i -> adapt(backend, spline_dimensions[i]), length(spline_dimensions)),
         adapt(backend, spline_grid.control_points),
+        adapt(backend, spline_grid.denominator),
+        adapt(backend, spline_grid.weights),
         adapt(backend, spline_grid.eval),
         adapt(backend, spline_grid.sample_indices),
-        adapt(backend, spline_grid.basis_function_products);
-        denominator = adapt(backend, spline_grid.denominator),
-        weights = adapt(backend, spline_grid.weights)
+        adapt(backend, spline_grid.basis_function_products)
     )
 end

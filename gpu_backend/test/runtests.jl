@@ -5,15 +5,18 @@ push!(ARGS, "--gpu_backend")
 
 test_dir = normpath(@__DIR__, "../../test")
 
-test_data = [("Utilities", "test_utils.jl")
-             ("KnotVector", "test_knot_vector.jl")
-             ("SplineDimension", "test_spline_dimension.jl")
-             ("SplineGrid", "test_spline_grid.jl")
-             ("Refinement", "test_refinement.jl")
-             ("NURBSGrid", "test_nurbs_grid.jl")
-             ("Plotting", "test_plot_rec.jl")
-             ("LinearMapsExt", "test_LinearMapsExt.jl")
-             ("EnzymeExt", "test_EnzymeExt.jl")]
+test_data = [
+    ("Utilities", "test_utils.jl"),
+    ("KnotVector", "test_knot_vector.jl"),
+    ("SplineDimension", "test_spline_dimension.jl"),
+    ("SplineGrid", "test_spline_grid.jl"),
+    ("NURBSGrid", "test_nurbs_grid.jl"),
+    ("RefinementMatrix", "test_refinement_matrix.jl"),
+    ("Refinement", "test_refinement.jl"),
+    ("Plotting", "test_plot_rec.jl"),
+    ("LinearMapsExt", "test_LinearMapsExt.jl"),
+    ("EnzymeExt", "test_EnzymeExt.jl")
+]
 
 for (test_name, test_file) in test_data
     @testset "$test_name" begin

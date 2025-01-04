@@ -38,11 +38,11 @@ struct SplineGrid{
     function SplineGrid(
             spline_dimensions,
             control_points,
+            denominator,
+            weights,
             eval,
             sample_indices,
-            basis_function_products;
-            denominator = nothing,
-            weights = nothing)
+            basis_function_products)
         # TODO: Add validation of combination of control points, weights, and basis functions
         new{
             eltype(spline_dimensions),
@@ -99,9 +99,14 @@ function SplineGrid(
     eval = KernelAbstractions.zeros(backend, T, size_eval_grid..., Nout)
     # Linear indices for control points per global sample point
     sample_indices = get_global_sample_indices(spline_dimensions, Nout)
+    # NURBS fields not needed
+    denominator = nothing
+    weights = nothing
     SplineGrid(
         spline_dimensions,
         control_points,
+        denominator,
+        weights,
         eval,
         sample_indices,
         basis_function_products
