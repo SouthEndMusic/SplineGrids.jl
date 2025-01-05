@@ -448,8 +448,8 @@ end
     rmeye(
         n::Integer;
         backend::Backend = CPU(),
-        Tv::Type{V} = Float32,
-        Ti::Type{I} = Int)::AbstractRefinementMatrix{V, I} where {V, I <: Integer}
+        float_type::Type{Tv} = Float32,
+        int_type::Type{Ti} = Int)::AbstractRefinementMatrix{Tv, Tv} where {Tv, Ti <: Integer}
 
 Construct an identity refinement matrix.
 
@@ -457,18 +457,18 @@ Construct an identity refinement matrix.
 
   - `n`: The size of the identity matrix is n×n
   - `backend`: The KernelAbstractions backend of the matrix data
-  - `Tv`: The value type of the matrix data
-  - `Ti`: The integer type of the matrix data
+  - `float_type`: The value type of the matrix data
+  - `int_type`: The integer type of the matrix data
 """
 function rmeye(
         n::Integer;
         backend::Backend = CPU(),
-        Tv::Type{V} = Float32,
-        Ti::Type{I} = Int
-)::AbstractRefinementMatrix{V, I} where {V, I <: Integer}
-    row_pointer = Ti.(collect(1:n))
-    column_start = Ti.(collect(1:n))
-    nzval = ones(Tv, n)
+        float_type::Type{Tv} = Float32,
+        int_type::Type{Ti} = Int32
+)::AbstractRefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
+    row_pointer = int_type.(collect(1:n))
+    column_start = int_type.(collect(1:n))
+    nzval = ones(float_type, n)
     eye = RefinementMatrix(n, n, row_pointer, column_start, nzval)
     adapt(backend, eye)
 end

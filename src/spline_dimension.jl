@@ -23,12 +23,13 @@ Defines the set of basis functions for a single dimension, and how it is sampled
     whose support the sample point is in, and the derivatives if requested.
 """
 struct SplineDimension{
-    K <: AbstractKnotVector{T} where {T},
-    S <: AbstractVector{T} where {T},
-    I <: AbstractVector{<:Integer},
+    K <: AbstractKnotVector{Tv, Ti} where {Tv, Ti},
+    S <: AbstractVector{Tv} where {Tv},
+    I <: AbstractVector{Ti} where {Ti},
     E <: AbstractArray{T, 3} where {T},
-    T <: AbstractFloat
-} <: AbstractSplineDimension{T}
+    Tv <: AbstractFloat,
+    Ti <: Integer
+} <: AbstractSplineDimension{Tv, Ti}
     degree::Int
     max_derivative_order::Int
     knot_vector::K
@@ -50,7 +51,8 @@ struct SplineDimension{
             typeof(sample_points),
             typeof(sample_indices),
             typeof(eval),
-            eltype(eval)
+            eltype(eval),
+            eltype(sample_indices)
         }(
             degree,
             max_derivative_order,
@@ -71,8 +73,9 @@ end
         max_derivative_order::Integer = 0,
         knot_vector::Union{Nothing, KnotVector} = nothing,
         backend::Backend = CPU(),
-        float_type::Type{T} = Float32,
-        kwargs...)
+        float_type::Type{Tv} = Float32,
+        int_type::Type{Ti} = Int32,
+        kwargs...)::SplineDimension where {Tv <: AbstractFloat, Ti <: Integer}
 
 Constructor for a SplineDimension. Optionally a `knot_vector` kwarg can be passed, otherwise a default knot vector is generated.
 For now by default the sample points are evenly spaced on the extent of the knot vector.
@@ -98,9 +101,10 @@ function SplineDimension(
         max_derivative_order::Integer = 0,
         knot_vector::Union{Nothing, KnotVector} = nothing,
         backend::Backend = CPU(),
-        float_type::Type{T} = Float32,
+        float_type::Type{Tv} = Float32,
+        int_type::Type{Ti} = Int32,
         kwargs...
-)::SplineDimension where {T <: AbstractFloat}
+)::SplineDimension where {Tv <: AbstractFloat, Ti <: Integer}
     @assert 0≤max_derivative_order≤degree "The max_degree must be positive and derivatives order higher than `degree` are all 0."
     if isnothing(knot_vector)
         knot_vector = KnotVector(
@@ -124,7 +128,7 @@ function SplineDimension(
     )
     sample_indices = KernelAbstractions.zeros(
         backend,
-        Int,
+        int_type,
         n_sample_points
     )
 
@@ -238,18 +242,21 @@ function evaluate!(spline_dimension::SplineDimension)::Nothing
 end
 
 """
+    decompress(
+        spline_dimension::AbstractSplineDimension{Tv}; derivative_order = 0) where {Tv}
+
 Transform `spline_dimension.eval` into a matrix of shape `(n_sample_points, n_points - degree - 1)`
 which explicitly gives the value for each basis function at each sample point.
 """
 function decompress(
-        spline_dimension::AbstractSplineDimension{T}; derivative_order = 0) where {T}
+        spline_dimension::AbstractSplineDimension{Tv}; derivative_order = 0) where {Tv}
     backend = get_backend(spline_dimension)
 
     (; sample_indices, degree, eval, max_derivative_order) = spline_dimension
     @assert derivative_order ≤ max_derivative_order
     n_sample_points = length(sample_indices)
     n_basis_functions = get_n_basis_functions(spline_dimension)
-    out = KernelAbstractions.zeros(backend, T, n_sample_points, n_basis_functions)
+    out = KernelAbstractions.zeros(backend, Tv, n_sample_points, n_basis_functions)
 
     decompress_basis_function_eval_kernel(backend)(
         out,

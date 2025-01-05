@@ -1,4 +1,13 @@
 """
+    SplineGrid(
+        spline_dimensions,
+        control_points,
+        denominator,
+        weights,
+        eval,
+        sample_indices,
+        basis_function_products)
+
 The SplineGrid is the central object of the `SplineGrids.jl` package, containing
 all information to evaluate the defined spline on the defined grid.
 
@@ -16,18 +25,20 @@ all information to evaluate the defined spline on the defined grid.
     from the various spline dimensions.
 """
 struct SplineGrid{
-    S <: AbstractSplineDimension{T} where {T},
-    C <: AbstractArray{T} where {T}, # N = Nin + 1
-    D <: Union{AbstractArray{T, Nin}, Nothing} where {T, Nin},
-    W <: Union{AbstractArray{T, Nin}, Nothing} where {T, Nin},
-    E <: AbstractArray{T} where {T},
-    I <: AbstractArray{<:Integer, Nin} where {Nin},
-    B <: AbstractArray{T} where {T},
+    S <: AbstractSplineDimension{Tv} where {Tv},
+    C <:
+    Union{AbstractArray{Tv}, AbstractControlPoints{Nin, Nout, Tv}} where {Nin, Nout, Tv},
+    D <: Union{AbstractArray{Tv, Nin}, Nothing} where {Tv, Nin},
+    W <: Union{AbstractArray{Tv, Nin}, Nothing} where {Tv, Nin},
+    E <: AbstractArray{Tv} where {Tv},
+    I <: AbstractArray{Ti, Nin} where {Ti, Nin},
+    B <: AbstractArray{Tv} where {Tv},
     Nin,
     Nout,
     HasWeights,
-    T <: AbstractFloat
-} <: AbstractSplineGrid{Nin, Nout, HasWeights, T}
+    Tv <: AbstractFloat,
+    Ti <: Integer
+} <: AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti}
     spline_dimensions::NTuple{Nin, S}
     control_points::C
     denominator::D
@@ -55,7 +66,8 @@ struct SplineGrid{
             length(spline_dimensions),
             size(control_points)[end],
             isa(weights, AbstractArray),
-            eltype(control_points)
+            eltype(control_points),
+            eltype(sample_indices)
         }(
             spline_dimensions,
             control_points,
@@ -81,22 +93,22 @@ Define a `SplineGrid` from an NTuple of spline dimensions and the number of outp
   - `Nout`: The number of output dimensions. I.e. the control points and thus the spline live in ℝ^Nout.
 """
 function SplineGrid(
-        spline_dimensions::NTuple{Nin, <:AbstractSplineDimension{T}},
+        spline_dimensions::NTuple{Nin, <:AbstractSplineDimension{Tv}},
         Nout::Integer
-)::AbstractSplineGrid{Nin} where {Nin, T}
+)::AbstractSplineGrid{Nin} where {Nin, Tv}
     backend = get_backend(first(spline_dimensions))
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
     # The size of the grid of control points
     size_cp_grid = get_n_basis_functions.(spline_dimensions)
     # The control points
-    control_points = KernelAbstractions.zeros(CPU(), T, size_cp_grid..., Nout)
+    control_points = KernelAbstractions.zeros(CPU(), Tv, size_cp_grid..., Nout)
     set_unit_cp_grid!(control_points)
     control_points = adapt(backend, control_points)
     # Preallocated memory for basis function product evaluation
-    basis_function_products = KernelAbstractions.zeros(backend, T, size_eval_grid...)
+    basis_function_products = KernelAbstractions.zeros(backend, Tv, size_eval_grid...)
     # Preallocated memory for grid evaluation of the spline
-    eval = KernelAbstractions.zeros(backend, T, size_eval_grid..., Nout)
+    eval = KernelAbstractions.zeros(backend, Tv, size_eval_grid..., Nout)
     # Linear indices for control points per global sample point
     sample_indices = get_global_sample_indices(spline_dimensions, Nout)
     # NURBS fields not needed
@@ -196,7 +208,8 @@ function evaluate!(spline_grid::AbstractSplineGrid{Nin};
             control_points,
             sample_indices,
             offset,
-            ndrange = size(sample_indices))
+            ndrange = size(sample_indices)
+        )
         synchronize(backend)
     end
     return nothing
@@ -271,8 +284,14 @@ function evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin};
 
         # Add the 'basis function product * control point' contribution to eval
         offset = get_offset(size(control_points), Tuple(I))
-        kernel!(control_points, eval, basis_function_products,
-            sample_indices, offset, ndrange = size(sample_indices))
+        kernel!(
+            control_points,
+            eval,
+            basis_function_products,
+            sample_indices,
+            offset,
+            ndrange = size(sample_indices)
+        )
         synchronize(backend)
     end
     return nothing

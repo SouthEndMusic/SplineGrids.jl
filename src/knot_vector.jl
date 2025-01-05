@@ -9,14 +9,15 @@ Defines a knot vector.
   - `multiplicities`: The multiplicity of each knot in `knots`.
 """
 struct KnotVector{
-    K <: AbstractVector{T} where {T},
-    M <: AbstractVector{<:Integer},
-    T <: AbstractFloat
-} <: AbstractKnotVector{T}
+    K <: AbstractVector{Tv} where {Tv},
+    M <: AbstractVector{Ti} where {Ti},
+    Tv <: AbstractFloat,
+    Ti <: Integer
+} <: AbstractKnotVector{Tv, Ti}
     knot_values::K
     multiplicities::M
     knots_all::K
-    extent::Tuple{T, T}
+    extent::Tuple{Tv, Tv}
     function KnotVector(knot_values, multiplicities)
         @assert length(knot_values)==length(multiplicities) "knot_values and multiplicities must be of the same length."
         @assert knot_values==sort(knot_values) "knot_values must be sorted."
@@ -37,7 +38,8 @@ struct KnotVector{
         new{
             typeof(knot_values),
             typeof(multiplicities),
-            eltype(knot_values)
+            eltype(knot_values),
+            eltype(multiplicities)
         }(
             knot_values,
             multiplicities,
@@ -68,6 +70,7 @@ other multiplicities are 1.
   - `distribution`: The distribution of the internal knots. The options are :equispaced or :random
   - `backend`: The KernelAbstractions backend of the arrays in the object. Defaults to `CPU()`.
   - `float_type`: The type of all floating point arrays. Defaults to `Float32`.
+  - `int_type`: The type of all integer arrays. Defaults to `Int32`.
 """
 function KnotVector(
         n_basis_functions::Integer,
@@ -75,8 +78,9 @@ function KnotVector(
         extent::Tuple{Number, Number} = (0, 1),
         distribution::Symbol = :equispaced,
         backend::Backend = CPU(),
-        float_type::Type{T} = Float32
-)::KnotVector where {T <: AbstractFloat}
+        float_type::Type{Tv} = Float32,
+        int_type::Type{Ti} = Int32
+)::KnotVector where {Tv <: AbstractFloat, Ti <: Integer}
     @assert n_basis_functions - degree ≥ 1
     n_knot_values = n_basis_functions - degree + 1
 
@@ -99,7 +103,7 @@ function KnotVector(
     end
 
     # For now always create a clamped knot vector.
-    multiplicities = ones(Int, n_knot_values)
+    multiplicities = ones(int_type, n_knot_values)
     multiplicities[1] = degree + 1
     multiplicities[end] = degree + 1
     KnotVector(
