@@ -2,7 +2,7 @@ module SplineGridsLinearMapsExt
 using SplineGrids
 using LinearMaps
 
-function LinearMaps.LinearMap(spline_grid::SplineGrids.AbstractSplineGrid{Nin};
+function LinearMaps.LinearMap(spline_grid::SplineGrid{Nin};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin)) where {Nin}
     SplineGrids.validate_partial_derivatives(
         spline_grid, derivative_order

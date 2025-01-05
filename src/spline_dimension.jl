@@ -23,12 +23,12 @@ Defines the set of basis functions for a single dimension, and how it is sampled
     whose support the sample point is in, and the derivatives if requested.
 """
 struct SplineDimension{
-    K <: AbstractKnotVector{Tv, Ti} where {Tv, Ti},
-    S <: AbstractVector{Tv} where {Tv},
-    I <: AbstractVector{Ti} where {Ti},
-    E <: AbstractArray{T, 3} where {T},
     Tv <: AbstractFloat,
-    Ti <: Integer
+    Ti <: Integer,
+    K <: KnotVector{Tv, Ti},
+    S <: AbstractVector{Tv},
+    I <: AbstractVector{Ti},
+    E <: AbstractArray{Tv, 3}
 } <: AbstractSplineDimension{Tv, Ti}
     degree::Int
     max_derivative_order::Int
@@ -47,12 +47,12 @@ struct SplineDimension{
             eval_prev
     )
         new{
+            eltype(eval),
+            eltype(sample_indices),
             typeof(knot_vector),
             typeof(sample_points),
             typeof(sample_indices),
-            typeof(eval),
-            eltype(eval),
-            eltype(sample_indices)
+            typeof(eval)
         }(
             degree,
             max_derivative_order,
@@ -71,7 +71,7 @@ end
         degree::Integer,
         n_sample_points::Integer;
         max_derivative_order::Integer = 0,
-        knot_vector::Union{Nothing, KnotVector} = nothing,
+        knot_vector::Union{Nothing, KnotVector{Tv, Ti}} = nothing,
         backend::Backend = CPU(),
         float_type::Type{Tv} = Float32,
         int_type::Type{Ti} = Int32,
@@ -99,7 +99,7 @@ function SplineDimension(
         degree::Integer,
         n_sample_points::Integer;
         max_derivative_order::Integer = 0,
-        knot_vector::Union{Nothing, KnotVector} = nothing,
+        knot_vector::Union{Nothing, KnotVector{Tv, Ti}} = nothing,
         backend::Backend = CPU(),
         float_type::Type{Tv} = Float32,
         int_type::Type{Ti} = Int32,
@@ -243,13 +243,13 @@ end
 
 """
     decompress(
-        spline_dimension::AbstractSplineDimension{Tv}; derivative_order = 0) where {Tv}
+        spline_dimension::SplineDimension{Tv}; derivative_order::Integer = 0) where {Tv}
 
 Transform `spline_dimension.eval` into a matrix of shape `(n_sample_points, n_points - degree - 1)`
 which explicitly gives the value for each basis function at each sample point.
 """
 function decompress(
-        spline_dimension::AbstractSplineDimension{Tv}; derivative_order = 0) where {Tv}
+        spline_dimension::SplineDimension{Tv}; derivative_order::Integer = 0) where {Tv}
     backend = get_backend(spline_dimension)
 
     (; sample_indices, degree, eval, max_derivative_order) = spline_dimension

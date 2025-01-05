@@ -25,19 +25,20 @@ all information to evaluate the defined spline on the defined grid.
     from the various spline dimensions.
 """
 struct SplineGrid{
-    S <: AbstractSplineDimension{Tv} where {Tv},
-    C <:
-    Union{AbstractArray{Tv}, AbstractControlPoints{Nin, Nout, Tv}} where {Nin, Nout, Tv},
-    D <: Union{AbstractArray{Tv, Nin}, Nothing} where {Tv, Nin},
-    W <: Union{AbstractArray{Tv, Nin}, Nothing} where {Tv, Nin},
-    E <: AbstractArray{Tv} where {Tv},
-    I <: AbstractArray{Ti, Nin} where {Ti, Nin},
-    B <: AbstractArray{Tv} where {Tv},
     Nin,
     Nout,
-    HasWeights,
     Tv <: AbstractFloat,
-    Ti <: Integer
+    Ti <: Integer,
+    S <: SplineDimension{Tv, Ti},
+    C <:
+    Union{AbstractArray{Tv},
+        AbstractControlPoints{Nin, Nout, Tv, Ti}},
+    D <: Union{AbstractArray{Tv, Nin}, Nothing},
+    W <: Union{AbstractArray{Tv, Nin}, Nothing},
+    E <: AbstractArray{Tv},
+    I <: AbstractArray{Ti, Nin},
+    B <: AbstractArray{Tv},
+    HasWeights
 } <: AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti}
     spline_dimensions::NTuple{Nin, S}
     control_points::C
@@ -56,6 +57,10 @@ struct SplineGrid{
             basis_function_products)
         # TODO: Add validation of combination of control points, weights, and basis functions
         new{
+            length(spline_dimensions),
+            size(control_points)[end],
+            eltype(control_points),
+            eltype(sample_indices),
             eltype(spline_dimensions),
             typeof(control_points),
             typeof(denominator),
@@ -63,11 +68,7 @@ struct SplineGrid{
             typeof(eval),
             typeof(sample_indices),
             typeof(basis_function_products),
-            length(spline_dimensions),
-            size(control_points)[end],
-            isa(weights, AbstractArray),
-            eltype(control_points),
-            eltype(sample_indices)
+            isa(weights, AbstractArray)
         }(
             spline_dimensions,
             control_points,
@@ -83,7 +84,7 @@ end
 # TODO: Add indexing functionality such that indexing a spline_grid implies indexing spline_grid.eval
 
 """
-    SplineGrid(spline_dimensions::NTuple{Nin, <:SplineDimension}, Nout::Integer)
+    SplineGrid(spline_dimensions::NTuple{Nin, <:SplineDimension{Tv, Ti}}, Nout::Integer)::SplineGrid{Nin, Tv, Ti} where {Nin, Tv, Ti}
 
 Define a `SplineGrid` from an NTuple of spline dimensions and the number of output dimensions.
 
@@ -93,9 +94,9 @@ Define a `SplineGrid` from an NTuple of spline dimensions and the number of outp
   - `Nout`: The number of output dimensions. I.e. the control points and thus the spline live in ℝ^Nout.
 """
 function SplineGrid(
-        spline_dimensions::NTuple{Nin, <:AbstractSplineDimension{Tv}},
+        spline_dimensions::NTuple{Nin, <:SplineDimension{Tv, Ti}},
         Nout::Integer
-)::AbstractSplineGrid{Nin} where {Nin, Tv}
+)::SplineGrid{Nin, Nout, Tv, Ti} where {Nin, Tv, Ti}
     backend = get_backend(first(spline_dimensions))
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
@@ -161,7 +162,7 @@ end
 end
 
 """
-    evaluate!(spline_grid::AbstractSplineGrid{Nin};
+    evaluate!(spline_grid::SplineGrid{Nin};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractArray = spline_grid.control_points,
         eval::AbstractArray = spline_grid.eval)
@@ -173,11 +174,11 @@ as a linear combination of control with basis function products as coefficients.
 Uses the `control_points` and `eval` arrays from the `spline_grid` by default,
 but different arrays can be specified as a convenience for optimization algorithms.
 """
-function evaluate!(spline_grid::AbstractSplineGrid{Nin};
+function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout, false};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractArray = spline_grid.control_points,
         eval::AbstractArray = spline_grid.eval
-)::Nothing where {Nin}
+)::Nothing where {Nin, Nout}
     (; basis_function_products, spline_dimensions, sample_indices) = spline_grid
     validate_partial_derivatives(spline_dimensions, derivative_order)
     eval .= 0
@@ -246,16 +247,16 @@ end
 end
 
 """
-    evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin};
+    evaluate_adjoint!(spline_grid::SplineGrid{Nin, Nout, false};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractArray = spline_grid.control_points,
-        eval::AbstractArray = spline_grid.eval)
+        eval::AbstractArray = spline_grid.eval)::Nothing where {Nin}
 
 evaluate the adjoint of the linear mapping `control_points -> eval`. This is a computation of the form
 `eval -> control_points`. If we write `evaluate!(spline_grid)` as a matrix vector multiplication `eval = M * control_points`,
 Then the adjoint is given by `v -> M' * v`. This mapping is used in fitting algorithms.
 """
-function evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin};
+function evaluate_adjoint!(spline_grid::SplineGrid{Nin};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractArray = spline_grid.control_points,
         eval::AbstractArray = spline_grid.eval

@@ -52,13 +52,13 @@ end
 # (Computed on CPU)
 function get_global_sample_indices(
         spline_dimensions::NTuple{
-            <:Any, <:AbstractSplineDimension},
-        Nout::Integer)
+            <:Any, <:AbstractSplineDimension{Tv, Ti}},
+        Nout::Integer) where {Tv, Ti}
     backend = get_backend(first(spline_dimensions))
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
     # Assumptions: dim_out = 0, I = (0,...,0)
-    sample_indices = KernelAbstractions.zeros(CPU(), Int, size_eval_grid...)
+    sample_indices = KernelAbstractions.zeros(CPU(), Ti, size_eval_grid...)
     set_global_sample_indices!(sample_indices, spline_dimensions, Nout)
     adapt(backend, sample_indices)
 end

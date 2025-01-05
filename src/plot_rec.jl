@@ -36,7 +36,7 @@ const SPLINE_GRID_COLOR = :blue
     end
 end
 
-@recipe function f(spline_grid::AbstractSplineGrid{1, 1})
+@recipe function f(spline_grid::SplineGrid{1, 1})
     spline_grid = adapt(CPU(), spline_grid)
     (; eval, spline_dimensions) = spline_grid
     (; sample_points, knot_vector) = only(spline_dimensions)
@@ -67,7 +67,7 @@ end
     end
 end
 
-@recipe function f(spline_grid::AbstractSplineGrid{1, 2})
+@recipe function f(spline_grid::SplineGrid{1, 2})
     spline_grid = adapt(CPU(), spline_grid)
     (; eval, control_points) = spline_grid
 
@@ -104,7 +104,7 @@ end
     end
 end
 
-@recipe function f(spline_grid::AbstractSplineGrid{1, 3})
+@recipe function f(spline_grid::SplineGrid{1, 3})
     spline_grid = adapt(CPU(), spline_grid)
     (; eval, control_points) = spline_grid
 
@@ -144,7 +144,7 @@ end
     return nothing
 end
 
-@recipe function f(spline_grid::AbstractSplineGrid{1, 4})
+@recipe function f(spline_grid::SplineGrid{1, 4})
     spline_grid = adapt(CPU(), spline_grid)
     (; eval, control_points) = spline_grid
 
@@ -186,7 +186,7 @@ end
     return nothing
 end
 
-@recipe function f(spline_grid::AbstractSplineGrid{2, 1}; plot_knots = true)
+@recipe function f(spline_grid::SplineGrid{2, 1}; plot_knots = true)
     spline_grid = adapt(CPU(), spline_grid)
     (; spline_dimensions, eval) = spline_grid
 
@@ -231,7 +231,7 @@ end
     end
 end
 
-@recipe function f(spline_grid::AbstractSplineGrid{2, 2})
+@recipe function f(spline_grid::SplineGrid{2, 2})
     spline_grid = adapt(CPU(), spline_grid)
     (; eval, spline_dimensions) = spline_grid
 
@@ -266,7 +266,7 @@ end
     end
 end
 
-@recipe function f(spline_grid::AbstractSplineGrid{2, 3})
+@recipe function f(spline_grid::SplineGrid{2, 3})
     spline_grid = adapt(CPU(), spline_grid)
     (; eval) = spline_grid
 

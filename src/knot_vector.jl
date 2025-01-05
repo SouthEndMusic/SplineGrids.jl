@@ -9,10 +9,10 @@ Defines a knot vector.
   - `multiplicities`: The multiplicity of each knot in `knots`.
 """
 struct KnotVector{
-    K <: AbstractVector{Tv} where {Tv},
-    M <: AbstractVector{Ti} where {Ti},
     Tv <: AbstractFloat,
-    Ti <: Integer
+    Ti <: Integer,
+    K <: AbstractVector{Tv},
+    M <: AbstractVector{Ti}
 } <: AbstractKnotVector{Tv, Ti}
     knot_values::K
     multiplicities::M
@@ -36,10 +36,10 @@ struct KnotVector{
         )
         synchronize(backend)
         new{
-            typeof(knot_values),
-            typeof(multiplicities),
             eltype(knot_values),
-            eltype(multiplicities)
+            eltype(multiplicities),
+            typeof(knot_values),
+            typeof(multiplicities)
         }(
             knot_values,
             multiplicities,

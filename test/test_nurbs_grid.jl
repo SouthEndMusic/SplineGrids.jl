@@ -23,16 +23,13 @@ end
 end
 
 @testset "Circle" begin
-    using SplineGrids
-    using Plots
-
     n_control_points = 9
     degree = 2
     n_sample_points = 500
     dim_out = 2
 
-    knot_values = adapt(backend, [0, π / 2, π, 3π / 2, 2π])
-    multiplicities = adapt(backend, [3, 2, 2, 2, 3])
+    knot_values = adapt(backend, Float32[0, π / 2, π, 3π / 2, 2π])
+    multiplicities = adapt(backend, Int32[3, 2, 2, 2, 3])
     knot_vector = KnotVector(knot_values, multiplicities)
 
     spline_dimension = SplineDimension(

@@ -1,7 +1,7 @@
 function NURBSGrid(
-        spline_dimensions::NTuple{Nin, <:AbstractSplineDimension{Tv}},
+        spline_dimensions::NTuple{Nin, <:SplineDimension{Tv, Ti}},
         Nout::Integer
-)::AbstractSplineGrid{Nin} where {Nin, Tv}
+)::SplineGrid{Nin, Nout, Tv, Ti} where {Nin, Tv, Ti}
     backend = get_backend(first(spline_dimensions))
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
@@ -85,10 +85,11 @@ end
 end
 
 """
-    evaluate!(spline_grid::AbstractNURBSGrid;
+    evaluate!(
+        spline_grid::AbstractNURBSGrid{Nin};
         control_points::AbstractArray = spline_grid.control_points,
         weights::AbstractArray = spline_grid.weights,
-        eval::AbstractArray = spline_grid.eval)
+        eval::AbstractArray = spline_grid.eval)::Nothing where {Nin}
 
 Evaluate the NURBS grid, that is: take the evaluated basis functions for each sample point
 for each SplineDimension, and compute the output grid on each sample point combination
@@ -99,7 +100,8 @@ but different arrays can be specified as a convenience for optimization algorith
 
 NOTE: At the moment computing derivatives of NURBS grids is not supported.
 """
-function evaluate!(nurbs_grid::AbstractNURBSGrid{Nin};
+function evaluate!(
+        nurbs_grid::AbstractNURBSGrid{Nin};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractArray = nurbs_grid.control_points,
         weights::AbstractArray = nurbs_grid.weights,
