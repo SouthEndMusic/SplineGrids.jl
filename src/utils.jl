@@ -52,13 +52,13 @@ end
 # (Computed on CPU)
 function get_global_sample_indices(
         spline_dimensions::NTuple{
-            <:Any, <:AbstractSplineDimension},
-        Nout::Integer)
+            <:Any, <:AbstractSplineDimension{Tv, Ti}},
+        Nout::Integer) where {Tv, Ti}
     backend = get_backend(first(spline_dimensions))
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
     # Assumptions: dim_out = 0, I = (0,...,0)
-    sample_indices = KernelAbstractions.zeros(CPU(), Int, size_eval_grid...)
+    sample_indices = KernelAbstractions.zeros(CPU(), Ti, size_eval_grid...)
     set_global_sample_indices!(sample_indices, spline_dimensions, Nout)
     adapt(backend, sample_indices)
 end
@@ -91,7 +91,7 @@ function get_control_point_grid_size(spline_dimensions::NTuple{
 end
 
 # Outer product of n vectors, with thanks to Michael Abbott
-function outer!(A::AbstractArray{T, N}, vs::Vararg{AbstractArray, N}) where {T, N}
+function outer!(A::AbstractArray{Tv, N}, vs::Vararg{AbstractArray, N}) where {Tv, N}
     vecs = ntuple(n -> reshape(vs[n], ntuple(Returns(1), n - 1)..., :), N)
     broadcast!(*, A, vecs...)
 end
@@ -167,16 +167,20 @@ function KernelAbstractions.get_backend(spline_dimension::AbstractSplineDimensio
     get_backend(spline_dimension.eval)
 end
 
-function Adapt.adapt(backend::Backend,
-        knot_vector::AbstractKnotVector{T})::AbstractKnotVector{T} where {T}
+function Adapt.adapt(
+        backend::Backend,
+        knot_vector::AbstractKnotVector{Ti, Tv}
+)::AbstractKnotVector{Ti, Tv} where {Ti, Tv}
     KnotVector(
         adapt(backend, knot_vector.knot_values),
         adapt(backend, knot_vector.multiplicities)
     )
 end
 
-function Adapt.adapt(backend::Backend,
-        spline_dimension::AbstractSplineDimension{T})::AbstractSplineDimension{T} where {T}
+function Adapt.adapt(
+        backend::Backend,
+        spline_dimension::AbstractSplineDimension{Ti, Tv}
+)::AbstractSplineDimension{Ti, Tv} where {Ti, Tv}
     SplineDimension(
         spline_dimension.degree,
         spline_dimension.max_derivative_order,
@@ -188,10 +192,11 @@ function Adapt.adapt(backend::Backend,
     )
 end
 
-function Adapt.adapt(backend::Backend,
-        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, T}
+function Adapt.adapt(
+        backend::Backend,
+        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti}
 )::AbstractSplineGrid{
-        Nin, Nout, HasWeights, T} where {Nin, Nout, HasWeights, T}
+        Nin, Nout, HasWeights, Tv, Ti} where {Nin, Nout, HasWeights, Tv, Ti}
     (; spline_dimensions) = spline_grid
     SplineGrid(
         ntuple(i -> adapt(backend, spline_dimensions[i]), length(spline_dimensions)),
@@ -203,3 +208,7 @@ function Adapt.adapt(backend::Backend,
         adapt(backend, spline_grid.basis_function_products)
     )
 end
+
+get_Nin(::AbstractSplineGrid{Nin}) where {Nin} = Nin
+get_Tv(::AbstractSplineGrid{Nin, Nout, Tv}) where {Nin, Nout, Tv} = Tv
+get_Ti(::AbstractSplineGrid{Nin, Nout, Tv, Ti}) where {Nin, Nout, Tv, Ti} = Ti

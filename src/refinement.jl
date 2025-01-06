@@ -37,10 +37,10 @@ end
 
 """
     RefinementMatrix(
-        spline_dimension::AbstractSplineDimension{Tv},
-        knot_span_index::Ti,
+        spline_dimension::SplineDimension{Tv, Ti},
+        knot_span_index::Integer,
         knot_new
-        )::AbstractRefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
+        )::RefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
 
 Build a refinement matrix per row given a knot vector and a to be added new knot.
 
@@ -51,10 +51,10 @@ Build a refinement matrix per row given a knot vector and a to be added new knot
   - `knot_new`: The value of the new knot
 """
 function RefinementMatrix(
-        spline_dimension::AbstractSplineDimension{Tv},
-        knot_span_index::Ti,
+        spline_dimension::SplineDimension{Tv, Ti},
+        knot_span_index::Integer,
         knot_new::Any
-)::AbstractRefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
+)::RefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
     (; degree, knot_vector) = spline_dimension
 
     n_basis_functions = get_n_basis_functions(spline_dimension)
@@ -134,10 +134,13 @@ end
 
 """
     insert_knot(
-            spline_dimension::SplineDimension,
-            knot_new::AbstractFloat;
-            recompute_sample_indices::Bool = true,
-            evaluate::Bool = true::Tuple{SplineDimension, RefinementMatrix}
+        spline_dimension::SplineDimension{Tv, Ti},
+        knot_new::AbstractFloat;
+        recompute_sample_indices::Bool = true,
+        evaluate::Bool = true)::Tuple{
+            SplineDimension{Tv, Ti},
+            RefinementMatrix{Tv, Ti}
+        } where {Tv, Ti}
 
 Create a new spline dimension whose knot vector has the new knot with multiplicity 1.
 
@@ -156,11 +159,14 @@ Create a new spline dimension whose knot vector has the new knot with multiplici
     the basis functions after the knot insertion.
 """
 function insert_knot(
-        spline_dimension::SplineDimension,
+        spline_dimension::SplineDimension{Tv, Ti},
         knot_new::AbstractFloat;
         recompute_sample_indices::Bool = true,
         evaluate::Bool = true
-)::Tuple{SplineDimension, RefinementMatrix}
+)::Tuple{
+        SplineDimension{Tv, Ti},
+        RefinementMatrix{Tv, Ti}
+} where {Tv, Ti}
     (; knot_vector) = spline_dimension
 
     # Add new knot to knot vector
@@ -181,12 +187,11 @@ end
 
 """
     insert_knot(
-    spline_grid::AbstractSplineGrid{Nin, Nout},
-    knot_new::AbstractFloat,
-    dim_refinement::Integer;
-    evaluate_spline_dimension::Bool = true,
-    recompute_global_sample_indices = true
-    )::Tuple{SplineGrid, RefinementMatrix} where {Nin, Nout}
+        spline_grid::A,
+        dim_refinement::Integer,
+        knot_new::AbstractFloat;
+        evaluate_spline_dimension::Bool = true,
+        recompute_global_sample_indices = true)::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
 
 Create a new spline grid where a new knot is added to the knot vector underlying the indicated spline dimension.
 
@@ -208,12 +213,12 @@ Create a new spline grid where a new knot is added to the knot vector underlying
     the basis functions after the knot insertion for the knot insertion dimension.
 """
 function insert_knot(
-        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, T},
+        spline_grid::A,
         dim_refinement::Integer,
         knot_new::AbstractFloat;
         evaluate_spline_dimension::Bool = true,
         recompute_global_sample_indices = true
-)::Tuple{SplineGrid, RefinementMatrix} where {Nin, Nout, HasWeights, T}
+)::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
     (; spline_dimensions) = spline_grid
 
     @assert !is_nurbs(spline_grid) "Knot insertion not supported for NURBS"
@@ -235,8 +240,9 @@ function insert_knot(
 end
 
 """
-    refine(spline_dimension::SplineDimension;
-    knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing)::Tuple{SplineDimension, RefinementMatrix}
+    refine(
+        spline_dimension::SplineDimension{Tv, Ti};
+        knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing)::Tuple{SplineDimension{Tv, Ti}, RefinementMatrix{Tv, Ti}} where {Tv, Ti}
 
 Create a new spline dimension with multiple knots added to the underlying knot vector.
 
@@ -253,9 +259,9 @@ Create a new spline dimension with multiple knots added to the underlying knot v
     the basis functions after the refinement.
 """
 function refine(
-        spline_dimension::AbstractSplineDimension{Tv};
+        spline_dimension::SplineDimension{Tv, Ti};
         knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing
-)::Tuple{SplineDimension, RefinementMatrix} where {Tv}
+)::Tuple{SplineDimension{Tv, Ti}, RefinementMatrix{Tv, Ti}} where {Tv, Ti}
     (; knot_values) = spline_dimension.knot_vector
     backend = get_backend(spline_dimension)
 
@@ -266,7 +272,7 @@ function refine(
 
     # Start with refinement matrix = identity matrix
     n_basis_functions = get_n_basis_functions(spline_dimension)
-    refinement_matrix = rmeye(n_basis_functions; backend, Tv)
+    refinement_matrix = rmeye(n_basis_functions; backend, float_type = Tv, int_type = Ti)
 
     # Loop over knots to insert them in the knot vector and multiply the 
     # refinement matrices to obtain the refinement matrix of the whole refinement
@@ -284,11 +290,10 @@ end
 
 """
     refine(
-        spline_grid::AbstractSplineGrid{Nin, Nout, T},
+        spline_grid::A,
         dim_refinement::Integer;
-        knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing,
-        recompute_global_sample_indices = true
-        )::Tuple{SplineGrid, RefinementMatrix} where {Nin, Nout, T}
+        knots_new::Union{AbstractVector{<:AbstractFloat}, Nothing} = nothing,
+        recompute_global_sample_indices::Bool = true)::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
 
 Create a new spline grid where multiple knots are added to the knot vector underlying the indicated spline dimension.
 
@@ -309,11 +314,11 @@ Create a new spline grid where multiple knots are added to the knot vector under
     the basis functions after the knot insertion for the knot insertion dimension.
 """
 function refine(
-        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, T},
+        spline_grid::A,
         dim_refinement::Integer;
-        knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing,
+        knots_new::Union{AbstractVector{<:AbstractFloat}, Nothing} = nothing,
         recompute_global_sample_indices::Bool = true
-)::Tuple{SplineGrid, RefinementMatrix} where {Nin, Nout, HasWeights, T}
+)::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
     (; spline_dimensions) = spline_grid
 
     @assert !is_nurbs(spline_grid) "Knot insertion not supported for NURBS"
@@ -336,21 +341,21 @@ end
 
 """
     refine(
-        spline_grid::AbstractSplineGrid{Nin, Nout, false, T},
-        spline_dimension_new::AbstractSplineDimension{T},
+        spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv, Ti},
+        spline_dimension_new::SplineDimension{Tv, Ti},
         dim_refinement::Integer,
-        refinement_matrix::RefinementMatrix;
-        recompute_global_sample_indices::Bool = true) where {Nin, Nout, T}
+        refinement_matrix::RefinementMatrix{Tv, Ti};
+        recompute_global_sample_indices::Bool = true) where {Nin, Nout, Tv, Ti}
 
 Update the spline grid with a refined spline dimension in the specified dimension with the associated refinement matrix.
 """
 function refine(
-        spline_grid::AbstractSplineGrid{Nin, Nout, false, T},
-        spline_dimension_new::AbstractSplineDimension{T},
+        spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv, Ti},
+        spline_dimension_new::SplineDimension{Tv, Ti},
         dim_refinement::Integer,
-        refinement_matrix::RefinementMatrix;
+        refinement_matrix::RefinementMatrix{Tv, Ti};
         recompute_global_sample_indices::Bool = true
-) where {Nin, Nout, T}
+) where {Nin, Nout, Tv, Ti}
     (; spline_dimensions, control_points, sample_indices) = spline_grid
 
     # The number of control points added in the refinement dimension
@@ -366,7 +371,7 @@ function refine(
     backend = get_backend(spline_dimension_new)
     control_points_new = allocate(
         backend,
-        T,
+        Tv,
         size_cp_grid_new...
     )
 

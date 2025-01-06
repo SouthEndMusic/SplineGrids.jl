@@ -3,30 +3,30 @@
 ```@docs
 KnotVector(::Integer, ::Integer)
 SplineDimension(::Integer, ::Integer, ::Integer)
-SplineGrid(::NTuple{Nin, <:SplineDimension}, ::Integer) where Nin
+SplineGrid(::NTuple{Nin, <:SplineDimension{Tv, Ti}}, ::Integer) where {Nin, Tv, Ti}
 rmeye(::Integer)
-RefinementMatrix(::SplineGrids.AbstractSplineDimension{Tv}, ::Ti, ::Any) where {Tv, Ti <: Integer}
+RefinementMatrix(::SplineDimension{Tv, Ti}, ::Integer, ::Any) where {Tv, Ti <: Integer}
 ```
 
 # Evaluation
 
 ```@docs
 evaluate!(::SplineDimension)
-evaluate!(::SplineGrids.AbstractSplineGrid{Nin, Nout}) where {Nin, Nout}
-evaluate!(::SplineGrids.AbstractSplineGrid{Nin, Nout, true})  where {Nin, Nout}
-evaluate_adjoint!(::SplineGrids.AbstractSplineGrid{Nin, Nout}) where{Nin, Nout}
-mult!(::A, ::SplineGrids.AbstractRefinementMatrix{Tv}, ::A, ::Integer) where {Tv, A <: AbstractArray{Tv}}
+evaluate!(::SplineGrids.AbstractSplineGrid{Nin, Nout, false}) where {Nin, Nout}
+evaluate!(SplineGrids.AbstractNURBSGrid{Nin}) where {Nin}
+evaluate_adjoint!(::SplineGrid{Nin}) where {Nin}
+mult!(::A, ::RefinementMatrix{Tv}, ::A, ::Integer) where {Tv, A <: AbstractArray{Tv}}
 ```
 
 # Geometric operations
 
 ```@docs
 insert_knot(::KnotVector, ::AbstractFloat)
-insert_knot(::SplineDimension, ::AbstractFloat)
-insert_knot(::SplineGrids.AbstractSplineGrid{Nin, Nout, HasWeights, T}, ::Integer, ::AbstractFloat) where {Nin, Nout, HasWeights, T}
-refine(::SplineGrids.AbstractSplineDimension{Tv}) where {Tv}
-refine(::SplineGrids.AbstractSplineGrid{Nin, Nout, HasWeights, T}, ::Integer) where {Nin, Nout, HasWeights, T}
-refine(::SplineGrids.AbstractSplineGrid{Nin, Nout, false, T}, ::SplineGrids.AbstractSplineDimension{T}, ::Integer, ::RefinementMatrix) where {Nin, Nout, T}
+insert_knot(::SplineDimension{Tv, Ti}, ::AbstractFloat) where {Tv, Ti}
+insert_knot(::A, ::Integer, ::AbstractFloat) where {A <: SplineGrids.AbstractSplineGrid}
+refine(::SplineDimension{Tv, Ti}) where {Tv, Ti}
+refine(::A, ::Integer) where {A <: SplineGrids.AbstractSplineGrid}
+refine(::SplineGrids.AbstractSplineGrid{Nin, Nout, false, Tv, Ti}, ::SplineDimension{Tv, Ti}, ::Integer, ::RefinementMatrix{Tv, Ti}) where {Nin, Nout, Tv, Ti}
 ```
 
 # Structs

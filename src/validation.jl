@@ -21,9 +21,9 @@ function validate_partial_derivatives(
 end
 
 function validate_partial_derivatives(
-        spline_grid::AbstractSplineGrid,
+        spline_grid::AbstractSplineGrid{Nin, Nout, false},
         derivative_order::NTuple{Nin, <:Integer}
-)::Nothing where {Nin}
+)::Nothing where {Nin, Nout}
     validate_partial_derivatives(spline_grid.spline_dimensions, derivative_order)
 end
 

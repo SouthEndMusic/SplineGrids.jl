@@ -11,8 +11,8 @@ degree = 2
 n_sample_points = 500
 dim_out = 2
 
-knot_values = [0, π / 2, π, 3π / 2, 2π]
-multiplicities = [3, 2, 2, 2, 3]
+knot_values = Float32[0, π / 2, π, 3π / 2, 2π]
+multiplicities = Int32[3, 2, 2, 2, 3]
 knot_vector = KnotVector(knot_values, multiplicities)
 
 spline_dimension = SplineDimension(n_control_points, degree, n_sample_points; knot_vector)

@@ -19,13 +19,15 @@ using Accessors
 # - Nin: Number of input parameters
 # - Nout: number of output parameters
 # - HasWeights: Whether the spline has weights and thus is a NURBS
-# - T: The float type
-abstract type AbstractKnotVector{T <: AbstractFloat} end
-abstract type AbstractSplineDimension{T <: AbstractFloat} end
-abstract type AbstractSplineGrid{Nin, Nout, HasWeights, T <: AbstractFloat} end
-const AbstractNURBSGrid = AbstractSplineGrid{Nin, Nout, true, T} where {Nin, Nout, T}
-
+# - Tv: The floating punt number type
+# - Ti: The integer type
+abstract type AbstractKnotVector{Tv <: AbstractFloat, Ti <: Integer} end
+abstract type AbstractSplineDimension{Tv <: AbstractFloat, Ti <: Integer} end
+abstract type AbstractSplineGrid{Nin, Nout, HasWeights, Tv <: AbstractFloat, Ti <: Integer} end
 abstract type AbstractRefinementMatrix{Tv, Ti <: Integer} end
+abstract type AbstractControlPoints{Nin, Nout, Tv <: AbstractFloat, Ti <: Integer} end
+const AbstractNURBSGrid = AbstractSplineGrid{
+    Nin, Nout, true, Tv, Ti} where {Nin, Nout, Tv, Ti}
 
 include("util_kernels.jl")
 include("utils.jl")

@@ -17,10 +17,10 @@ The non-zeros are stored in a dense vector per row.
   - `nzval`: The nonzero values in the matrix
 """
 struct RefinementMatrix{
-    I <: AbstractVector{Ti} where {Ti},
-    V <: AbstractVector{Tv} where {Tv},
     Tv,
-    Ti <: Integer
+    Ti <: Integer,
+    I <: AbstractVector{Ti} where {Ti},
+    V <: AbstractVector{Tv} where {Tv}
 } <: AbstractRefinementMatrix{Tv, Ti}
     m::Int
     n::Int
@@ -46,22 +46,22 @@ struct RefinementMatrix{
             error("Invalid rows: $(findall(x -> !x, valid_row)).")
         end
         new{
-            typeof(row_pointer),
-            typeof(nzval),
             eltype(nzval),
-            eltype(row_pointer)
+            eltype(row_pointer),
+            typeof(row_pointer),
+            typeof(nzval)
         }(
             m, n, row_pointer, column_start, nzval
         )
     end
 end
 
-Base.size(A::AbstractRefinementMatrix) = (A.m, A.n)
-Base.length(A::AbstractRefinementMatrix) = A.m * A.n
+Base.size(A::RefinementMatrix) = (A.m, A.n)
+Base.length(A::RefinementMatrix) = A.m * A.n
 
 function Base.:(==)(
-        A::AbstractRefinementMatrix{Tv, Ti},
-        B::AbstractRefinementMatrix{Tv, Ti}
+        A::RefinementMatrix{Tv, Ti},
+        B::RefinementMatrix{Tv, Ti}
 ) where {Tv, Ti}
     (size(A) == size(B)) &&
         (A.row_pointer == B.row_pointer) &&
@@ -70,7 +70,7 @@ function Base.:(==)(
 end
 
 function Base.getindex(
-        refinement_matrix::AbstractRefinementMatrix{Tv}, i::Integer, j::Integer
+        refinement_matrix::RefinementMatrix{Tv}, i::Integer, j::Integer
 )::Tv where {Tv}
     (; m, n, row_pointer, column_start, nzval) = refinement_matrix
     if !((1 ≤ i ≤ m) && (1 ≤ j ≤ n))
@@ -86,7 +86,7 @@ function Base.getindex(
     end
 end
 
-function Adapt.adapt(backend::Backend, A::AbstractRefinementMatrix)
+function Adapt.adapt(backend::Backend, A::RefinementMatrix)
     if backend == get_backend(A.nzval)
         A
     else
@@ -272,9 +272,9 @@ end
 end
 
 function Base.:*(
-        A::AbstractRefinementMatrix{Tv, Ti},
-        B::AbstractRefinementMatrix{Tv, Ti}
-)::AbstractRefinementMatrix{Tv, Ti} where {Tv, Ti}
+        A::RefinementMatrix{Tv, Ti},
+        B::RefinementMatrix{Tv, Ti}
+)::RefinementMatrix{Tv, Ti} where {Tv, Ti}
     if A.n != B.m
         throw(DimensionMismatch("Inner dimensions must match"))
     end
@@ -347,7 +347,7 @@ end
     end
 end
 
-function Base.collect(A::AbstractRefinementMatrix{Tv}) where {Tv}
+function Base.collect(A::RefinementMatrix{Tv}) where {Tv}
     backend = get_backend(A.nzval)
     out = KernelAbstractions.zeros(backend, Tv, A.m, A.n)
 
@@ -397,7 +397,7 @@ end
 """
     mult!(
             control_points_new::A,
-            refinement_matrix::AbstractRefinementMatrix{Tv},
+            refinement_matrix::RefinementMatrix{Tv},
             control_points::A,
             dim_refinement::Integer)::Nothing where {Tv, A <: AbstractArray{Tv}}
 
@@ -412,7 +412,7 @@ Multiply each 'sub-vector' of `control_points` along the refinement dimension by
 """
 function mult!(
         control_points_new::A,
-        refinement_matrix::AbstractRefinementMatrix{Tv},
+        refinement_matrix::RefinementMatrix{Tv},
         control_points::A,
         dim_refinement::Integer
 )::Nothing where {Tv, A <: AbstractArray{Tv}}
@@ -448,8 +448,8 @@ end
     rmeye(
         n::Integer;
         backend::Backend = CPU(),
-        Tv::Type{V} = Float32,
-        Ti::Type{I} = Int)::AbstractRefinementMatrix{V, I} where {V, I <: Integer}
+        float_type::Type{Tv} = Float32,
+        int_type::Type{Ti} = Int)::RefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
 
 Construct an identity refinement matrix.
 
@@ -457,18 +457,18 @@ Construct an identity refinement matrix.
 
   - `n`: The size of the identity matrix is n×n
   - `backend`: The KernelAbstractions backend of the matrix data
-  - `Tv`: The value type of the matrix data
-  - `Ti`: The integer type of the matrix data
+  - `float_type`: The value type of the matrix data
+  - `int_type`: The integer type of the matrix data
 """
 function rmeye(
         n::Integer;
         backend::Backend = CPU(),
-        Tv::Type{V} = Float32,
-        Ti::Type{I} = Int
-)::AbstractRefinementMatrix{V, I} where {V, I <: Integer}
-    row_pointer = Ti.(collect(1:n))
-    column_start = Ti.(collect(1:n))
-    nzval = ones(Tv, n)
+        float_type::Type{Tv} = Float32,
+        int_type::Type{Ti} = Int32
+)::RefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
+    row_pointer = int_type.(collect(1:n))
+    column_start = int_type.(collect(1:n))
+    nzval = ones(float_type, n)
     eye = RefinementMatrix(n, n, row_pointer, column_start, nzval)
     adapt(backend, eye)
 end
