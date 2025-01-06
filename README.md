@@ -10,7 +10,7 @@ SplineGrids.jl is designed to efficiently evaluate a broad class of spline objec
 - Any number of input and output dimensions (see the examples [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_dimensions/))
 - Any degree of basis functions and type of knot vector
 - Using weights to define NURBS (see an example [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_nurbs/))
-- Any combination of partial derivatives (not for NURBS) (see an example [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_derivatives/))
+- Any combination of partial derivatives (not for NURBS, coming up) (see an example [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_derivatives/))
 - Local refinement (coming up)
 - CPU and GPU backends via [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl) (tested with `CUDABackend`)
 
