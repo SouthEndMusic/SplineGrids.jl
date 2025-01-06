@@ -23,9 +23,9 @@ mult!(::A, ::RefinementMatrix{Tv}, ::A, ::Integer) where {Tv, A <: AbstractArray
 ```@docs
 insert_knot(::KnotVector, ::AbstractFloat)
 insert_knot(::SplineDimension{Tv, Ti}, ::AbstractFloat) where {Tv, Ti}
-insert_knot(::A, ::Integer, ::AbstractFloat) where {A <: SplineGrid}
+insert_knot(::A, ::Integer, ::AbstractFloat) where {A <: SplineGrids.AbstractSplineGrid}
 refine(::SplineDimension{Tv, Ti}) where {Tv, Ti}
-refine(::A, ::Integer) where {A <: SplineGrid}
+refine(::A, ::Integer) where {A <: SplineGrids.AbstractSplineGrid}
 refine(::SplineGrids.AbstractSplineGrid{Nin, Nout, false, Tv, Ti}, ::SplineDimension{Tv, Ti}, ::Integer, ::RefinementMatrix{Tv, Ti}) where {Nin, Nout, Tv, Ti}
 ```
 
