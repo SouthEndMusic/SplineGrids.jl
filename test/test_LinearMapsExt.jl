@@ -19,7 +19,8 @@ end
     n_sample_points = (26, 73)
     Nout = 3
 
-    spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; backend)
+    spline_dimensions = SplineDimension.(
+        n_control_points, degree, n_sample_points; backend, float_type = Float64)
     spline_grid = SplineGrid(spline_dimensions, Nout)
     copyto!(spline_grid.control_points, rand(size(spline_grid.control_points)...))
     evaluate!(spline_grid)

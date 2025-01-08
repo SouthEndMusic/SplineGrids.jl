@@ -364,8 +364,8 @@ function Base.collect(A::RefinementMatrix{Tv}) where {Tv}
 end
 
 @kernel function refinement_matrix_array_mul_kernel(
-        control_points_new,
-        @Const(control_points),
+        Y,
+        @Const(B),
         @Const(row_pointer),
         @Const(column_start),
         @Const(nzval),
@@ -376,69 +376,68 @@ end
     # i: refinement matrix row index
     i = I[dim_refinement]
 
-    Ndim = ndims(control_points)
+    Ndim = ndims(B)
     column_start_, column_end = get_column_range(
         row_pointer, column_start, length(nzval), i)
     nzval_pointer = row_pointer[i]
 
-    out = zero(eltype(control_points_new))
+    out = zero(eltype(Y))
 
     # j: refinement_matrix column index
     for j in column_start_:column_end
-        control_point_indices = ntuple(
+        B_indices = ntuple(
             dim -> (dim == dim_refinement) ? j : I[dim], Ndim)
-        out += nzval[nzval_pointer] * control_points[control_point_indices...]
+        out += nzval[nzval_pointer] * B[B_indices...]
         nzval_pointer += 1
     end
 
-    control_points_new[I] = out
+    Y[I] = out
 end
 
 """
     mult!(
-            control_points_new::A,
-            refinement_matrix::RefinementMatrix{Tv},
-            control_points::A,
-            dim_refinement::Integer)::Nothing where {Tv, A <: AbstractArray{Tv}}
+        Y::V,
+        A::RefinementMatrix{Tv},
+        B::V,
+        dim_refinement::Integer)::Nothing where {Tv, V <: AbstractArray{Tv}}
 
 Multiply each 'sub-vector' of `control_points` along the refinement dimension by the refinement matrix in-place.
 
 ## Inputs
 
-  - `control_points_new`: The target array of the multiplication
-  - `refinement_matrix`: The matrix each 'sub-vector' will be multiplied by
-  - `control_points`: The array that will be multiplied by the refinement matrix
+  - `Y`: The target array of the multiplication
+  - `A`: The matrix each 'sub-vector' of `B` will be multiplied by
+  - `B`: The array that will be multiplied by the refinement matrix
   - `dim_refinement`: The dimension along which the refinement matrix multiplication will take place
 """
 function mult!(
-        control_points_new::A,
-        refinement_matrix::RefinementMatrix{Tv},
-        control_points::A,
+        Y::V,
+        A::RefinementMatrix{Tv},
+        B::V,
         dim_refinement::Integer
-)::Nothing where {Tv, A <: AbstractArray{Tv}}
-    backend = get_backend(control_points)
-    size_control_points = size(control_points)
-    size_control_points_new = size(control_points_new)
-    for (dim, (dimsize, dimsize_new)) in enumerate(zip(
-        size_control_points, size_control_points_new))
+)::Nothing where {Tv, V <: AbstractArray{Tv}}
+    backend = get_backend(B)
+    size_B = size(B)
+    size_Y = size(Y)
+    for (dim, (dimsize, dimsize_new)) in enumerate(zip(size_B, size_Y))
         if dim == dim_refinement
-            if !((refinement_matrix.m == size_control_points_new[dim]) &&
-                 (refinement_matrix.n == size_control_points[dim]))
-                error("Refinement matrix size does not match `control_points` and `control_points_new` along refinement dimension $dim.")
+            if !((A.m == size_Y[dim]) &&
+                 (A.n == size_B[dim]))
+                error("Refinement matrix size does not match `B` and `Y` along refinement dimension $dim.")
             end
         else
             (dimsize != dimsize_new) &&
-                error("`control_points` and `control_points_new` don't have the same size along dimension $dim.")
+                error("`B` and `Y` don't have the same size along dimension $dim.")
         end
     end
     refinement_matrix_array_mul_kernel(backend)(
-        control_points_new,
-        control_points,
-        refinement_matrix.row_pointer,
-        refinement_matrix.column_start,
-        refinement_matrix.nzval,
+        Y,
+        B,
+        A.row_pointer,
+        A.column_start,
+        A.nzval,
         dim_refinement,
-        ndrange = size_control_points_new
+        ndrange = size_Y
     )
     synchronize(backend)
     return nothing

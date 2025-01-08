@@ -167,29 +167,60 @@ function KernelAbstractions.get_backend(spline_dimension::AbstractSplineDimensio
     get_backend(spline_dimension.eval)
 end
 
+function KernelAbstractions.get_backend(control_points::AbstractControlPoints)
+    get_backend(obtain(control_points))
+end
+
 function Adapt.adapt(
         backend::Backend,
         knot_vector::AbstractKnotVector{Ti, Tv}
 )::AbstractKnotVector{Ti, Tv} where {Ti, Tv}
-    KnotVector(
-        adapt(backend, knot_vector.knot_values),
-        adapt(backend, knot_vector.multiplicities)
-    )
+    if backend == get_backend(knot_vector.knot_values)
+        knot_vector
+    else
+        KnotVector(
+            adapt(backend, knot_vector.knot_values),
+            adapt(backend, knot_vector.multiplicities)
+        )
+    end
 end
 
 function Adapt.adapt(
         backend::Backend,
         spline_dimension::AbstractSplineDimension{Ti, Tv}
 )::AbstractSplineDimension{Ti, Tv} where {Ti, Tv}
-    SplineDimension(
-        spline_dimension.degree,
-        spline_dimension.max_derivative_order,
-        adapt(backend, spline_dimension.knot_vector),
-        adapt(backend, spline_dimension.sample_points),
-        adapt(backend, spline_dimension.sample_indices),
-        adapt(backend, spline_dimension.eval),
-        adapt(backend, spline_dimension.eval_prev)
-    )
+    if backend == get_backend(spline_dimension)
+        spline_dimension
+    else
+        SplineDimension(
+            spline_dimension.degree,
+            spline_dimension.max_derivative_order,
+            adapt(backend, spline_dimension.knot_vector),
+            adapt(backend, spline_dimension.sample_points),
+            adapt(backend, spline_dimension.sample_indices),
+            adapt(backend, spline_dimension.eval),
+            adapt(backend, spline_dimension.eval_prev)
+        )
+    end
+end
+
+function Adapt.adapt(
+        backend::Backend,
+        control_points::AbstractControlPoints
+)
+    if get_backend(control_points) == backend
+        control_points
+    else
+        if control_points isa DefaultControlPoints
+            DefaultControlPoints(adapt(backend, control_points.control_points))
+        else # control_points isa LocallyRefinedControlPoints
+            LocallyRefinedControlPoints(
+                adapt(backend, control_points.control_points_base),
+                map(cp -> adapt(backend, cp), control_points.control_points_refined),
+                map(lr -> adapt(backend, lr), control_points.local_refinements)
+            )
+        end
+    end
 end
 
 function Adapt.adapt(
@@ -198,17 +229,17 @@ function Adapt.adapt(
 )::AbstractSplineGrid{
         Nin, Nout, HasWeights, Tv, Ti} where {Nin, Nout, HasWeights, Tv, Ti}
     (; spline_dimensions) = spline_grid
-    SplineGrid(
-        ntuple(i -> adapt(backend, spline_dimensions[i]), length(spline_dimensions)),
-        adapt(backend, spline_grid.control_points),
-        adapt(backend, spline_grid.denominator),
-        adapt(backend, spline_grid.weights),
-        adapt(backend, spline_grid.eval),
-        adapt(backend, spline_grid.sample_indices),
-        adapt(backend, spline_grid.basis_function_products)
-    )
+    if backend == get_backend(first(spline_dimensions))
+        spline_grid
+    else
+        SplineGrid(
+            ntuple(i -> adapt(backend, spline_dimensions[i]), length(spline_dimensions)),
+            adapt(backend, spline_grid.control_points),
+            adapt(backend, spline_grid.denominator),
+            adapt(backend, spline_grid.weights),
+            adapt(backend, spline_grid.eval),
+            adapt(backend, spline_grid.sample_indices),
+            adapt(backend, spline_grid.basis_function_products)
+        )
+    end
 end
-
-get_Nin(::AbstractSplineGrid{Nin}) where {Nin} = Nin
-get_Tv(::AbstractSplineGrid{Nin, Nout, Tv}) where {Nin, Nout, Tv} = Tv
-get_Ti(::AbstractSplineGrid{Nin, Nout, Tv, Ti}) where {Nin, Nout, Tv, Ti} = Ti
