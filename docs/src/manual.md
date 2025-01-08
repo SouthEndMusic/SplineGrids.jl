@@ -34,12 +34,16 @@ refine(::SplineGrids.AbstractSplineGrid{Nin, Nout, false, Tv, Ti}, ::SplineDimen
 ```@docs
 KnotVector
 SplineDimension
-SplineGrid
 RefinementMatrix
+DefaultControlPoints
+LocalRefinement
+LocallyRefinedControlPoints
+SplineGrid
 ```
 
 # Utility functions
 
 ```@docs
 decompress
+refine_all_dimensions_locally
 ```

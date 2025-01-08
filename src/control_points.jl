@@ -1,3 +1,8 @@
+"""
+    DefaultControlPoints(control_points)
+
+A thin wrapper around an array of control point values.
+"""
 struct DefaultControlPoints{
     Nin,
     Nout,
@@ -45,6 +50,15 @@ end
         refinement_matrix,
         refinement_indices,
         refinement_values)
+
+The data for performing a local refinement.
+
+## Fields
+
+  - `dim_refinement`: The dimension along which will be refined
+  - `refinement_matrix`: The matrix that performs the refinement
+  - `refinement_indices`: The indices of the control points that will be overwritten after the refinement
+  - `refinement_values`: The new values of the control points that will be rewritten after refinement
 """
 struct LocalRefinement{
     Nin,
@@ -82,6 +96,21 @@ struct LocalRefinement{
     end
 end
 
+"""
+    LocallyRefinedControlPoints(
+        control_points_base,
+        control_points_refined,
+        local_refinements)
+
+All data required to perform multiple refinement steps and overwriting control point values along the way,
+yielding a Truncated Hierarchical Basis (THB) spline.
+
+## Fields
+
+  - `control_points_base`: The densely defined control points at the basis of the hierarchy
+  - `control_points_refined`: The intermediate and final control point arrays after applying the local refinements
+  - `local_refinements`: Data for local refinement for each step in the hierarchy
+"""
 struct LocallyRefinedControlPoints{
     Nin,
     Nout,
@@ -135,6 +164,10 @@ end
 
 evaluate!(control_points::AbstractControlPoints) = nothing
 
+"""
+Evaluate the locally refined control points. For each local refinement, first
+apply the refinement matrix and then overwrite the desired control point values.
+"""
 function evaluate!(control_points::LocallyRefinedControlPoints)
     (; control_points_base, control_points_refined, local_refinements) = control_points
     backend = get_backend(control_points_base)
@@ -172,20 +205,25 @@ function obtain(control_points::LocallyRefinedControlPoints)
     end
 end
 
-function refine_all_dimensions(
+"""
+Set up a default refinement matrix for each input dimension in order
+(a default refinement matrix means bisecting each non-trivial knot span).
+After this, data can be added to `spline_grid.control_points <: LocallyRefinedControlPoints` from
+the output `spline_grid` to achieve local refinement by overwriting control point values
+resulting from the refinement matrix multiplication.
+"""
+function setup_default_local_refinement(
         spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv, Ti}
 ) where {Nin, Nout, Tv, Ti}
-    (; control_points) = spline_grid
-    V = typeof(control_points)
-    backend = get_backend(control_points)
-
-    control_points_base = control_points
+    control_points_base = obtain(spline_grid.control_points)
+    V = typeof(control_points_base)
     control_points_refined = V[]
+    backend = get_backend(control_points_base)
 
     local local_refinements
     for dim in 1:Nin
         spline_grid, refinement_matrix = refine(spline_grid, dim)
-        push!(control_points_refined, spline_grid.control_points)
+        push!(control_points_refined, obtain(spline_grid.control_points))
 
         refinement_indices = allocate(backend, Ti, 0, Nin)
         refinement_values = allocate(backend, Tv, 0, Nout)

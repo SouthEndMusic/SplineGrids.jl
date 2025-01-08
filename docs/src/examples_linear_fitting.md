@@ -16,7 +16,7 @@ using SplineGrids
 
 n_control_points = (40, 40)
 degree = (2, 2)
-image_array = Float64.(Gray.(image[end:-1:1, :]))'
+image_array = Float32.(Gray.(image[end:-1:1, :]))'
 n_sample_points = size(image_array)
 dim_out = 1
 
