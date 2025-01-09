@@ -45,5 +45,5 @@ SplineGrid
 
 ```@docs
 decompress
-refine_all_dimensions_locally
+setup_default_local_refinement
 ```

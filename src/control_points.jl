@@ -22,6 +22,16 @@ struct DefaultControlPoints{
     end
 end
 
+function Base.show(
+        io::IO,
+        mime::MIME"text/plain",
+        control_points::DefaultControlPoints{Nin, Nout, Tv}
+) where {Nin, Nout, Tv}
+    cp_grid_size = size(control_points)[1:(end - 1)]
+    println(io,
+        "DefaultControlPoints for grid of size $cp_grid_size in ℝ$(super(string(Nout))) ($Tv).")
+end
+
 Base.ndims(::Type{C}) where {Nin, C <: DefaultControlPoints{Nin}} = Nin + 1
 Base.lastindex(control_points::DefaultControlPoints) = length(control_points)
 
@@ -140,6 +150,31 @@ struct LocallyRefinedControlPoints{
             local_refinements
         )
     end
+end
+
+function Base.show(
+        io::IO,
+        mime::MIME"text/plain",
+        control_points::LocallyRefinedControlPoints{Nin, Nout, Tv}
+) where {Nin, Nout, Tv}
+    (; local_refinements) = control_points
+    cp_grid_size = size(control_points)[1:(end - 1)]
+    println(io,
+        "LocallyRefinedControlPoints for final grid of size $cp_grid_size in ℝ$(super(string(Nout))) ($Tv). Local refinements:")
+    data = zip(
+        map(
+        i -> (
+            local_refinements[i].dim_refinement,
+            local_refinements[i].refinement_matrix.n,
+            local_refinements[i].refinement_matrix.m,
+            size(local_refinements[i].refinement_indices)[1]
+        ),
+        eachindex(local_refinements)
+    )...)
+    data = hcat(collect.(collect(data))...)
+    header = ["input dimension", "# control points before",
+        "# control points after", "# overwritten control points"]
+    pretty_table(io, data; header)
 end
 
 Base.ndims(control_points::AbstractControlPoints) = ndims(obtain(control_points))

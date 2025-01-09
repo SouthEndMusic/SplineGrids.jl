@@ -144,20 +144,31 @@ base_name(::AbstractSplineGrid) = "SplineGrid"
 base_name(::AbstractNURBSGrid) = "NURBSGrid"
 
 function Base.show(
-        io::IO, mime::MIME"text/plain",
-        spline_grid::AbstractSplineGrid{Nin, Nout}) where {Nin, Nout}
-    (; spline_dimensions) = spline_grid
-    header = ["input_dimension", "degree", "# basis functions", "# sample points"]
-    data = zip(map(
-        n -> (n, spline_dimensions[n].degree,
+        io::IO,
+        mime::MIME"text/plain",
+        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv}
+) where {Nin, Nout, HasWeights, Tv}
+    (; spline_dimensions, control_points) = spline_grid
+    header = ["input dimension", "degree", "# basis functions", "# sample points"]
+    data = zip(
+        map(
+        n -> (
+            n,
+            spline_dimensions[n].degree,
             SplineGrids.get_n_basis_functions(spline_dimensions[n]),
-            length(spline_dimensions[n].sample_points)),
-        eachindex(spline_dimensions))...)
-    data = hcat(collect.(collect(data))...)
+            length(spline_dimensions[n].sample_points)
+        ),
+        eachindex(spline_dimensions)
+    )...)
 
-    println(
-        io, "$(base_name(spline_grid)) $(shape_name(Nin)) with outputs in ℝ$(super(string(Nout))) with the following properties per dimension:")
+    data = hcat(collect.(collect(data))...)
+    intro = "$(base_name(spline_grid)) $(shape_name(Nin)) with outputs in ℝ$(super(string(Nout))) ($Tv)"
+
+    println(io, intro, "\n", repeat("-", length(intro)))
+    println(io, "* Properties per dimension:")
     pretty_table(io, data; header)
+    println(io, "* Control points:")
+    show(io, mime, control_points)
 end
 
 is_nurbs(::Any) = false
