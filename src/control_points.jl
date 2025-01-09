@@ -163,13 +163,13 @@ function Base.show(
         "LocallyRefinedControlPoints for final grid of size $cp_grid_size in ℝ$(super(string(Nout))) ($Tv). Local refinements:")
     data = zip(
         map(
-        i -> (
-            local_refinements[i].dim_refinement,
-            local_refinements[i].refinement_matrix.n,
-            local_refinements[i].refinement_matrix.m,
-            size(local_refinements[i].refinement_indices)[1]
+        lr -> (
+            lr.dim_refinement,
+            lr.refinement_matrix.n,
+            lr.refinement_matrix.m,
+            size(lr.refinement_indices)[1]
         ),
-        eachindex(local_refinements)
+        local_refinements
     )...)
     data = hcat(collect.(collect(data))...)
     header = ["input dimension", "# control points before",
@@ -183,6 +183,47 @@ Base.length(control_points::AbstractControlPoints) = length(obtain(control_point
 Base.eltype(::AbstractControlPoints{Nin, Nout, Tv}) where {Nin, Nout, Tv} = Tv
 Base.vec(control_points::AbstractControlPoints) = vec(obtain(control_points))
 
+function get_n_control_points(control_points::AbstractControlPoints{Nin}) where {Nin}
+    prod(size(obtain(control_points))[1:Nin])
+end
+
+function get_n_control_points(control_points::LocallyRefinedControlPoints{Nin}) where {Nin}
+    (; control_points_base, local_refinements) = control_points
+    n_control_points = prod(size(control_points_base)[1:Nin])
+    for local_refinement in local_refinements
+        n_control_points += size(local_refinement.refinement_indices)[1]
+    end
+    n_control_points
+end
+
+function get_n_control_points(spline_grid::AbstractSplineGrid)
+    get_n_control_points(spline_grid.control_points)
+end
+
+function set_control_points!(
+        control_points::LocallyRefinedControlPoints{Nin, Nout},
+        values::AbstractMatrix
+)::Nothing where {Nin, Nout}
+    (; control_points_base, local_refinements) = control_points
+    n_control_points = get_n_control_points(control_points)
+    n_input, n_output = size(values)
+    @assert n_input==n_control_points "There are $n_control_points control points in this object, got $n_input."
+    @assert n_output==Nout "These control points live in ℝ$(super(string(Nout))), got control points living in ℝ$(super(string(N_output)))."
+
+    n_control_points_base = prod(size(control_points_base)[1:Nin])
+    control_points_base .= reshape(
+        view(values, 1:n_control_points_base, :), size(control_points_base))
+
+    i_start = n_control_points_base + 1
+
+    for local_refinement in local_refinements
+        n_control_points_refinement = size(local_refinement.refinement_indices)[1]
+        local_refinement.refinement_values .= view(
+            values, i_start:(i_start + n_control_points_refinement - 1), :)
+        i_start += n_control_points_refinement
+    end
+end
+
 @kernel function local_refinement_kernel(
         control_points,
         @Const(refinement_indices),
@@ -190,7 +231,7 @@ Base.vec(control_points::AbstractControlPoints) = vec(obtain(control_points))
 )
     i = @index(Global, Linear)
     Nout = size(control_points)[end]
-    refinement_indices_ = refinement_indices[i]
+    refinement_indices_ = refinement_indices[i, :]
 
     for j in 1:Nout
         control_points[refinement_indices_..., j] = refinement_values[i, j]
@@ -224,13 +265,17 @@ function evaluate!(control_points::LocallyRefinedControlPoints)
         kernel!(
             cp_new,
             refinement_indices,
-            refinement_values
+            refinement_values,
+            ndrange = size(refinement_indices)[1]
         )
     end
 end
 
 obtain(control_points::AbstractArray) = control_points
 obtain(control_points::DefaultControlPoints) = control_points.control_points
+function KernelAbstractions.get_backend(control_points::AbstractControlPoints)
+    get_backend(obtain(control_points))
+end
 
 function obtain(control_points::LocallyRefinedControlPoints)
     if isempty(control_points.control_points_refined)
@@ -284,4 +329,54 @@ function setup_default_local_refinement(
     )
 
     @set spline_grid.control_points = locally_refined_control_points
+end
+
+function activate_local_refinement!(
+        control_points::LocallyRefinedControlPoints{Nin, Nout, Tv, Ti},
+        refinement_indices::AbstractMatrix{Ti};
+        refinement_index::Integer = length(control_points.local_refinements)
+)::Nothing where {Nin, Nout, Tv, Ti}
+    (; local_refinements) = control_points
+    control_points_refined = control_points.control_points_refined[refinement_index]
+    local_refinement = local_refinements[refinement_index]
+
+    @assert size(refinement_indices)[2]==Nin "Number of indices must match the number of input dimensions."
+
+    refinement_indices_new = unique(
+        vcat(
+            local_refinement.refinement_indices,
+            refinement_indices
+        ),
+        dims = 1
+    )
+
+    n_refinements = size(local_refinement.refinement_indices)[1]
+    n_refinements_new = size(refinement_indices_new)[1]
+
+    n_control_points_new = n_refinements_new - n_refinements
+
+    # TODO: Do this more efficiently and GPU proof
+    refinement_values_added = vcat([control_points_refined[
+                                        refinement_indices_new[i, :]..., :]
+                                    for i in (n_refinements + 1):n_refinements_new]...)
+
+    refinement_values_new = vcat(
+        local_refinement.refinement_values,
+        refinement_values_added
+    )
+
+    local_refinements[refinement_index] = LocalRefinement(
+        local_refinement.dim_refinement,
+        local_refinement.refinement_matrix,
+        refinement_indices_new,
+        refinement_values_new
+    )
+
+    return nothing
+end
+
+function activate_local_refinement!(
+        spline_grid::AbstractSplineGrid, args...; kwargs...)::Nothing
+    activate_local_refinement!(
+        spline_grid.control_points, args...; kwargs...)
 end

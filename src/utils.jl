@@ -152,13 +152,16 @@ function Base.show(
     header = ["input dimension", "degree", "# basis functions", "# sample points"]
     data = zip(
         map(
-        n -> (
-            n,
-            spline_dimensions[n].degree,
-            SplineGrids.get_n_basis_functions(spline_dimensions[n]),
-            length(spline_dimensions[n].sample_points)
-        ),
-        eachindex(spline_dimensions)
+        input -> begin
+            (n, sd) = input
+            (
+                n,
+                sd.degree,
+                get_n_basis_functions(sd),
+                length(sd.sample_points)
+            )
+        end,
+        enumerate(spline_dimensions)
     )...)
 
     data = hcat(collect.(collect(data))...)

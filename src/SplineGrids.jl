@@ -50,6 +50,7 @@ include("validation.jl")
 export KnotVector, SplineDimension, SplineGrid, NURBSGrid, decompress, evaluate!,
        evaluate_adjoint!, insert_knot, refine, RefinementMatrix, rmeye, mult!,
        set_control_points!, DefaultControlPoints, LocalRefinement,
-       LocallyRefinedControlPoints, setup_default_local_refinement
+       LocallyRefinedControlPoints, setup_default_local_refinement,
+       activate_local_refinement!, get_n_control_points
 
 end # module SplineGrids
