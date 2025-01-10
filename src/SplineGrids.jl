@@ -15,6 +15,9 @@ using RecipesBase
 # Needed for updating objects
 using Accessors
 
+# Needed for handling locally refined control point data
+using LazyArrays
+
 # Type parameters:
 # - Nin: Number of input parameters
 # - Nout: number of output parameters
@@ -51,6 +54,12 @@ export KnotVector, SplineDimension, SplineGrid, NURBSGrid, decompress, evaluate!
        evaluate_adjoint!, insert_knot, refine, RefinementMatrix, rmeye, mult!,
        set_control_points!, DefaultControlPoints, LocalRefinement,
        LocallyRefinedControlPoints, setup_default_local_refinement,
-       activate_local_refinement!, get_n_control_points
+       extend_default_local_refinement,
+       activate_local_refinement!, get_n_control_points, plot_basis, plot_basis!,
+       activate_local_control_point_range!
+
+# Define names for SplineGridsMakieExt
+function plot_basis end
+function plot_basis! end
 
 end # module SplineGrids

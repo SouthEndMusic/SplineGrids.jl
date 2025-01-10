@@ -7,7 +7,8 @@ makedocs(modules = [SplineGrids],
     linkcheck = true,
     pages = ["index.md",
         "Theory" => [
-            "Refinement" => "theory_refinement.md"
+            "Refinement" => "theory_refinement.md",
+            "Local refinement (THB-splines)" => "theory_local_refinement.md"
         ],
         "Examples" => [
             "Dimensionality" => "examples_dimensions.md",

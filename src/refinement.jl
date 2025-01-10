@@ -397,7 +397,12 @@ function refine(
     spline_dimensions_new = ntuple(
         dim -> (dim == dim_refinement) ? spline_dimension_new : spline_dimensions[dim], Nin)
 
-    spline_grid_new = @set spline_grid.control_points = DefaultControlPoints(control_points_new)
+    spline_grid_new = if control_points isa DefaultControlPoints
+        spline_grid_new = @set spline_grid.control_points = DefaultControlPoints(control_points_new)
+    else
+        push!(control_points.control_points_refined, control_points_new)
+        spline_grid
+    end
     spline_grid_new = @set spline_grid_new.spline_dimensions = spline_dimensions_new
 
     spline_grid_new, refinement_matrix
