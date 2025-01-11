@@ -52,9 +52,8 @@ include("validation.jl")
 
 export KnotVector, SplineDimension, SplineGrid, NURBSGrid, decompress, evaluate!,
        evaluate_adjoint!, insert_knot, refine, RefinementMatrix, rmeye, mult!,
-       set_control_points!, DefaultControlPoints, LocalRefinement,
-       LocallyRefinedControlPoints, setup_default_local_refinement,
-       extend_default_local_refinement,
+       DefaultControlPoints, LocalRefinement, LocallyRefinedControlPoints,
+       setup_default_local_refinement, extend_default_local_refinement,
        activate_local_refinement!, get_n_control_points, plot_basis, plot_basis!,
        activate_local_control_point_range!
 

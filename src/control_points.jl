@@ -32,7 +32,6 @@ function Base.show(
         "DefaultControlPoints for grid of size $cp_grid_size in ℝ$(super(string(Nout))) ($Tv).")
 end
 
-Base.ndims(::Type{C}) where {Nin, C <: DefaultControlPoints{Nin}} = Nin + 1
 Base.lastindex(control_points::DefaultControlPoints) = length(control_points)
 
 function Base.getindex(control_points::DefaultControlPoints, inds...)
@@ -43,15 +42,9 @@ function Base.setindex!(control_points::DefaultControlPoints, val, inds...)
     control_points.control_points[inds...] = val
 end
 
-function Base.copyto!(control_points::DefaultControlPoints, vals, inds...)
+function Base.copyto!(control_points::DefaultControlPoints,
+        vals::Union{AbstractArray, Base.Broadcast.Broadcasted}, inds...)
     copyto!(control_points.control_points, vals)
-end
-
-function set_control_points!(
-        control_points::DefaultControlPoints,
-        values::AbstractArray
-)
-    copyto!(control_points.control_points, values)
 end
 
 """
@@ -152,6 +145,7 @@ struct LocallyRefinedControlPoints{
     end
 end
 
+# Helper function for getindex and setindex! for LocallyRefinedControlPoints
 function get_control_point_view(control_points::LocallyRefinedControlPoints{
         Nin, Nout}) where {Nin, Nout}
     (; control_points_base, local_refinements) = control_points
@@ -168,7 +162,15 @@ function Base.getindex(control_points::LocallyRefinedControlPoints, i_cp, i_dimo
 end
 
 function Base.setindex!(control_points::LocallyRefinedControlPoints, vals, i_cp, i_dimout)
-    get_control_point_view(control_points)[i_cp, i_dimout] .= vals
+    if length(vals) == 1
+        get_control_point_view(control_points)[i_cp, i_dimout] = only(vals)
+    else
+        get_control_point_view(control_points)[i_cp, i_dimout] .= vals
+    end
+end
+
+function Base.copyto!(control_points::LocallyRefinedControlPoints, vals)
+    get_control_point_view(control_points) .= vals
 end
 
 function Base.show(
@@ -191,17 +193,21 @@ function Base.show(
         local_refinements
     )...)
     data = hcat(collect.(collect(data))...)
-    header = ["input dimension", "# control points before",
-        "# control points after", "# overwritten control points"]
+    header = ["input dim.", "# control p. before",
+        "# control p. after", "# activated control p."]
     pretty_table(io, data; header)
 end
 
 Base.ndims(control_points::AbstractControlPoints) = ndims(obtain(control_points))
+Base.ndims(::Type{C}) where {Nin, C <: AbstractControlPoints{Nin}} = Nin + 1
 Base.size(control_points::AbstractControlPoints) = size(obtain(control_points))
 Base.length(control_points::AbstractControlPoints) = length(obtain(control_points))
 Base.eltype(::AbstractControlPoints{Nin, Nout, Tv}) where {Nin, Nout, Tv} = Tv
 Base.vec(control_points::AbstractControlPoints) = vec(obtain(control_points))
 
+"""
+Get the number of control points within the control point object.
+"""
 function get_n_control_points(control_points::AbstractControlPoints{Nin}) where {Nin}
     prod(size(obtain(control_points))[1:Nin])
 end
@@ -217,30 +223,6 @@ end
 
 function get_n_control_points(spline_grid::AbstractSplineGrid)
     get_n_control_points(spline_grid.control_points)
-end
-
-function set_control_points!(
-        control_points::LocallyRefinedControlPoints{Nin, Nout},
-        values::AbstractMatrix
-)::Nothing where {Nin, Nout}
-    (; control_points_base, local_refinements) = control_points
-    n_control_points = get_n_control_points(control_points)
-    n_input, n_output = size(values)
-    @assert n_input==n_control_points "There are $n_control_points control points in this object, got $n_input."
-    @assert n_output==Nout "These control points live in ℝ$(super(string(Nout))), got control points living in ℝ$(super(string(n_output)))."
-
-    n_control_points_base = prod(size(control_points_base)[1:Nin])
-    control_points_base .= reshape(
-        view(values, 1:n_control_points_base, :), size(control_points_base))
-
-    i_start = n_control_points_base + 1
-
-    for local_refinement in local_refinements
-        n_control_points_refinement = size(local_refinement.refinement_indices)[1]
-        local_refinement.refinement_values .= view(
-            values, i_start:(i_start + n_control_points_refinement - 1), :)
-        i_start += n_control_points_refinement
-    end
 end
 
 @kernel function local_refinement_kernel(
@@ -301,6 +283,7 @@ function obtain(control_points::LocallyRefinedControlPoints)
     end
 end
 
+# Helper function for setting up or extending default local refinement
 function default_local_refinement(
         spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
         dim_refinement::Integer
@@ -334,9 +317,10 @@ function setup_default_local_refinement(
     control_points_base = obtain(spline_grid.control_points)
 
     # First dimension
+    dim_refinement = 1
     spline_grid, local_refinement = default_local_refinement(
         spline_grid,
-        1
+        dim_refinement
     )
     control_points_refined = [obtain(spline_grid.control_points)]
     local_refinements = [local_refinement]
@@ -360,6 +344,10 @@ function setup_default_local_refinement(
     @set spline_grid.control_points = locally_refined_control_points
 end
 
+"""
+Extend default local refinement, that is: for a spline grid that already has locally refined control points,
+add default local refinement for each input dimension in order.
+"""
 function extend_default_local_refinement(spline_grid::AbstractSplineGrid{Nin}) where {Nin}
     (; control_points) = spline_grid
     @assert control_points isa LocallyRefinedControlPoints
@@ -376,6 +364,18 @@ function extend_default_local_refinement(spline_grid::AbstractSplineGrid{Nin}) w
     spline_grid
 end
 
+"""
+Given a refinement step (by default the last refinement),
+add new control points that overwrite the result from the refinement matrix.
+These new values are chosen such that the spline geometry does not change.
+
+## Inputs
+
+  - `control_points`: The locally refined control points where new control points will be activated
+  - `refinement_indices`: The indices in the control point grid at the `refinement_index` level which
+    will be overwritten
+  - `refinement_index`: The index of the refinement after which new control points will be activated
+"""
 function activate_local_refinement!(
         control_points::LocallyRefinedControlPoints{Nin, Nout, Tv, Ti},
         refinement_indices::AbstractMatrix{Ti};
@@ -385,7 +385,7 @@ function activate_local_refinement!(
     control_points_refined = control_points.control_points_refined[refinement_index]
     local_refinement = local_refinements[refinement_index]
 
-    @assert size(refinement_indices)[2]==Nin "Number of indices must match the number of input dimensions."
+    @assert size(refinement_indices)[2]==Nin "Number of indices per control point must match the number of input dimensions."
 
     refinement_indices_new = unique(
         vcat(
@@ -397,8 +397,6 @@ function activate_local_refinement!(
 
     n_refinements = size(local_refinement.refinement_indices)[1]
     n_refinements_new = size(refinement_indices_new)[1]
-
-    n_control_points_new = n_refinements_new - n_refinements
 
     # TODO: Do this more efficiently and GPU proof
     refinement_values_added = hcat([control_points_refined[
@@ -420,16 +418,24 @@ function activate_local_refinement!(
     return nothing
 end
 
+"""
+Convenience wrapper of `activate_local_refinement!` for a spline grid
+"""
 function activate_local_refinement!(
         spline_grid::AbstractSplineGrid, args...; kwargs...)::Nothing
     activate_local_refinement!(
         spline_grid.control_points, args...; kwargs...)
 end
 
+"""
+Instead of supplying explicit indices of the control points for local refinement activation,
+supply a range of indices per dimension.
+"""
 function activate_local_control_point_range!(
         spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
         ranges::Vararg{UnitRange}
 )::Nothing where {Nin, Nout, HasWeights, Tv, Ti}
+    @assert length(ranges) == Nin
     local_refinement_indices = [Ti.(collect(x)) for x in Iterators.product(ranges...)]
     local_refinement_indices = reduce(vcat, local_refinement_indices')
     activate_local_refinement!(spline_grid, local_refinement_indices)

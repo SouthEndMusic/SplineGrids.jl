@@ -6,7 +6,7 @@ As we have seen in the previous section ([Refinement](@ref)), The number of cont
 3. Overwrite certain control points in one of the intermediate extended grids
 
 !!! note "Understanding THB splines"
-    THB-splines can be a tricky construct when you encounter them for the first time. This page does not aim to give a full theoretical background, that can be for instance found in [[1]](https://www.ag.jku.at/pubs/2016gjkmss.pdf). Playing around with them in the context of this package might however give you intuition for THB-splines quicker than reading the theory.
+    THB-splines can be a tricky construct to understand when you encounter them for the first time. This page does not aim to give a full theoretical background, that can be for instance found in [[1]](https://www.ag.jku.at/pubs/2016gjkmss.pdf). Playing around with THB-splines in the context of this package might however give you intuition for them more quickly than reading the theory.
 
 ## An example
 

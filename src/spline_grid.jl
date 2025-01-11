@@ -297,7 +297,3 @@ function evaluate_adjoint!(spline_grid::SplineGrid{Nin, Nout, Tv};
     end
     return nothing
 end
-
-function set_control_points!(spline_grid::SplineGrid, values::AbstractArray)
-    set_control_points!(spline_grid.control_points, values)
-end

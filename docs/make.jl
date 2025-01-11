@@ -5,6 +5,7 @@ makedocs(modules = [SplineGrids],
     sitename = "SplineGrids.jl",
     clean = true,
     linkcheck = true,
+    pagesonly = true,
     pages = ["index.md",
         "Theory" => [
             "Refinement" => "theory_refinement.md",

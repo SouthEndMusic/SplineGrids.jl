@@ -20,17 +20,16 @@ function SplineGrids.plot_basis!(
     spline_grid = adapt(CPU(), spline_grid)
     control_points_new = deepcopy(control_points)
     @reset spline_grid.control_points = control_points_new
-    backend = get_backend(spline_grid.control_points)
-
-    n_control_points = get_n_control_points(spline_grid)
-    values = KernelAbstractions.zeros(backend, Tv, n_control_points, Nout)
 
     eval_view = view(spline_grid.eval, :, :, 1)
     basis_functions = zero(eval_view)
-    for i in 1:n_control_points
-        values .= 0
-        values[i, 1] = 1
-        set_control_points!(spline_grid, values)
+    for i in 1:get_n_control_points(spline_grid)
+        control_points_new .= 0
+        if control_points_new isa DefaultControlPoints
+            control_points_new[CartesianIndices(size(control_points_new)[1:2])[i], 1] = 1
+        else
+            control_points_new[i, 1] = 1
+        end
         evaluate!(control_points_new)
         evaluate!(spline_grid)
         broadcast!(max, basis_functions, basis_functions, eval_view)
