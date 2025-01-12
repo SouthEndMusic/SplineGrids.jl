@@ -73,3 +73,27 @@ for (Nin, Nout) in dimensionalities
         end
     end
 end
+
+@testset "MakieExt" begin
+    using CairoMakie
+    spline_grid = SplineGrid(spline_dimensions[1:2], 3)
+
+    @test try
+        plot_basis(spline_grid)
+        true
+    catch e
+        println("Error: $e")
+        Base.show_backtrace(stderr, catch_backtrace())
+        false
+    end
+
+    spline_grid = setup_default_local_refinement(spline_grid)
+    @test try
+        plot_basis(spline_grid)
+        true
+    catch e
+        println("Error: $e")
+        Base.show_backtrace(stderr, catch_backtrace())
+        false
+    end
+end

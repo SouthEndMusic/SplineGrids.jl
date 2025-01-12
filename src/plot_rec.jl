@@ -70,6 +70,7 @@ end
 @recipe function f(spline_grid::SplineGrid{1, 2})
     spline_grid = adapt(CPU(), spline_grid)
     (; eval, control_points) = spline_grid
+    control_points = obtain(control_points)
 
     xlabel --> "Output dimension 1"
     ylabel --> "Output dimension 2"
@@ -100,13 +101,14 @@ end
         else
             c := CONTROL_POINT_COLOR
         end
-        spline_grid.control_points[:, 1], spline_grid.control_points[:, 2]
+        control_points[:, 1], control_points[:, 2]
     end
 end
 
 @recipe function f(spline_grid::SplineGrid{1, 3})
     spline_grid = adapt(CPU(), spline_grid)
     (; eval, control_points) = spline_grid
+    control_points = obtain(control_points)
 
     xlabel --> "Output dimension 1"
     ylabel --> "Output dimension 2"
@@ -147,6 +149,7 @@ end
 @recipe function f(spline_grid::SplineGrid{1, 4})
     spline_grid = adapt(CPU(), spline_grid)
     (; eval, control_points) = spline_grid
+    control_points = obtain(control_points)
 
     xlabel --> "Output dimension 1"
     ylabel --> "Output dimension 2"

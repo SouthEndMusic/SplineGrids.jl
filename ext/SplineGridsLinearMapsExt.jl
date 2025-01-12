@@ -2,13 +2,15 @@ module SplineGridsLinearMapsExt
 using SplineGrids
 using LinearMaps
 
-function LinearMaps.LinearMap(spline_grid::SplineGrid{Nin};
-        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin)) where {Nin}
+function LinearMaps.LinearMap(
+        spline_grid::SplineGrid{Nin, Nout, Tv};
+        derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin)
+) where {Nin, Nout, Tv}
     SplineGrids.validate_partial_derivatives(
         spline_grid, derivative_order
     )
 
-    LinearMap(
+    LinearMap{Tv}(
         # In place evaluation control points -> spline grid
         (evaluation_flat, control_points_flat) -> evaluate!(
             spline_grid;

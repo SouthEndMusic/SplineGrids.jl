@@ -10,6 +10,7 @@ function NURBSGrid(
     # The control points
     control_points = KernelAbstractions.zeros(CPU(), Tv, size_cp_grid..., Nout)
     set_unit_cp_grid!(control_points)
+    control_points = DefaultControlPoints(control_points)
     control_points = adapt(backend, control_points)
     # The weights and denominator
     weights = KernelAbstractions.ones(backend, Tv, size_cp_grid...)
@@ -101,12 +102,12 @@ but different arrays can be specified as a convenience for optimization algorith
 NOTE: At the moment computing derivatives of NURBS grids is not supported.
 """
 function evaluate!(
-        nurbs_grid::AbstractNURBSGrid{Nin};
+        nurbs_grid::AbstractNURBSGrid{Nin, Nout, Tv};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
-        control_points::AbstractArray = nurbs_grid.control_points,
+        control_points::AbstractControlPointArray{Nin, Nout, Tv} = nurbs_grid.control_points,
         weights::AbstractArray = nurbs_grid.weights,
         eval::AbstractArray = nurbs_grid.eval
-)::Nothing where {Nin}
+)::Nothing where {Nin, Nout, Tv}
     (; basis_function_products, spline_dimensions, sample_indices, denominator) = nurbs_grid
     validate_partial_derivatives(nurbs_grid, derivative_order)
     eval .= 0
@@ -139,7 +140,7 @@ function evaluate!(
             denominator,
             basis_function_products,
             weights,
-            control_points,
+            obtain(control_points),
             sample_indices,
             offset,
             divide,

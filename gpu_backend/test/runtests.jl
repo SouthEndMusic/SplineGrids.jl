@@ -13,7 +13,8 @@ test_data = [
     ("NURBSGrid", "test_nurbs_grid.jl"),
     ("RefinementMatrix", "test_refinement_matrix.jl"),
     ("Refinement", "test_refinement.jl"),
-    ("Plotting", "test_plot_rec.jl"),
+    ("Local refinement", "test_local_refinement.jl"),
+    ("Plotting", "test_plotting.jl"),
     ("LinearMapsExt", "test_LinearMapsExt.jl"),
     ("EnzymeExt", "test_EnzymeExt.jl")
 ]

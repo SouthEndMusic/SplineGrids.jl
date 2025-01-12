@@ -5,9 +5,11 @@ makedocs(modules = [SplineGrids],
     sitename = "SplineGrids.jl",
     clean = true,
     linkcheck = true,
+    pagesonly = true,
     pages = ["index.md",
         "Theory" => [
-            "Refinement" => "theory_refinement.md"
+            "Refinement" => "theory_refinement.md",
+            "Local refinement (THB-splines)" => "theory_local_refinement.md"
         ],
         "Examples" => [
             "Dimensionality" => "examples_dimensions.md",
@@ -20,6 +22,7 @@ makedocs(modules = [SplineGrids],
             "Solving a PDE" => "examples_pde.md",
             "Optimizing a lens surface" => "examples_optics.md"
         ],
-        "Manual" => "manual.md"])
+        "Manual" => "manual.md"]
+)
 
 deploydocs(; repo = "github.com/SouthEndMusic/SplineGrids.jl.git")
