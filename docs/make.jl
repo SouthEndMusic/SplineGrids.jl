@@ -6,6 +6,7 @@ makedocs(modules = [SplineGrids],
     clean = true,
     linkcheck = true,
     pagesonly = true,
+    linkcheck_ignore = ["https://www.ag.jku.at/pubs/2016gjkmss.pdf"],
     pages = ["index.md",
         "Theory" => [
             "Refinement" => "theory_refinement.md",
@@ -22,7 +23,8 @@ makedocs(modules = [SplineGrids],
             "Solving a PDE" => "examples_pde.md",
             "Optimizing a lens surface" => "examples_optics.md"
         ],
-        "Manual" => "manual.md"]
+        "Manual" => "manual.md"
+    ]
 )
 
 deploydocs(; repo = "github.com/SouthEndMusic/SplineGrids.jl.git")
