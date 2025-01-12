@@ -87,7 +87,7 @@ $$
 
 where $\otimes_n$ is the n-th mode tensor product, where $n$ is the input dimension that was refined.
 
-The matrix $R$ is sparse with a particular pattern: the non-zeros in each row and column are consecutive, and each row and column has at least one non-zero. This is taken advantage of with a specialized sparse matrix encoding for efficient multiplications. For more details on this see the [manual](https://southendmusic.github.io/SplineGrids.jl/dev/manual/).
+The matrix $R$ is sparse with a particular pattern: the non-zeros in each row and column are consecutive, and each row and column has at least one non-zero. This is taken advantage of with a specialized sparse matrix encoding for efficient multiplications. For more details on this see the manual section on [Structs](@ref).
 
 For the knot refinement performed above the refinement matrix looks like this:
 
