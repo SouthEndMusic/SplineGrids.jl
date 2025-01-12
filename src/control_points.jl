@@ -232,11 +232,20 @@ end
         @Const(refinement_values)
 )
     i = @index(Global, Linear)
+    Nin = ndims(control_points) - 1
     Nout = size(control_points)[end]
-    refinement_indices_ = refinement_indices[i, :]
 
-    for j in 1:Nout
-        control_points[refinement_indices_..., j] = refinement_values[i, j]
+    cp_grid_size = prod(size(control_points)[1:(end - 1)])
+    lin_cp_index_base = refinement_indices[i, 1]
+    size_prod = 1
+    for dim_in in 2:Nin
+        size_prod *= size(control_points, dim_in - 1)
+        lin_cp_index_base += (refinement_indices[i, dim_in] - 1) * size_prod
+    end
+
+    for dim_out in 1:Nout
+        lin_cp_idx = lin_cp_index_base + (dim_out - 1) * cp_grid_size
+        control_points[lin_cp_idx] = refinement_values[i, dim_out]
     end
 end
 
@@ -264,13 +273,15 @@ function evaluate!(control_points::LocallyRefinedControlPoints)
             cp_prev,
             dim_refinement
         )
-        kernel!(
-            cp_new,
-            refinement_indices,
-            refinement_values,
-            ndrange = size(refinement_indices)[1]
-        )
-        synchronize(backend)
+        if !isempty(refinement_indices)
+            kernel!(
+                cp_new,
+                refinement_indices,
+                refinement_values,
+                ndrange = (size(refinement_indices, 1),)
+            )
+            synchronize(backend)
+        end
     end
 end
 
@@ -366,6 +377,37 @@ function extend_default_local_refinement(spline_grid::AbstractSplineGrid{Nin}) w
     spline_grid
 end
 
+@kernel function refinement_values_new_kernel(
+        refinement_values_new,
+        @Const(refinement_values),
+        @Const(control_points_refined),
+        @Const(refinement_indices_new)
+)
+    i = @index(Global, Linear)
+
+    Nin = size(refinement_indices_new, 2)
+    Nout = size(refinement_values_new, 2)
+    n_refinement_values = size(refinement_values, 1)
+
+    if i ≤ n_refinement_values
+        for dim_out in 1:Nout
+            refinement_values_new[i, dim_out] = refinement_values[i, dim_out]
+        end
+    else
+        cp_grid_size = prod(size(control_points_refined)[1:(end - 1)])
+        lin_cp_index_base = refinement_indices_new[i, 1]
+        size_prod = 1
+        for dim_in in 2:Nin
+            size_prod *= size(control_points_refined, dim_in - 1)
+            lin_cp_index_base += (refinement_indices_new[i, dim_in] - 1) * size_prod
+        end
+        for dim_out in 1:Nout
+            lin_cp_idx = lin_cp_index_base + (dim_out - 1) * cp_grid_size
+            refinement_values_new[i, dim_out] = control_points_refined[lin_cp_idx]
+        end
+    end
+end
+
 """
 Given a refinement step (by default the last refinement),
 add new control points that overwrite the result from the refinement matrix.
@@ -386,29 +428,35 @@ function activate_local_refinement!(
     (; local_refinements) = control_points
     control_points_refined = control_points.control_points_refined[refinement_index]
     local_refinement = local_refinements[refinement_index]
+    backend = get_backend(control_points)
 
     @assert size(refinement_indices)[2]==Nin "Number of indices per control point must match the number of input dimensions."
 
-    refinement_indices_new = unique(
-        vcat(
-            local_refinement.refinement_indices,
-            refinement_indices
-        ),
-        dims = 1
+    # Find unique refinement indices on CPU (https://github.com/JuliaGPU/CUDA.jl/issues/991)
+    refinement_indices_new = adapt(
+        backend,
+        unique(
+            adapt(
+                CPU(),
+                vcat(
+                    local_refinement.refinement_indices,
+                    refinement_indices
+                )),
+            dims = 1
+        )
     )
 
-    n_refinements = size(local_refinement.refinement_indices)[1]
-    n_refinements_new = size(refinement_indices_new)[1]
+    n_refinement_values_new = size(refinement_indices_new, 1)
 
-    # TODO: Do this more efficiently and GPU proof
-    refinement_values_added = hcat([control_points_refined[
-                                        refinement_indices_new[i, :]..., :]
-                                    for i in (n_refinements + 1):n_refinements_new]...)'
-
-    refinement_values_new = vcat(
+    refinement_values_new = allocate(backend, Tv, n_refinement_values_new, Nout)
+    refinement_values_new_kernel(backend)(
+        refinement_values_new,
         local_refinement.refinement_values,
-        refinement_values_added
+        control_points_refined,
+        refinement_indices_new,
+        ndrange = (n_refinement_values_new,)
     )
+    synchronize(backend)
 
     local_refinements[refinement_index] = LocalRefinement(
         local_refinement.dim_refinement,
