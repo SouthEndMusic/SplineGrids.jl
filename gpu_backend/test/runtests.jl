@@ -14,7 +14,7 @@ test_data = [
     ("RefinementMatrix", "test_refinement_matrix.jl"),
     ("Refinement", "test_refinement.jl"),
     ("Local refinement", "test_local_refinement.jl"),
-    ("Plotting", "test_plot_rec.jl"),
+    ("Plotting", "test_plotting.jl"),
     ("LinearMapsExt", "test_LinearMapsExt.jl"),
     ("EnzymeExt", "test_EnzymeExt.jl")
 ]

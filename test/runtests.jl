@@ -8,7 +8,7 @@ using SafeTestsets
 @safetestset "RefinementMatrix" include("test_refinement_matrix.jl")
 @safetestset "Refinement" include("test_refinement.jl")
 @safetestset "Local refinement" include("test_local_refinement.jl")
-@safetestset "Plotting" include("test_plot_rec.jl")
+@safetestset "Plotting" include("test_plotting.jl")
 @safetestset "LinearMapsExt" include("test_LinearMapsExt.jl")
 @safetestset "EnzymeExt" include("test_EnzymeExt.jl")
 @safetestset "Aqua" include("aqua.jl")

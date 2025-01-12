@@ -99,6 +99,19 @@ struct LocalRefinement{
     end
 end
 
+function Adapt.adapt(backend::Backend, local_refinement::LocalRefinement)
+    if get_backend(local_refinement.refinement_indices) == backend
+        local_refinement
+    else
+        LocalRefinement(
+            local_refinement.dim_refinement,
+            adapt(backend, local_refinement.refinement_matrix),
+            adapt(backend, local_refinement.refinement_indices),
+            adapt(backend, local_refinement.refinement_values)
+        )
+    end
+end
+
 """
     LocallyRefinedControlPoints(
         control_points_base,

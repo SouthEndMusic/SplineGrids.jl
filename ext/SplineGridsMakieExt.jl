@@ -16,8 +16,8 @@ function SplineGrids.plot_basis!(
         ax::Makie.Axis3,
         spline_grid::SplineGrid{2, Nout, Tv}
 )::Nothing where {Nout, Tv}
-    (; control_points, spline_dimensions) = spline_grid
     spline_grid = adapt(CPU(), spline_grid)
+    (; control_points, spline_dimensions) = spline_grid
     control_points_new = deepcopy(control_points)
     @reset spline_grid.control_points = control_points_new
 

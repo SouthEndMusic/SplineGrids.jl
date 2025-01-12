@@ -17,6 +17,9 @@ end
 
     spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; backend)
     spline_grid = SplineGrid(spline_dimensions, dim_out)
+    @test get_n_control_points(spline_grid) == 36
+    @test isnothing(evaluate!(spline_grid.control_points))
+
     spline_grid = setup_default_local_refinement(spline_grid)
     (; control_points) = spline_grid
 
@@ -36,4 +39,9 @@ end
 
     @test get_n_control_points(spline_grid) == 72
     @test obtain(control_points) ≈ control_points_before
+
+    spline_grid = extend_default_local_refinement(spline_grid)
+
+    empty!(control_points.control_points_refined)
+    @test obtain(control_points) === control_points.control_points_base
 end
