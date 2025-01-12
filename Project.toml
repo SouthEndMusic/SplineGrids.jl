@@ -1,5 +1,6 @@
 name = "SplineGrids"
 uuid = "59c446ea-fb23-41e3-bcd2-697fa0a242d6"
+version = "0.1.0"
 
 [deps]
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
