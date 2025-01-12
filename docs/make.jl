@@ -7,7 +7,8 @@ makedocs(modules = [SplineGrids],
     linkcheck = true,
     pagesonly = true,
     linkcheck_ignore = ["https://www.ag.jku.at/pubs/2016gjkmss.pdf"],
-    pages = ["index.md",
+    pages = [
+        "index.md",
         "Theory" => [
             "Refinement" => "theory_refinement.md",
             "Local refinement (THB-splines)" => "theory_local_refinement.md"
