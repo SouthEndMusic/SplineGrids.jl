@@ -22,6 +22,7 @@ makedocs(modules = [SplineGrids],
             "Solving a PDE" => "examples_pde.md",
             "Optimizing a lens surface" => "examples_optics.md"
         ],
-        "Manual" => "manual.md"])
+        "Manual" => "manual.md"]
+)
 
 deploydocs(; repo = "github.com/SouthEndMusic/SplineGrids.jl.git")

@@ -169,7 +169,8 @@ function Base.setindex!(control_points::LocallyRefinedControlPoints, vals, i_cp,
     end
 end
 
-function Base.copyto!(control_points::LocallyRefinedControlPoints, vals)
+function Base.copyto!(control_points::LocallyRefinedControlPoints,
+        vals::Union{AbstractArray, Base.Broadcast.Broadcasted})
     get_control_point_view(control_points) .= vals
 end
 
@@ -269,6 +270,7 @@ function evaluate!(control_points::LocallyRefinedControlPoints)
             refinement_values,
             ndrange = size(refinement_indices)[1]
         )
+        synchronize(backend)
     end
 end
 
