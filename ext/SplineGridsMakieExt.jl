@@ -1,5 +1,5 @@
 module SplineGridsMakieExt
-using Accessors
+using ConstructionBase
 using Adapt
 using KernelAbstractions
 using Makie
@@ -19,7 +19,7 @@ function SplineGrids.plot_basis!(
     spline_grid = adapt(CPU(), spline_grid)
     (; control_points, spline_dimensions) = spline_grid
     control_points_new = deepcopy(control_points)
-    @reset spline_grid.control_points = control_points_new
+    spline_grid = setproperties(spline_grid; control_points = control_points_new)
 
     eval_view = view(spline_grid.eval, :, :, 1)
     basis_functions = zero(eval_view)

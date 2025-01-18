@@ -24,7 +24,7 @@ end
 
 function Base.show(
         io::IO,
-        mime::MIME"text/plain",
+        ::MIME"text/plain",
         control_points::DefaultControlPoints{Nin, Nout, Tv}
 ) where {Nin, Nout, Tv}
     cp_grid_size = size(control_points)[1:(end - 1)]
@@ -189,7 +189,7 @@ end
 
 function Base.show(
         io::IO,
-        mime::MIME"text/plain",
+        ::MIME"text/plain",
         control_points::LocallyRefinedControlPoints{Nin, Nout, Tv}
 ) where {Nin, Nout, Tv}
     (; local_refinements) = control_points
@@ -207,8 +207,7 @@ function Base.show(
         local_refinements
     )...)
     data = hcat(collect.(collect(data))...)
-    header = ["input dim.", "# control p. before",
-        "# control p. after", "# activated control p."]
+    header = ["input dim.", "# c.p. before", "# c.p. after", "# activated c.p."]
     pretty_table(io, data; header)
 end
 
@@ -367,7 +366,7 @@ function setup_default_local_refinement(
         local_refinements
     )
 
-    @set spline_grid.control_points = locally_refined_control_points
+    setproperties(spline_grid; control_points = locally_refined_control_points)
 end
 
 """

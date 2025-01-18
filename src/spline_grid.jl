@@ -54,6 +54,8 @@ struct SplineGrid{
             sample_indices,
             basis_function_products)
         # TODO: Add validation of combination of control points, weights, and basis functions
+        validate_spline_grid(spline_dimensions, control_points, denominator,
+            weights, eval, sample_indices, basis_function_products)
         new{
             length(spline_dimensions),
             size(control_points)[end],
@@ -78,8 +80,6 @@ struct SplineGrid{
         )
     end
 end
-
-# TODO: Add indexing functionality such that indexing a spline_grid implies indexing spline_grid.eval
 
 """
     SplineGrid(spline_dimensions::NTuple{Nin, <:SplineDimension{Tv, Ti}}, Nout::Integer)::SplineGrid{Nin, Tv, Ti} where {Nin, Tv, Ti}

@@ -221,7 +221,7 @@ end
                                             nzval_B[nzval_pointer_B]
             end
             # TODO: An optimization here is possible:
-            # When a zero after a nonzero is found, the loop over j can be cut of 
+            # When a zero after a nonzero is found, the loop over j can be cut off
             nzval_pointer_C += 1
         end
         nzval_pointer_A += 1

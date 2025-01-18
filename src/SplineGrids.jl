@@ -13,7 +13,7 @@ using Subscripts
 using RecipesBase
 
 # Needed for updating objects
-using Accessors
+using ConstructionBase
 
 # Needed for handling locally refined control point data
 using LazyArrays
