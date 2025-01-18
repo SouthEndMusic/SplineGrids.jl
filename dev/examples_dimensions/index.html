@@ -19,7 +19,7 @@ spline_grid.control_points .= [0.342, 0.633, 0.446, 0.716, 0.843, 0.171, 0.061, 
 evaluate!(spline_grid)
 
 # Plot
-plot(spline_grid)</code></pre><img src="76d939db.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve with outputs in ℝ¹ (Float32)
+plot(spline_grid)</code></pre><img src="90578b5a.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve with outputs in ℝ¹ (Float32)
 ---------------------------------------------
 * Properties per dimension:
 ┌─────────────────┬────────┬───────────────────┬─────────────────┐
@@ -49,7 +49,7 @@ spline_grid.control_points[:, 2] .= @. r * sin(θ)
 evaluate!(spline_grid)
 
 # Plot
-plot(spline_grid)</code></pre><img src="8f8758ef.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve with outputs in ℝ² (Float32)
+plot(spline_grid)</code></pre><img src="19215407.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve with outputs in ℝ² (Float32)
 ---------------------------------------------
 * Properties per dimension:
 ┌─────────────────┬────────┬───────────────────┬─────────────────┐
@@ -81,7 +81,7 @@ spline_grid.control_points[:, 3] .= z
 evaluate!(spline_grid)
 
 # Plot
-plot(spline_grid)</code></pre><img src="07214f2a.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve with outputs in ℝ³ (Float32)
+plot(spline_grid)</code></pre><img src="f268673a.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve with outputs in ℝ³ (Float32)
 ---------------------------------------------
 * Properties per dimension:
 ┌─────────────────┬────────┬───────────────────┬─────────────────┐
@@ -115,7 +115,7 @@ spline_grid.control_points[:, 4] .= c
 evaluate!(spline_grid)
 
 # Plot
-plot(spline_grid)</code></pre><img src="c2829837.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve with outputs in ℝ⁴ (Float32)
+plot(spline_grid)</code></pre><img src="1d9c5fe9.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid curve with outputs in ℝ⁴ (Float32)
 ---------------------------------------------
 * Properties per dimension:
 ┌─────────────────┬────────┬───────────────────┬─────────────────┐
@@ -143,7 +143,7 @@ spline_grid.control_points[1:2:end] .= 1:prod(n_control_points)/2
 evaluate!(spline_grid)
 
 # Plot
-plot(spline_grid)</code></pre><img src="d3d4843a.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid surface with outputs in ℝ¹ (Float32)
+plot(spline_grid)</code></pre><img src="055410ad.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid surface with outputs in ℝ¹ (Float32)
 -----------------------------------------------
 * Properties per dimension:
 ┌─────────────────┬────────┬───────────────────┬─────────────────┐
@@ -171,7 +171,7 @@ spline_grid.control_points .= [-0.358 0.795 -0.016 -0.295; 0.923 -0.182 -0.644 0
 evaluate!(spline_grid)
 
 # plot
-plot(spline_grid)</code></pre><img src="1515ea9f.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid surface with outputs in ℝ² (Float32)
+plot(spline_grid)</code></pre><img src="3337e2d5.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid surface with outputs in ℝ² (Float32)
 -----------------------------------------------
 * Properties per dimension:
 ┌─────────────────┬────────┬───────────────────┬─────────────────┐
@@ -207,7 +207,7 @@ end
 evaluate!(spline_grid)
 
 # Plot
-plot(spline_grid)</code></pre><img src="f9ef2d3c.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid surface with outputs in ℝ³ (Float32)
+plot(spline_grid)</code></pre><img src="8cea79ab.svg" alt="Example block output"/><pre><code class="language-julia hljs">spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid surface with outputs in ℝ³ (Float32)
 -----------------------------------------------
 * Properties per dimension:
 ┌─────────────────┬────────┬───────────────────┬─────────────────┐
@@ -218,4 +218,4 @@ plot(spline_grid)</code></pre><img src="f9ef2d3c.svg" alt="Example block output"
 └─────────────────┴────────┴───────────────────┴─────────────────┘
 * Control points:
 DefaultControlPoints for grid of size (25, 2) in ℝ³ (Float32).
-</span></code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../theory_local_refinement/">« Local refinement (THB-splines)</a><a class="docs-footer-nextpage" href="../examples_nurbs/">NURBS »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Thursday 16 January 2025 09:14">Thursday 16 January 2025</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</span></code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../theory_local_refinement/">« Local refinement (THB-splines)</a><a class="docs-footer-nextpage" href="../examples_nurbs/">NURBS »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Saturday 18 January 2025 08:26">Saturday 18 January 2025</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
