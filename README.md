@@ -1,6 +1,7 @@
 # SplineGrids.jl
 
-[![Global Docs](https://img.shields.io/badge/docs-blue.svg)](https://southendmusic.github.io/SplineGrids.jl/)
+[![DocStable](https://img.shields.io/badge/docs-stable-blue.svg)](https://southendmusic.github.io/SplineGrids.jl/stable/)
+[![DocDev](https://img.shields.io/badge/docs-dev-blue.svg)](https://southendmusic.github.io/SplineGrids.jl/dev/)
 
 [![CI](https://github.com/SouthEndMusic/SplineGrids.jl/actions/workflows/Tests.yml/badge.svg?branch=master)](https://github.com/SouthEndMusic/SplineGrids.jl/actions/workflows/Tests.yml)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
