@@ -171,7 +171,7 @@ function insert_knot(
 
     # Add new knot to knot vector
     knot_vector_new, knot_span_index = insert_knot(knot_vector, knot_new)
-    spline_dimension_new = @set spline_dimension.knot_vector = knot_vector_new
+    spline_dimension_new = setproperties(spline_dimension; knot_vector = knot_vector_new)
 
     # Compute refinement matrix
     refinement_matrix = RefinementMatrix(spline_dimension, knot_span_index, knot_new)
@@ -398,12 +398,15 @@ function refine(
         dim -> (dim == dim_refinement) ? spline_dimension_new : spline_dimensions[dim], Nin)
 
     spline_grid_new = if control_points isa DefaultControlPoints
-        spline_grid_new = @set spline_grid.control_points = DefaultControlPoints(control_points_new)
+        setproperties(
+            spline_grid;
+            spline_dimensions = spline_dimensions_new,
+            control_points = DefaultControlPoints(control_points_new)
+        )
     else
         push!(control_points.control_points_refined, control_points_new)
-        spline_grid
+        setproperties(spline_grid; spline_dimensions = spline_dimensions_new)
     end
-    spline_grid_new = @set spline_grid_new.spline_dimensions = spline_dimensions_new
 
     spline_grid_new, refinement_matrix
 end
