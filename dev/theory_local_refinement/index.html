@@ -21,14 +21,13 @@ spline_grid = setup_default_local_refinement(spline_grid)</code></pre><pre class
 └─────────────────┴────────┴───────────────────┴─────────────────┘
 * Control points:
 LocallyRefinedControlPoints for final grid of size (10, 10) in ℝ³ (Float32). Local refinements:
-┌────────────┬─────────────────────┬────────────────────┬───────────────────────
-│ input dim. │ # control p. before │ # control p. after │ # activated control  ⋯
-├────────────┼─────────────────────┼────────────────────┼───────────────────────
-│          1 │                   6 │                 10 │                      ⋯
-│          2 │                   6 │                 10 │                      ⋯
-└────────────┴─────────────────────┴────────────────────┴───────────────────────
-<span class="sgr36">                                                                1 column omitted
-</span></span></code></pre><pre><code class="language-julia hljs"># Activate control point ranges (by default in the last extended control point grid).
+┌────────────┬───────────────┬──────────────┬──────────────────┐
+│ input dim. │ # c.p. before │ # c.p. after │ # activated c.p. │
+├────────────┼───────────────┼──────────────┼──────────────────┤
+│          1 │             6 │           10 │                0 │
+│          2 │             6 │           10 │                0 │
+└────────────┴───────────────┴──────────────┴──────────────────┘
+</span></code></pre><pre><code class="language-julia hljs"># Activate control point ranges (by default in the last extended control point grid).
 # Note that some of these ranges overlap, this is fine and no duplicate control points are created
 activate_local_control_point_range!(spline_grid, 1:4, 1:6)
 activate_local_control_point_range!(spline_grid, 1:6, 1:2)
@@ -44,16 +43,15 @@ plot_basis(spline_grid)</code></pre><img src="c8794cf6.png" alt="Example block o
 └─────────────────┴────────┴───────────────────┴─────────────────┘
 * Control points:
 LocallyRefinedControlPoints for final grid of size (18, 18) in ℝ³ (Float32). Local refinements:
-┌────────────┬─────────────────────┬────────────────────┬───────────────────────
-│ input dim. │ # control p. before │ # control p. after │ # activated control  ⋯
-├────────────┼─────────────────────┼────────────────────┼───────────────────────
-│          1 │                   6 │                 10 │                      ⋯
-│          2 │                   6 │                 10 │                      ⋯
-│          1 │                  10 │                 18 │                      ⋯
-│          2 │                  10 │                 18 │                      ⋯
-└────────────┴─────────────────────┴────────────────────┴───────────────────────
-<span class="sgr36">                                                                1 column omitted
-</span></span></code></pre><pre><code class="language-julia hljs">activate_local_control_point_range!(spline_grid, 5:12, 1:4)
+┌────────────┬───────────────┬──────────────┬──────────────────┐
+│ input dim. │ # c.p. before │ # c.p. after │ # activated c.p. │
+├────────────┼───────────────┼──────────────┼──────────────────┤
+│          1 │             6 │           10 │                0 │
+│          2 │             6 │           10 │               36 │
+│          1 │            10 │           18 │                0 │
+│          2 │            10 │           18 │                0 │
+└────────────┴───────────────┴──────────────┴──────────────────┘
+</span></code></pre><pre><code class="language-julia hljs">activate_local_control_point_range!(spline_grid, 5:12, 1:4)
 activate_local_control_point_range!(spline_grid, 7:8, 5:6)
 plot_basis(spline_grid)</code></pre><img src="eab44875.png" alt="Example block output"/><p>This is in fact an exact reproduction of the THB-spline example shown in <a href="https://www.ag.jku.at/pubs/2016gjkmss.pdf">[1]</a> (p. 6).</p><p>Finally, let&#39;s give the <span>$z$</span>-coordinates of the control points some random values and look at the surface.</p><pre><code class="language-julia hljs">using Plots
 using Random
@@ -63,4 +61,4 @@ spline_grid.control_points[:, 3] .= rand(Float32, get_n_control_points(spline_gr
 evaluate!(spline_grid.control_points)
 evaluate!(spline_grid)
 p = Plots.plot(spline_grid, camera = (30, 60, 1.5))
-Plots.zlims!(p, 0, 1)</code></pre><img src="94694248.svg" alt="Example block output"/><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><p>[1] Giannelli, C., Jüttler, B., Kleiss, S. K., Mantzaflaris, A., Simeon, B., &amp; Špeh, J. (2016). <em>THB-splines: An effective mathematical technology for adaptive refinement in geometric design and isogeometric analysis.</em> Computer Methods in Applied Mechanics and Engineering, 299, 337-365.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../theory_refinement/">« Refinement</a><a class="docs-footer-nextpage" href="../examples_dimensions/">Dimensionality »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Saturday 18 January 2025 08:26">Saturday 18 January 2025</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+Plots.zlims!(p, 0, 1)</code></pre><img src="45b0a5b3.svg" alt="Example block output"/><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><p>[1] Giannelli, C., Jüttler, B., Kleiss, S. K., Mantzaflaris, A., Simeon, B., &amp; Špeh, J. (2016). <em>THB-splines: An effective mathematical technology for adaptive refinement in geometric design and isogeometric analysis.</em> Computer Methods in Applied Mechanics and Engineering, 299, 337-365.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../theory_refinement/">« Refinement</a><a class="docs-footer-nextpage" href="../examples_dimensions/">Dimensionality »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Saturday 18 January 2025 21:40">Saturday 18 January 2025</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
