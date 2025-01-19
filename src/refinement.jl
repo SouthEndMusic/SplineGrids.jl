@@ -190,8 +190,7 @@ end
         spline_grid::A,
         dim_refinement::Integer,
         knot_new::AbstractFloat;
-        evaluate_spline_dimension::Bool = true,
-        recompute_global_sample_indices = true)::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
+        evaluate_spline_dimension::Bool = true)::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
 
 Create a new spline grid where a new knot is added to the knot vector underlying the indicated spline dimension.
 
@@ -201,8 +200,6 @@ Create a new spline grid where a new knot is added to the knot vector underlying
   - `knot_new`: The value of the knot to be added
   - `dim_refinement`: The index of the spline dimension to which the knot will be added
   - `evaluate_spline_dimension`: Whether the spline dimension to which the knot is added should be evaluated.
-    Defaults to `true`.
-  - `recompute_global_sample_indices`: Whether the global sample indices should be recomputed after the knot insertion.
     Defaults to `true`.
 
 ## Outputs
@@ -216,8 +213,7 @@ function insert_knot(
         spline_grid::A,
         dim_refinement::Integer,
         knot_new::AbstractFloat;
-        evaluate_spline_dimension::Bool = true,
-        recompute_global_sample_indices = true
+        evaluate_spline_dimension::Bool = true
 )::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
     (; spline_dimensions) = spline_grid
 
@@ -234,8 +230,7 @@ function insert_knot(
         spline_grid,
         spline_dimension_new,
         dim_refinement,
-        refinement_matrix;
-        recompute_global_sample_indices
+        refinement_matrix
     )
 end
 
@@ -292,8 +287,7 @@ end
     refine(
         spline_grid::A,
         dim_refinement::Integer;
-        knots_new::Union{AbstractVector{<:AbstractFloat}, Nothing} = nothing,
-        recompute_global_sample_indices::Bool = true)::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
+        knots_new::Union{AbstractVector{<:AbstractFloat}, Nothing} = nothing)::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
 
 Create a new spline grid where multiple knots are added to the knot vector underlying the indicated spline dimension.
 
@@ -303,8 +297,6 @@ Create a new spline grid where multiple knots are added to the knot vector under
   - `dim_refinement`: The index of the spline dimension whose knot vector will be refined
   - `knots_new`: The knots that will be added. Defaults to `nothing`, which internally is translated to all midpoints of the
     non-trivial knot spans of the knot vector that will be refined.
-  - `recompute_global_sample_indices`: Whether the global sample indices should be recomputed after the knot refinement.
-    Defaults to `true`.
 
 ## Outputs
 
@@ -316,8 +308,7 @@ Create a new spline grid where multiple knots are added to the knot vector under
 function refine(
         spline_grid::A,
         dim_refinement::Integer;
-        knots_new::Union{AbstractVector{<:AbstractFloat}, Nothing} = nothing,
-        recompute_global_sample_indices::Bool = true
+        knots_new::Union{AbstractVector{<:AbstractFloat}, Nothing} = nothing
 )::Tuple{A, RefinementMatrix} where {A <: AbstractSplineGrid}
     (; spline_dimensions) = spline_grid
 
@@ -334,8 +325,7 @@ function refine(
         spline_grid,
         spline_dimension_new,
         dim_refinement,
-        refinement_matrix;
-        recompute_global_sample_indices
+        refinement_matrix
     )
 end
 
@@ -344,8 +334,7 @@ end
         spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv, Ti},
         spline_dimension_new::SplineDimension{Tv, Ti},
         dim_refinement::Integer,
-        refinement_matrix::RefinementMatrix{Tv, Ti};
-        recompute_global_sample_indices::Bool = true) where {Nin, Nout, Tv, Ti}
+        refinement_matrix::RefinementMatrix{Tv, Ti} where {Nin, Nout, Tv, Ti}
 
 Update the spline grid with a refined spline dimension in the specified dimension with the associated refinement matrix.
 """
@@ -353,10 +342,9 @@ function refine(
         spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv, Ti},
         spline_dimension_new::SplineDimension{Tv, Ti},
         dim_refinement::Integer,
-        refinement_matrix::RefinementMatrix{Tv, Ti};
-        recompute_global_sample_indices::Bool = true
+        refinement_matrix::RefinementMatrix{Tv, Ti}
 ) where {Nin, Nout, Tv, Ti}
-    (; spline_dimensions, control_points, sample_indices) = spline_grid
+    (; spline_dimensions, control_points) = spline_grid
 
     # The number of control points added in the refinement dimension
     n_cp_new = size(refinement_matrix)[1] - size(refinement_matrix)[2]
@@ -384,15 +372,6 @@ function refine(
 
     spline_dimensions_new = ntuple(
         dim -> (dim == dim_refinement) ? spline_dimension_new : spline_dimensions[dim], Nin)
-
-    if recompute_global_sample_indices
-        sample_indices_cpu = adapt(CPU(), sample_indices)
-        set_global_sample_indices!(
-            sample_indices_cpu,
-            spline_dimensions_new,
-            Nout)
-        copyto!(sample_indices, sample_indices_cpu)
-    end
 
     spline_dimensions_new = ntuple(
         dim -> (dim == dim_refinement) ? spline_dimension_new : spline_dimensions[dim], Nin)

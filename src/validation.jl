@@ -1,11 +1,8 @@
 function validate_spline_grid(
         spline_dimensions,
         control_points,
-        denominator,
         weights,
-        eval,
-        sample_indices,
-        basis_function_products
+        eval
 )::Nothing
     errors = false
 
@@ -13,21 +10,18 @@ function validate_spline_grid(
     Nin_sd = length(spline_dimensions)
     Nin_cp = ndims(control_points) - 1
     Nin_eval = ndims(eval) - 1
-    Nin_si = ndims(sample_indices)
-    Nin_bfp = ndims(basis_function_products)
 
     if isnothing(weights)
-        Nins = (Nin_sd, Nin_cp, Nin_eval, Nin_si, Nin_bfp)
+        Nins = (Nin_sd, Nin_cp, Nin_eval)
         if !allequal(Nins)
-            @error "The number of input dimensions from the spline dimensions, control_points, eval, sample indices and basis function products must agree, got $Nins respectively."
+            @error "The number of input dimensions from the spline dimensions, control_points, and eval must agree, got $Nins respectively."
             errors = true
         end
     else
         Nin_weights = ndims(weights)
-        Nin_denom = ndims(weights)
-        Nins = (Nin_sd, Nin_cp, Nin_eval, Nin_si, Nin_bfp, Nin_weights, Nin_denom)
+        Nins = (Nin_sd, Nin_cp, Nin_eval, Nin_weights)
         if !allequal(Nins)
-            @error "The number of input dimensions from the spline dimensions, control_points, eval, sample indices, basis function products, weights and denominator must agree, got $Nins respectively."
+            @error "The number of input dimensions from the spline dimensions, control_points, eval and weights must agree, got $Nins respectively."
             errors = true
         end
     end
@@ -48,35 +42,6 @@ function validate_spline_grid(
     if cp_grid_size_sd != cp_grid_size_cp
         @error "The control point grid sizes from the spline dimensions $cp_grid_size_sd and the control points $cp_grid_size_cp must agree."
         errors = true
-    end
-
-    # Evaluation grid size
-    eval_grid_size_si = size(sample_indices)
-    eval_grid_size_bfp = size(basis_function_products)
-    eval_grid_size_eval = size(eval)[1:(end - 1)]
-
-    if isnothing(weights)
-        eval_grid_sizes = (
-            eval_grid_size_si,
-            eval_grid_size_bfp,
-            eval_grid_size_eval
-        )
-        if !allequal(eval_grid_sizes)
-            @error "The evaluation grid sizes from the sample indices, basis function products and eval must agree, got $eval_grid_sizes respectively."
-            errors = true
-        end
-    else
-        eval_grid_size_denom = size(denominator)
-        eval_grid_sizes = (
-            eval_grid_size_si,
-            eval_grid_size_bfp,
-            eval_grid_size_eval,
-            eval_grid_size_denom
-        )
-        if !allequal(eval_grid_sizes)
-            @error "The evaluation grid sizes from the sample indices, basis function products, eval and denominator must agree, got $eval_grid_sizes respectively."
-            errors = true
-        end
     end
 
     if errors
