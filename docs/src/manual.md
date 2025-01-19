@@ -4,6 +4,7 @@
 KnotVector(::Integer, ::Integer)
 SplineDimension(::Integer, ::Integer, ::Integer)
 SplineGrid(::NTuple{Nin, <:SplineDimension{Tv, Ti}}, ::Integer) where {Nin, Tv, Ti}
+NURBSGrid(::NTuple{Nin, <:SplineDimension{Tv, Ti}}, ::Integer) where {Nin, Tv, Ti}
 rmeye(::Integer)
 RefinementMatrix(::SplineDimension{Tv, Ti}, ::Integer, ::Any) where {Tv, Ti <: Integer}
 ```
