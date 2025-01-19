@@ -46,7 +46,6 @@ include("refinement_matrix.jl")
 include("refinement.jl")
 include("control_points.jl")
 include("spline_grid.jl")
-include("nurbs_grid.jl")
 include("plot_rec.jl")
 include("validation.jl")
 

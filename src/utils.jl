@@ -28,41 +28,6 @@ function set_sample_indices!(spline_dimension::AbstractSplineDimension)::Nothing
     synchronize(backend)
 end
 
-function set_global_sample_indices!(
-        sample_indices::AbstractArray{<:Integer},
-        spline_dimensions::NTuple{
-            Nin, <:AbstractSplineDimension},
-        Nout::Integer)::Nothing where {Nin}
-    cp_array_size = (get_control_point_grid_size(spline_dimensions)..., Nout)
-    cp_indices = zeros(Int, Nin + 1)
-    sample_indices_dims = [adapt(CPU(), spline_dim.sample_indices)
-                           for spline_dim in spline_dimensions]
-    for J in CartesianIndices(sample_indices)
-        for dim in 1:Nin
-            spline_dim = spline_dimensions[dim]
-            cp_indices[dim] = sample_indices_dims[dim][J[dim]] -
-                              spline_dim.degree - 1
-        end
-        sample_indices[J] = get_linear_index(cp_array_size, cp_indices)
-    end
-    return nothing
-end
-
-# Linear indices for control points per global sample point
-# (Computed on CPU)
-function get_global_sample_indices(
-        spline_dimensions::NTuple{
-            <:Any, <:AbstractSplineDimension{Tv, Ti}},
-        Nout::Integer) where {Tv, Ti}
-    backend = get_backend(first(spline_dimensions))
-    # The size of the point grid on which the spline is evaluated
-    size_eval_grid = get_sample_grid_size(spline_dimensions)
-    # Assumptions: dim_out = 0, I = (0,...,0)
-    sample_indices = KernelAbstractions.zeros(CPU(), Ti, size_eval_grid...)
-    set_global_sample_indices!(sample_indices, spline_dimensions, Nout)
-    adapt(backend, sample_indices)
-end
-
 # The number of basis functions in this spline dimension
 function get_n_basis_functions(spline_dimension::AbstractSplineDimension)
     length(spline_dimension.knot_vector.knots_all) - spline_dimension.degree - 1
@@ -73,7 +38,7 @@ end
 function get_cp_kernel_size(spline_dimensions::NTuple{
         Nin, <:AbstractSplineDimension})::NTuple{
         Nin, Int} where {Nin}
-    ntuple(n -> spline_dimensions[n].degree + 1, Nin)
+    ntuple(dim_in -> spline_dimensions[dim_in].degree + 1, Nin)
 end
 
 # The size of the grid on the domain of the spline where the 
@@ -88,41 +53,6 @@ function get_control_point_grid_size(spline_dimensions::NTuple{
         Nin, <:AbstractSplineDimension})::NTuple{
         Nin, Int} where {Nin}
     get_n_basis_functions.(spline_dimensions)
-end
-
-# Outer product of n vectors, with thanks to Michael Abbott
-function outer!(A::AbstractArray{Tv, N}, vs::Vararg{AbstractArray, N}) where {Tv, N}
-    vecs = ntuple(n -> reshape(vs[n], ntuple(Returns(1), n - 1)..., :), N)
-    broadcast!(*, A, vecs...)
-end
-
-# Type stable calculation of linear index
-function get_linear_index(array_shape, indices)
-    linear_idx = 1
-    offset_local = 1
-
-    for i in eachindex(indices)
-        @inbounds linear_idx += (indices[i] - 1) * offset_local
-        @inbounds offset_local *= array_shape[i]
-    end
-
-    return linear_idx
-end
-
-# Type stable calculate of the offset of the linear index for a
-# location in the control point kernel given by `indices`
-function get_offset(array_shape, indices)
-
-    # Calculate flat index using column-major order (Julia's default)
-    linear_idx = 0
-    offset_local = 1
-
-    for i in eachindex(indices)
-        @inbounds linear_idx += indices[i] * offset_local
-        @inbounds offset_local *= array_shape[i]
-    end
-
-    return linear_idx
 end
 
 function insert(v::AbstractVector{T}, i::Integer, x) where {T}
@@ -249,11 +179,8 @@ function Adapt.adapt(
         SplineGrid(
             ntuple(i -> adapt(backend, spline_dimensions[i]), length(spline_dimensions)),
             adapt(backend, spline_grid.control_points),
-            adapt(backend, spline_grid.denominator),
             adapt(backend, spline_grid.weights),
-            adapt(backend, spline_grid.eval),
-            adapt(backend, spline_grid.sample_indices),
-            adapt(backend, spline_grid.basis_function_products)
+            adapt(backend, spline_grid.eval)
         )
     end
 end
