@@ -72,13 +72,13 @@ struct LocalRefinement{
     I <: AbstractMatrix{Ti},
     D <: AbstractMatrix{Tv}
 }
-    dim_refinement::Int
-    refinement_matrix::R
+    dims_refinement::Vector{Int}
+    refinement_matrices::Vector{R}
     refinement_indices::I
     refinement_values::D
     function LocalRefinement(
-            dim_refinement,
-            refinement_matrix,
+            dims_refinement,
+            refinement_matrices,
             refinement_indices,
             refinement_values
     )
@@ -87,12 +87,12 @@ struct LocalRefinement{
             size(refinement_values)[2],
             eltype(refinement_values),
             eltype(refinement_indices),
-            typeof(refinement_matrix),
+            eltype(refinement_matrices),
             typeof(refinement_indices),
             typeof(refinement_values)
         }(
-            dim_refinement,
-            refinement_matrix,
+            dims_refinement,
+            refinement_matrices,
             refinement_indices,
             refinement_values
         )
@@ -104,8 +104,8 @@ function Adapt.adapt(backend::Backend, local_refinement::LocalRefinement)
         local_refinement
     else
         LocalRefinement(
-            local_refinement.dim_refinement,
-            adapt(backend, local_refinement.refinement_matrix),
+            local_refinement.dims_refinement,
+            map(refmat -> adapt(backend, refmat), local_refinement.refinement_matrices),
             adapt(backend, local_refinement.refinement_indices),
             adapt(backend, local_refinement.refinement_values)
         )
@@ -196,17 +196,25 @@ function Base.show(
     cp_grid_size = size(control_points)[1:(end - 1)]
     println(io,
         "LocallyRefinedControlPoints for final grid of size $cp_grid_size in ℝ$(super(string(Nout))) ($Tv). Local refinements:")
-    data = zip(
-        map(
-        lr -> (
-            lr.dim_refinement,
-            lr.refinement_matrix.n,
-            lr.refinement_matrix.m,
-            size(lr.refinement_indices)[1]
-        ),
-        local_refinements
-    )...)
-    data = hcat(collect.(collect(data))...)
+
+    input_dims = Int[]
+    n_cp_before = Int[]
+    n_cp_after = Int[]
+    n_cp_activated = Int[]
+
+    for local_refinement in local_refinements
+        (; dims_refinement, refinement_matrices, refinement_indices) = local_refinement
+        for (i, (input_dim, ref_mat)) in enumerate(zip(
+            dims_refinement, refinement_matrices))
+            push!(input_dims, input_dim)
+            push!(n_cp_before, ref_mat.n)
+            push!(n_cp_after, ref_mat.m)
+            push!(n_cp_activated,
+                (i == length(dims_refinement)) ? size(refinement_indices, 1) : 0)
+        end
+    end
+
+    data = hcat(input_dims, n_cp_before, n_cp_after, n_cp_activated)
     header = ["input dim.", "# c.p. before", "# c.p. after", "# activated c.p."]
     pretty_table(io, data; header)
 end
@@ -244,20 +252,14 @@ end
         @Const(refinement_values)
 )
     i = @index(Global, Linear)
+
     Nin = ndims(control_points) - 1
     Nout = size(control_points)[end]
 
-    cp_grid_size = prod(size(control_points)[1:(end - 1)])
-    lin_cp_index_base = refinement_indices[i, 1]
-    size_prod = 1
-    for dim_in in 2:Nin
-        size_prod *= size(control_points, dim_in - 1)
-        lin_cp_index_base += (refinement_indices[i, dim_in] - 1) * size_prod
-    end
+    indices = ntuple(dim_in -> refinement_indices[i, dim_in], Nin)
 
     for dim_out in 1:Nout
-        lin_cp_idx = lin_cp_index_base + (dim_out - 1) * cp_grid_size
-        control_points[lin_cp_idx] = refinement_values[i, dim_out]
+        control_points[indices..., dim_out] = refinement_values[i, dim_out]
     end
 end
 
@@ -273,17 +275,17 @@ function evaluate!(control_points::LocallyRefinedControlPoints)
     kernel! = local_refinement_kernel(backend)
 
     for (i, local_refinement) in enumerate(local_refinements)
-        (; dim_refinement,
-        refinement_matrix,
+        (; dims_refinement,
+        refinement_matrices,
         refinement_indices,
         refinement_values) = local_refinement
         cp_prev = (i == 1) ? control_points_base : control_points_refined[i - 1]
         cp_new = control_points_refined[i]
         mult!(
             cp_new,
-            (refinement_matrix,),
+            Tuple(refinement_matrices),
             cp_prev,
-            (dim_refinement,)
+            Tuple(dims_refinement)
         )
         if !isempty(refinement_indices)
             kernel!(
@@ -308,85 +310,67 @@ function obtain(control_points::LocallyRefinedControlPoints)
     end
 end
 
-# Helper function for setting up or extending default local refinement
-function default_local_refinement(
-        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
-        dim_refinement::Integer
+function add_default_local_refinement(
+        spline_grid::AbstractSplineGrid{
+        Nin, Nout, HasWeights, Tv, Ti}
 ) where {Nin, Nout, HasWeights, Tv, Ti}
-    backend = get_backend(spline_grid.eval)
-    spline_grid, refinement_matrix = refine(spline_grid, dim_refinement)
-
-    refinement_indices = allocate(backend, Ti, 0, Nin)
-    refinement_values = allocate(backend, Tv, 0, Nout)
-
-    local_refinement = LocalRefinement(
-        dim_refinement,
-        refinement_matrix,
-        refinement_indices,
-        refinement_values
-    )
-
-    spline_grid, local_refinement
-end
-
-"""
-Set up a default refinement matrix for each input dimension in order
-(a default refinement matrix means bisecting each non-trivial knot span).
-After this, data can be added to `spline_grid.control_points <: LocallyRefinedControlPoints` from
-the output `spline_grid` to achieve local refinement by overwriting control point values
-resulting from the refinement matrix multiplication.
-"""
-function setup_default_local_refinement(
-        spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv, Ti}
-) where {Nin, Nout, Tv, Ti}
-    control_points_base = obtain(spline_grid.control_points)
+    (; spline_dimensions, control_points) = spline_grid
+    backend = get_backend(control_points)
 
     # First dimension
-    dim_refinement = 1
-    spline_grid, local_refinement = default_local_refinement(
-        spline_grid,
-        dim_refinement
-    )
-    control_points_refined = [obtain(spline_grid.control_points)]
-    local_refinements = [local_refinement]
+    spline_dimension_new, refinement_matrix = refine(first(spline_dimensions))
+    refinement_matrices = [refinement_matrix]
+    spline_dimensions_new = ntuple(
+        dim_in -> (dim_in == 1) ? spline_dimension_new : spline_dimensions[dim_in], Nin)
 
-    # Other dimensions
-    for dim_refinement in 2:Nin
-        spline_grid, local_refinement = default_local_refinement(
-            spline_grid,
-            dim_refinement
-        )
-        push!(control_points_refined, obtain(spline_grid.control_points))
-        push!(local_refinements, local_refinement)
+    # other dimensions
+    for (dim_refinement, spline_dimension) in enumerate(spline_dimensions)
+        (dim_refinement == 1) && continue
+        spline_dimension_new, refinement_matrix = refine(spline_dimension)
+        push!(refinement_matrices, refinement_matrix)
+        spline_dimensions_new = ntuple(
+            dim_in -> (dim_in == dim_refinement) ? spline_dimension_new :
+                      spline_dimensions_new[dim_in],
+            Nin)
     end
 
-    locally_refined_control_points = LocallyRefinedControlPoints(
-        control_points_base,
-        control_points_refined,
-        local_refinements
+    evaluate!.(spline_dimensions_new)
+
+    control_points_refined_new = KernelAbstractions.zeros(
+        backend, Tv, get_control_point_grid_size(spline_dimensions_new)..., Nout)
+
+    dims_refinement = Tuple(1:Nin)
+
+    mult!(
+        control_points_refined_new,
+        Tuple(refinement_matrices),
+        obtain(control_points),
+        dims_refinement
     )
 
-    setproperties(spline_grid; control_points = locally_refined_control_points)
-end
+    local_refinement = LocalRefinement(
+        collect(dims_refinement),
+        refinement_matrices,
+        allocate(backend, Ti, 0, Nin),
+        allocate(backend, Tv, 0, Nout)
+    )
 
-"""
-Extend default local refinement, that is: for a spline grid that already has locally refined control points,
-add default local refinement for each input dimension in order.
-"""
-function extend_default_local_refinement(spline_grid::AbstractSplineGrid{Nin}) where {Nin}
-    (; control_points) = spline_grid
-    @assert control_points isa LocallyRefinedControlPoints
-    (; local_refinements) = control_points
-
-    for dim_refinement in 1:Nin
-        spline_grid, local_refinement = default_local_refinement(
-            spline_grid,
-            dim_refinement
+    control_points_new = if control_points isa DefaultControlPoints
+        LocallyRefinedControlPoints(
+            obtain(control_points),
+            [control_points_refined_new],
+            [local_refinement]
         )
-        push!(local_refinements, local_refinement)
+    else # control_points isa LocallyRefinedControlPoints
+        push!(control_points.control_points_refined, control_points_refined_new)
+        push!(control_points.local_refinements, local_refinement)
+        control_points
     end
 
-    spline_grid
+    setproperties(spline_grid;
+        spline_dimensions = spline_dimensions_new,
+        control_points = control_points_new
+    )
 end
 
 @kernel function refinement_values_new_kernel(
@@ -471,8 +455,8 @@ function activate_local_refinement!(
     synchronize(backend)
 
     local_refinements[refinement_index] = LocalRefinement(
-        local_refinement.dim_refinement,
-        local_refinement.refinement_matrix,
+        local_refinement.dims_refinement,
+        local_refinement.refinement_matrices,
         refinement_indices_new,
         refinement_values_new
     )

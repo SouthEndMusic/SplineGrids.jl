@@ -397,10 +397,9 @@ end
         end
     end
 
-    n_columns = Tuple(n_columns)
     out = zero(eltype(Y))
 
-    for J_base in CartesianIndices(n_columns)
+    for J_base in CartesianIndices(Tuple(n_columns))
         # B index
         J = ntuple(dim -> J_base[dim] + column_start[dim] - 1, Ndims)
         contrib = B[J...]
@@ -449,7 +448,7 @@ function mult!(
             A = As[findfirst(==(dim), dims_refinement)]
             if !((A.m == size_Y[dim]) &&
                  (A.n == size_B[dim]))
-                error("Size of refinement matrix for dimension $dim does not match `B` and `Y` along refinement dimension $dim.")
+                error("Size of refinement matrix does not match `B` and `Y` along refinement dimension $dim.")
             end
         else
             (dimsize != dimsize_new) &&

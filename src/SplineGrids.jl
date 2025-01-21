@@ -55,9 +55,8 @@ include("validation.jl")
 export KnotVector, SplineDimension, SplineGrid, NURBSGrid, decompress, evaluate!,
        evaluate_adjoint!, insert_knot, refine, RefinementMatrix, rmeye, mult!,
        DefaultControlPoints, LocalRefinement, LocallyRefinedControlPoints,
-       setup_default_local_refinement, extend_default_local_refinement,
-       activate_local_refinement!, get_n_control_points, plot_basis, plot_basis!,
-       activate_local_control_point_range!
+       add_default_local_refinement, activate_local_refinement!, get_n_control_points,
+       plot_basis, plot_basis!, activate_local_control_point_range!
 
 # Define names for SplineGridsMakieExt
 function plot_basis end
