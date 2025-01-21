@@ -365,9 +365,9 @@ function refine(
 
     mult!(
         control_points_new,
-        refinement_matrix,
+        (refinement_matrix,),
         obtain(control_points),
-        dim_refinement
+        (dim_refinement,)
     )
 
     spline_dimensions_new = ntuple(

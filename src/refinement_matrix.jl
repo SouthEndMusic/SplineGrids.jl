@@ -366,29 +366,52 @@ end
 @kernel function refinement_matrix_array_mul_kernel(
         Y,
         @Const(B),
-        @Const(row_pointer),
-        @Const(column_start),
-        @Const(nzval),
-        dim_refinement
+        @Const(row_pointer_all),
+        @Const(column_start_all),
+        @Const(nzval_all),
+        refmat_index_all
 )
+    # Y index
     I = @index(Global, Cartesian)
 
-    # i: refinement matrix row index
-    i = I[dim_refinement]
+    Ndims = ndims(Y)
+    Ti = eltype(first(row_pointer_all))
 
-    Ndim = ndims(B)
-    column_start_, column_end = get_column_range(
-        row_pointer, column_start, length(nzval), i)
-    nzval_pointer = row_pointer[i]
+    column_start = MVector{Ndims, Ti}(undef)
+    n_columns = MVector{Ndims, Ti}(undef)
 
+    for dim in 1:Ndims
+        refmat_index = refmat_index_all[dim]
+        if iszero(refmat_index)
+            column_start[dim] = I[dim]
+            n_columns[dim] = 1
+        else
+            column_start_, column_end = get_column_range(
+                row_pointer_all[refmat_index],
+                column_start_all[refmat_index],
+                length(nzval_all[refmat_index]),
+                I[dim]
+            )
+            column_start[dim] = column_start_
+            n_columns[dim] = column_end - column_start_ + 1
+        end
+    end
+
+    n_columns = Tuple(n_columns)
     out = zero(eltype(Y))
 
-    # j: refinement_matrix column index
-    for j in column_start_:column_end
-        B_indices = ntuple(
-            dim -> (dim == dim_refinement) ? j : I[dim], Ndim)
-        out += nzval[nzval_pointer] * B[B_indices...]
-        nzval_pointer += 1
+    for J_base in CartesianIndices(n_columns)
+        # B index
+        J = ntuple(dim -> J_base[dim] + column_start[dim] - 1, Ndims)
+        contrib = B[J...]
+        for dim in 1:Ndims
+            refmat_index = refmat_index_all[dim]
+            if !iszero(refmat_index)
+                row_pointer = row_pointer_all[refmat_index][I[dim]]
+                contrib *= nzval_all[refmat_index][row_pointer + J_base[dim] - 1]
+            end
+        end
+        out += contrib
     end
 
     Y[I] = out
@@ -397,46 +420,54 @@ end
 """
     mult!(
         Y::V,
-        A::RefinementMatrix{Tv},
+        As::NTuple{<:RefinementMatrix{Tv}, N},
         B::V,
-        dim_refinement::Integer)::Nothing where {Tv, V <: AbstractArray{Tv}}
+        dims_refinement::NTuple{<:Integer, N})::Nothing where {Tv, V <: AbstractArray{Tv}, N}
 
-Multiply each 'sub-vector' of `control_points` along the refinement dimension by the refinement matrix in-place.
+'left-multiply' the array B by every refinement matrix along the specified dimension.
 
 ## Inputs
 
   - `Y`: The target array of the multiplication
-  - `A`: The matrix each 'sub-vector' of `B` will be multiplied by
-  - `B`: The array that will be multiplied by the refinement matrix
-  - `dim_refinement`: The dimension along which the refinement matrix multiplication will take place
+  - `As`: The refinement matrices `Y` will be multiplied by
+  - `B`: The array that will be multiplied by the refinement matrices
+  - `dims_refinement`: The dimension along which the refinement matrix multiplication will take place for each matrix
 """
 function mult!(
         Y::V,
-        A::RefinementMatrix{Tv},
+        As::NTuple{N, <:RefinementMatrix{Tv}},
         B::V,
-        dim_refinement::Integer
-)::Nothing where {Tv, V <: AbstractArray{Tv}}
+        dims_refinement::NTuple{N, <:Integer}
+)::Nothing where {Tv, V <: AbstractArray{Tv}, N}
     backend = get_backend(B)
     size_B = size(B)
     size_Y = size(Y)
+    @assert allunique(dims_refinement) "Refinement dimensions must be unique."
+    @assert length(As)==length(dims_refinement) "There must be exactly one refinement dimension per refinement matrix."
     for (dim, (dimsize, dimsize_new)) in enumerate(zip(size_B, size_Y))
-        if dim == dim_refinement
+        if dim ∈ dims_refinement
+            A = As[findfirst(==(dim), dims_refinement)]
             if !((A.m == size_Y[dim]) &&
                  (A.n == size_B[dim]))
-                error("Refinement matrix size does not match `B` and `Y` along refinement dimension $dim.")
+                error("Size of refinement matrix for dimension $dim does not match `B` and `Y` along refinement dimension $dim.")
             end
         else
             (dimsize != dimsize_new) &&
                 error("`B` and `Y` don't have the same size along dimension $dim.")
         end
     end
+
+    n_refmat = length(dims_refinement)
+    refmat_index_all = ntuple(
+        dim -> (dim ∈ dims_refinement) ? findfirst(==(dim), dims_refinement) : 0, ndims(Y))
+
     refinement_matrix_array_mul_kernel(backend)(
         Y,
         B,
-        A.row_pointer,
-        A.column_start,
-        A.nzval,
-        dim_refinement,
+        ntuple(i -> As[i].row_pointer, n_refmat),
+        ntuple(i -> As[i].column_start, n_refmat),
+        ntuple(i -> As[i].nzval, n_refmat),
+        refmat_index_all,
         ndrange = size_Y
     )
     synchronize(backend)

@@ -12,6 +12,9 @@ using Subscripts
 # Needed for plotting
 using RecipesBase
 
+# Needed for allocating static arrays in kernels
+using StaticArraysCore
+
 # Needed for updating objects
 using ConstructionBase
 

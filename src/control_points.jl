@@ -281,9 +281,9 @@ function evaluate!(control_points::LocallyRefinedControlPoints)
         cp_new = control_points_refined[i]
         mult!(
             cp_new,
-            refinement_matrix,
+            (refinement_matrix,),
             cp_prev,
-            dim_refinement
+            (dim_refinement,)
         )
         if !isempty(refinement_indices)
             kernel!(
