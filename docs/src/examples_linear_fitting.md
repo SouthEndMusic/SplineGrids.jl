@@ -81,11 +81,3 @@ plot_basis(spline_grid)
 ```
 
 We can now fit the image again with the refined basis (coming up).
-
-```@example tutorial
-# spline_grid_map = LinearMap(spline_grid)
-# sol = lsqr(spline_grid_map, vec(image_array))
-# spline_grid.control_points .= reshape(sol, size(spline_grid.control_points))
-# evaluate!(spline_grid)
-# plot(spline_grid)
-```
