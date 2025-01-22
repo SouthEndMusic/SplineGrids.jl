@@ -32,7 +32,7 @@ This basis looks rather 'Cartesian', and knot insertion can only refine the basi
 
 ```@example tutorial
 # Set up `LocallyRefinedControlPoints` with a refinement matrix for both dimensions
-spline_grid = setup_default_local_refinement(spline_grid)
+spline_grid = add_default_local_refinement(spline_grid)
 ```
 
 ```@example tutorial
@@ -47,7 +47,7 @@ plot_basis(spline_grid)
 A nice property of this construction is that it can be iterated, creating a hierarchy. Let's refine the basis some more:
 
 ```@example tutorial
-spline_grid = extend_default_local_refinement(spline_grid)
+spline_grid = add_default_local_refinement(spline_grid)
 ```
 
 ```@example tutorial
