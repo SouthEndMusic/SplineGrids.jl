@@ -14,7 +14,7 @@ In this section we solve the following PDE problem with a spline grid:
 
 where the domain is given by the open unit cube: $\Omega = (0,1)^3$. We assume that $g(x,y,z) = 0$ for $z \in (0,1)$ and $g(x,y,z) = f(x,y)$ for $z = 0, 1$.
 
-We solve this problem by sampling the domain and enforcing the PDE on the interior points and the boundary condition on the boundary points. 
+We solve this problem by sampling the domain and enforcing the PDE on the interior points and the boundary condition on the boundary points.
 
 ## The residual kernel
 
@@ -24,17 +24,17 @@ We first define the kernel which calculates the residual of a given approximatio
 using KernelAbstractions
 
 @kernel function pde_residual_kernel(
-    residual,
-    @Const(f),
-    @Const(u),
-    @Const(∂₁²u),
-    @Const(∂₂²u),
-    @Const(∂₃²u),
+        residual,
+        @Const(f),
+        @Const(u),
+        @Const(∂₁²u),
+        @Const(∂₂²u),
+        @Const(∂₃²u)
 )
     I = @index(Global, Cartesian)
 
     is_boundary = false
-    for (i, i_max) in zip(Tuple(I)[1:end-1], size(residual)[1:end-1])
+    for (i, i_max) in zip(Tuple(I)[1:(end - 1)], size(residual)[1:(end - 1)])
         if (i == 1) || (i == i_max)
             is_boundary = true
             break
@@ -66,10 +66,10 @@ function pde_residual!(residual, control_points_flat, p)::Nothing
         size(spline_grid.control_points)
     )
 
-    evaluate!(spline_grid; control_points, eval=u)
-    evaluate!(spline_grid; control_points, eval=∂₁²u, derivative_order=(2, 0, 0))
-    evaluate!(spline_grid; control_points, eval=∂₂²u, derivative_order=(0, 2, 0))
-    evaluate!(spline_grid; control_points, eval=∂₃²u, derivative_order=(0, 0, 2))
+    evaluate!(spline_grid; control_points, eval = u)
+    evaluate!(spline_grid; control_points, eval = ∂₁²u, derivative_order = (2, 0, 0))
+    evaluate!(spline_grid; control_points, eval = ∂₂²u, derivative_order = (0, 2, 0))
+    evaluate!(spline_grid; control_points, eval = ∂₃²u, derivative_order = (0, 0, 2))
 
     backend = get_backend(u)
     pde_residual_kernel(backend)(
@@ -79,7 +79,7 @@ function pde_residual!(residual, control_points_flat, p)::Nothing
         ∂₁²u,
         ∂₂²u,
         ∂₃²u,
-        ndrange=size(u)
+        ndrange = size(u)
     )
     synchronize(backend)
     return nothing
@@ -98,7 +98,8 @@ degree = (2, 2, 2)
 n_sample_points = n_control_points
 dim_out = 1
 
-spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; max_derivative_order = 2)
+spline_dimensions = SplineDimension.(
+    n_control_points, degree, n_sample_points; max_derivative_order = 2)
 spline_grid = SplineGrid(spline_dimensions, dim_out)
 spline_grid
 ```
@@ -118,7 +119,7 @@ end
 function hills(x, y)
     R = 0.25
     out = 0.0
-    for θ in range(0, 2π, length=4)[1:end-1]
+    for θ in range(0, 2π, length = 4)[1:(end - 1)]
         x0 = 0.5 + R * cos(θ)
         y0 = 0.5 + R * sin(θ)
         out += hill(x, y, x0, y0, R / 2)
@@ -126,12 +127,10 @@ function hills(x, y)
     return 100 * out
 end
 
-
-f = [
-    hills.(x, y) for
-    x = spline_dimensions[1].sample_points,
-    y = spline_dimensions[2].sample_points
-]
+f = [hills.(x, y)
+     for
+     x in spline_dimensions[1].sample_points,
+y in spline_dimensions[2].sample_points]
 
 heatmap(f)
 ```
@@ -154,7 +153,7 @@ p = (;
     ∂₃²u = similar(spline_grid.eval)
 )
 
-meta_p = (; 
+meta_p = (;
     residual = similar(spline_grid.eval),
     p_duplicated = DuplicatedNoNeed(p, make_zero(p))
 )
@@ -200,7 +199,7 @@ sol = solve(problem, NewtonRaphson(linsolve = KrylovJL_GMRES()))
 spline_grid.control_points .= reshape(sol.u, size(spline_grid.control_points))
 evaluate!(spline_grid)
 fig = Figure()
-ax, plt = volume(fig[1,1], log.(spline_grid.eval[:, :, :, 1] .+ 1))
-Colorbar(fig[1,2], plt; label = L"\log(u + 1)")
+ax, plt = volume(fig[1, 1], log.(spline_grid.eval[:, :, :, 1] .+ 1))
+Colorbar(fig[1, 2], plt; label = L"\log(u + 1)")
 fig
 ```

@@ -77,3 +77,12 @@ end
         out[i] = x
     end
 end
+
+@kernel function collect_indices_kernel(indices, @Const(I))
+    i = @index(Global, Linear)
+    t = Tuple(I[i])
+    Nin = length(t)
+    for dim_in in 1:Nin
+        indices[i, dim_in] = t[dim_in]
+    end
+end

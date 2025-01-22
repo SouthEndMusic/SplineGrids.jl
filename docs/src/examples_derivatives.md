@@ -15,7 +15,8 @@ Nout = 3
 max_derivative_order = 1
 
 # Define the spline grid
-spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; max_derivative_order)
+spline_dimensions = SplineDimension.(
+    n_control_points, degree, n_sample_points; max_derivative_order)
 spline_grid = SplineGrid(spline_dimensions, Nout)
 for i in 1:n_control_points[1]
     for j in 1:n_control_points[2]
@@ -56,11 +57,11 @@ nothing
 
 ```@example tutorial
 # Derivatives of the surface with respect to the first dimension parameter
-evaluate!(spline_grid; derivative_order=(1, 0))
+evaluate!(spline_grid; derivative_order = (1, 0))
 ∂₁spline_grid_data = copy(spline_grid.eval)
 
 # Derivatives of the surface with respect to the second dimension parameter
-evaluate!(spline_grid; derivative_order=(0, 1))
+evaluate!(spline_grid; derivative_order = (0, 1))
 ∂₂spline_grid_data = spline_grid.eval
 nothing
 ```
@@ -90,7 +91,7 @@ using CairoMakie
 # Plotting the surface
 f = Figure()
 ax = Axis3(f[1, 1])
-CairoMakie.surface!(ax, eachslice(spline_grid_data, dims=3)...)
+CairoMakie.surface!(ax, eachslice(spline_grid_data, dims = 3)...)
 
 # Plotting a subset of the normal vectors
 spline_grid_data_reshaped = reshape(spline_grid_data, (prod(n_sample_points), 3))
@@ -98,9 +99,9 @@ normal_vectors_reshaped = reshape(normal_vectors, (prod(n_sample_points), 3))
 
 CairoMakie.quiver!(
     ax,
-    eachslice(view(spline_grid_data_reshaped, 1:192:prod(n_sample_points), :), dims=2)...,
-    eachslice(view(normal_vectors_reshaped, 1:192:prod(n_sample_points), :), dims=2)...,
-    arrowsize=0.03,
+    eachslice(view(spline_grid_data_reshaped, 1:192:prod(n_sample_points), :), dims = 2)...,
+    eachslice(view(normal_vectors_reshaped, 1:192:prod(n_sample_points), :), dims = 2)...,
+    arrowsize = 0.03
 )
 
 CairoMakie.xlims!(0, 1)

@@ -14,10 +14,10 @@ We define a spline grid with 2 input dimensions, 1 output dimension and a sample
 ```@example tutorial
 using SplineGrids
 
-n_control_points = (40, 40)
 degree = (2, 2)
 image_array = Float32.(Gray.(image[end:-1:1, :]))'
 n_sample_points = size(image_array)
+n_control_points = ntuple(i -> n_sample_points[i]÷10, 2)
 dim_out = 1
 
 spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
@@ -54,8 +54,38 @@ n_sample_points = (15, 15)
 dim_out = 1
 
 spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
-spline_grid = SplineGrid(spline_dimensions, dim_out)
-spline_grid_map = LinearMap(spline_grid)
+spline_grid_ = SplineGrid(spline_dimensions, dim_out)
+spline_grid_map = LinearMap(spline_grid_)
 M = sparse(spline_grid_map)
 heatmap(M[end:-1:1,:])
+```
+
+## Local refinement
+
+Clearly the error of the fit is largest around the boundary of the text:
+
+```@example tutorial
+err = (spline_grid.eval - image_array).^2
+heatmap(err[:,:,1]', colormap =  c=cgrad(:RdYlGn, rev=true))
+title!("Squared error per pixel")
+```
+
+We can easily locally refine the spline basis by mapping this error back on to the control points.
+
+```@example tutorial
+using CairoMakie
+
+spline_grid = add_default_local_refinement(spline_grid)
+error_informed_local_refinement!(spline_grid, err)
+plot_basis(spline_grid)
+```
+
+We can now fit the image again with the refined basis (coming up).
+
+```@example tutorial
+# spline_grid_map = LinearMap(spline_grid)
+# sol = lsqr(spline_grid_map, vec(image_array))
+# spline_grid.control_points .= reshape(sol, size(spline_grid.control_points))
+# evaluate!(spline_grid)
+# plot(spline_grid)
 ```

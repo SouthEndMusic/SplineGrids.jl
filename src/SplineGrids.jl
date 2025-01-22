@@ -56,7 +56,8 @@ export KnotVector, SplineDimension, SplineGrid, NURBSGrid, decompress, evaluate!
        evaluate_adjoint!, insert_knot, refine, RefinementMatrix, rmeye, mult!,
        DefaultControlPoints, LocalRefinement, LocallyRefinedControlPoints,
        add_default_local_refinement, activate_local_refinement!, get_n_control_points,
-       plot_basis, plot_basis!, activate_local_control_point_range!
+       plot_basis, plot_basis!, activate_local_control_point_range!,
+       error_informed_local_refinement!
 
 # Define names for SplineGridsMakieExt
 function plot_basis end
