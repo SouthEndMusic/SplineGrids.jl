@@ -87,7 +87,7 @@ end
         false
     end
 
-    spline_grid = setup_default_local_refinement(spline_grid)
+    spline_grid = add_default_local_refinement(spline_grid)
     @test try
         plot_basis(spline_grid)
         true
