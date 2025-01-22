@@ -49,17 +49,18 @@ end
 
 """
     LocalRefinement(
-        dim_refinement,
-        refinement_matrix,
+        dims_refinement,
+        refinement_matrices,
         refinement_indices,
         refinement_values)
 
-The data for performing a local refinement.
+The data for performing a local refinement; one or more refinement matrices and the to be overwritten control point
+values after multiplication with the refinement matrices along the specified dimensions.
 
 ## Fields
 
-  - `dim_refinement`: The dimension along which will be refined
-  - `refinement_matrix`: The matrix that performs the refinement
+  - `dims_refinement`: The dimensions along which will be refined
+  - `refinement_matrices`: The matrices that perform the refinement
   - `refinement_indices`: The indices of the control points that will be overwritten after the refinement
   - `refinement_values`: The new values of the control points that will be rewritten after refinement
 """
@@ -310,6 +311,12 @@ function obtain(control_points::LocallyRefinedControlPoints)
     end
 end
 
+"""
+    add_default_local_refinement(spline_grid)
+
+Refine in the default way in every dimension, i.e. bisecting every non-trivial knot span.
+Yields a spline grid with a `LocallyRefinedControlPoints` object for the `control_points` field.
+"""
 function add_default_local_refinement(
         spline_grid::AbstractSplineGrid{
         Nin, Nout, HasWeights, Tv, Ti}

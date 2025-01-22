@@ -4,8 +4,8 @@
 KnotVector(::Integer, ::Integer)
 SplineDimension(::Integer, ::Integer, ::Integer)
 SplineGrid(::NTuple{Nin, <:SplineDimension{Tv, Ti}}, ::Integer) where {Nin, Tv, Ti}
-NURBSGrid(::NTuple{Nin, <:SplineDimension{Tv, Ti}}, ::Integer) where {Nin, Tv, Ti}
-rmeye(::Integer)
+NURBSGrid
+rmeye
 RefinementMatrix(::SplineDimension{Tv, Ti}, ::Integer, ::Any) where {Tv, Ti <: Integer}
 ```
 
@@ -15,8 +15,8 @@ RefinementMatrix(::SplineDimension{Tv, Ti}, ::Integer, ::Any) where {Tv, Ti <: I
 evaluate!(::SplineDimension)
 evaluate!(::SplineGrids.AbstractSplineGrid{Nin, Nout, false}) where {Nin, Nout}
 evaluate!(::SplineGrids.AbstractNURBSGrid{Nin}) where {Nin}
-evaluate_adjoint!(::SplineGrid{Nin}) where {Nin}
-mult!(::A, ::RefinementMatrix{Tv}, ::A, ::Integer) where {Tv, A <: AbstractArray{Tv}}
+evaluate_adjoint!
+mult!
 evaluate!(::LocallyRefinedControlPoints)
 ```
 
@@ -33,10 +33,7 @@ activate_local_refinement!(
         ::LocallyRefinedControlPoints{Nin, Nout, Tv, Ti},
         ::AbstractMatrix{Ti}) where {Nin, Nout, Tv, Ti}
 activate_local_refinement!(::SplineGrids.AbstractSplineGrid, args...)
-activate_local_control_point_range!(
-        ::SplineGrids.AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
-        ::Vararg{UnitRange}
-) where {Nin, Nout, HasWeights, Tv, Ti}
+activate_local_control_point_range!
 ```
 
 # Structs
@@ -55,8 +52,6 @@ SplineGrid
 
 ```@docs
 decompress
-setup_default_local_refinement
-get_n_control_points(::LocallyRefinedControlPoints{Nin}) where {Nin}
-setup_default_local_refinement(::SplineGrids.AbstractSplineGrid{Nin, Nout, false, Tv, Ti}) where {Nin, Nout, Tv, Ti}
-extend_default_local_refinement(::SplineGrids.AbstractSplineGrid{Nin}) where {Nin}
+get_n_control_points
+add_default_local_refinement
 ```
