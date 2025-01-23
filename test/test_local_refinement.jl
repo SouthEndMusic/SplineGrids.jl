@@ -1,5 +1,6 @@
 using SplineGrids
 using KernelAbstractions
+using Adapt
 
 if "--gpu_backend" ∈ ARGS
     backend = CUDABackend()
@@ -61,6 +62,8 @@ end
     error_informed_local_refinement!(spline_grid, error)
 
     @test only(spline_grid.control_points.local_refinements).refinement_indices ==
-          Int32[5 3; 6 3; 7 3; 8 3; 4 4; 5 4; 6 4; 7 4; 8 4; 4 5; 5 5; 6 5; 7 5; 8 5; 5 6;
-                6 6; 7 6; 8 6]
+          adapt(backend,
+        Int32[5 3; 6 3; 7 3; 8 3; 4 4; 5 4; 6 4; 7 4; 8 4; 4 5; 5 5; 6 5; 7 5; 8 5; 5 6;
+              6 6; 7 6; 8 6]
+    )
 end

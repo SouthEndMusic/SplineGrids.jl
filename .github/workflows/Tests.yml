@@ -27,8 +27,8 @@ jobs:
       fail-fast: false
       matrix:
         julia_version:
-          - 1.10.4
-          - 1.11.1
+          - lts
+          - release
         os:
           - "ubuntu-latest"
           - "macOS-latest"

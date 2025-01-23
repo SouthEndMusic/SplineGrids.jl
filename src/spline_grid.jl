@@ -285,6 +285,7 @@ function evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv}
         control_points::AbstractControlPointArray{Nin, Nout, Tv} = spline_grid.control_points,
         eval::AbstractArray = spline_grid.eval
 )::Nothing where {Nin, Nout, Tv}
+    @assert !is_nurbs(spline_grid) "Adjoint evaluation not supported for NURBS."
     (; spline_dimensions) = spline_grid
     validate_partial_derivatives(spline_dimensions, derivative_order)
     control_points = obtain(control_points)
