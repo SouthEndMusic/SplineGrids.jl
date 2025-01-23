@@ -74,6 +74,8 @@ p = Plots.plot(spline_grid, camera = (30, 60, 1.5))
 Plots.zlims!(p, 0, 1)
 ```
 
+See [Local refinement informed by local error](@ref) for an example of how a local fitting error can be used to inform where to refine.
+
 ## References
 
 [1] Giannelli, C., Jüttler, B., Kleiss, S. K., Mantzaflaris, A., Simeon, B., & Špeh, J. (2016). _THB-splines: An effective mathematical technology for adaptive refinement in geometric design and isogeometric analysis._ Computer Methods in Applied Mechanics and Engineering, 299, 337-365.
