@@ -60,7 +60,7 @@ M = sparse(spline_grid_map)
 heatmap(M[end:-1:1,:])
 ```
 
-## Local refinement
+## Local refinement informed by local error
 
 Clearly the error of the fit is largest around the boundary of the text:
 
