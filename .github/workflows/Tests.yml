@@ -27,8 +27,8 @@ jobs:
       fail-fast: false
       matrix:
         julia_version:
-          - 'lts'
-          - 'release'
+          - "lts"
+          - "release"
         os:
           - "ubuntu-latest"
           - "macOS-latest"
