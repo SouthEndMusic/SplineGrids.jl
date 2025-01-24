@@ -9,7 +9,8 @@ Nout = 3
 max_derivative_order = 1
 
 # Define the spline grid
-spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; max_derivative_order)
+spline_dimensions = SplineDimension.(
+    n_control_points, degree, n_sample_points; max_derivative_order)
 spline_grid = SplineGrid(spline_dimensions, Nout)
 for i in 1:n_control_points[1]
     for j in 1:n_control_points[2]
@@ -22,11 +23,11 @@ plot(spline_dimensions[1])</code></pre><img src="ca41250f.svg" alt="Example bloc
 plot(spline_dimensions[1]; derivative_order = 1)</code></pre><img src="d0958571.svg" alt="Example block output"/><h3 id="Evaluating-the-surface"><a class="docs-heading-anchor" href="#Evaluating-the-surface">Evaluating the surface</a><a id="Evaluating-the-surface-1"></a><a class="docs-heading-anchor-permalink" href="#Evaluating-the-surface" title="Permalink"></a></h3><p>The data is copied because <code>spline_grid.eval</code> will be overwritten below when computing the partial derivatives.</p><pre><code class="language-julia hljs">evaluate!(spline_grid)
 spline_grid_data = copy(spline_grid.eval)
 nothing</code></pre><h3 id="Computing-the-partial-derivatives"><a class="docs-heading-anchor" href="#Computing-the-partial-derivatives">Computing the partial derivatives</a><a id="Computing-the-partial-derivatives-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-the-partial-derivatives" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Derivatives of the surface with respect to the first dimension parameter
-evaluate!(spline_grid; derivative_order=(1, 0))
+evaluate!(spline_grid; derivative_order = (1, 0))
 ∂₁spline_grid_data = copy(spline_grid.eval)
 
 # Derivatives of the surface with respect to the second dimension parameter
-evaluate!(spline_grid; derivative_order=(0, 1))
+evaluate!(spline_grid; derivative_order = (0, 1))
 ∂₂spline_grid_data = spline_grid.eval
 nothing</code></pre><h3 id="Computing-the-normal-vectors"><a class="docs-heading-anchor" href="#Computing-the-normal-vectors">Computing the normal vectors</a><a id="Computing-the-normal-vectors-1"></a><a class="docs-heading-anchor-permalink" href="#Computing-the-normal-vectors" title="Permalink"></a></h3><pre><code class="language-julia hljs">using LinearAlgebra
 
@@ -44,7 +45,7 @@ end</code></pre><h3 id="Plotting"><a class="docs-heading-anchor" href="#Plotting
 # Plotting the surface
 f = Figure()
 ax = Axis3(f[1, 1])
-CairoMakie.surface!(ax, eachslice(spline_grid_data, dims=3)...)
+CairoMakie.surface!(ax, eachslice(spline_grid_data, dims = 3)...)
 
 # Plotting a subset of the normal vectors
 spline_grid_data_reshaped = reshape(spline_grid_data, (prod(n_sample_points), 3))
@@ -52,12 +53,12 @@ normal_vectors_reshaped = reshape(normal_vectors, (prod(n_sample_points), 3))
 
 CairoMakie.quiver!(
     ax,
-    eachslice(view(spline_grid_data_reshaped, 1:192:prod(n_sample_points), :), dims=2)...,
-    eachslice(view(normal_vectors_reshaped, 1:192:prod(n_sample_points), :), dims=2)...,
-    arrowsize=0.03,
+    eachslice(view(spline_grid_data_reshaped, 1:192:prod(n_sample_points), :), dims = 2)...,
+    eachslice(view(normal_vectors_reshaped, 1:192:prod(n_sample_points), :), dims = 2)...,
+    arrowsize = 0.03
 )
 
 CairoMakie.xlims!(0, 1)
 CairoMakie.ylims!(0, 1)
 
-f</code></pre><img src="1e1b4a07.png" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_nurbs/">« NURBS</a><a class="docs-footer-nextpage" href="../examples_linear_fitting/">Linear fitting »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Thursday 23 January 2025 23:06">Thursday 23 January 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+f</code></pre><img src="1e1b4a07.png" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_nurbs/">« NURBS</a><a class="docs-footer-nextpage" href="../examples_linear_fitting/">Linear fitting »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Friday 24 January 2025 08:27">Friday 24 January 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

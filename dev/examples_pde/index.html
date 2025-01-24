@@ -5,20 +5,20 @@
     \Delta u = u^3 &amp;\text{ for }&amp; \mathbf{x} \in \Omega \\
     u = g(\mathbf{x}) \; &amp;\text{ for }&amp; \mathbf{x} \in \partial\Omega
 \end{cases}
-\end{align*},\]</p><p>where the domain is given by the open unit cube: <span>$\Omega = (0,1)^3$</span>. We assume that <span>$g(x,y,z) = 0$</span> for <span>$z \in (0,1)$</span> and <span>$g(x,y,z) = f(x,y)$</span> for <span>$z = 0, 1$</span>.</p><p>We solve this problem by sampling the domain and enforcing the PDE on the interior points and the boundary condition on the boundary points. </p><h2 id="The-residual-kernel"><a class="docs-heading-anchor" href="#The-residual-kernel">The residual kernel</a><a id="The-residual-kernel-1"></a><a class="docs-heading-anchor-permalink" href="#The-residual-kernel" title="Permalink"></a></h2><p>We first define the kernel which calculates the residual of a given approximation to the solution of the problem above. Note that this kernel is agnostic of the fact that the solution will come from a spline grid.</p><pre><code class="language-julia hljs">using KernelAbstractions
+\end{align*},\]</p><p>where the domain is given by the open unit cube: <span>$\Omega = (0,1)^3$</span>. We assume that <span>$g(x,y,z) = 0$</span> for <span>$z \in (0,1)$</span> and <span>$g(x,y,z) = f(x,y)$</span> for <span>$z = 0, 1$</span>.</p><p>We solve this problem by sampling the domain and enforcing the PDE on the interior points and the boundary condition on the boundary points.</p><h2 id="The-residual-kernel"><a class="docs-heading-anchor" href="#The-residual-kernel">The residual kernel</a><a id="The-residual-kernel-1"></a><a class="docs-heading-anchor-permalink" href="#The-residual-kernel" title="Permalink"></a></h2><p>We first define the kernel which calculates the residual of a given approximation to the solution of the problem above. Note that this kernel is agnostic of the fact that the solution will come from a spline grid.</p><pre><code class="language-julia hljs">using KernelAbstractions
 
 @kernel function pde_residual_kernel(
-    residual,
-    @Const(f),
-    @Const(u),
-    @Const(∂₁²u),
-    @Const(∂₂²u),
-    @Const(∂₃²u),
+        residual,
+        @Const(f),
+        @Const(u),
+        @Const(∂₁²u),
+        @Const(∂₂²u),
+        @Const(∂₃²u)
 )
     I = @index(Global, Cartesian)
 
     is_boundary = false
-    for (i, i_max) in zip(Tuple(I)[1:end-1], size(residual)[1:end-1])
+    for (i, i_max) in zip(Tuple(I)[1:(end - 1)], size(residual)[1:(end - 1)])
         if (i == 1) || (i == i_max)
             is_boundary = true
             break
@@ -42,10 +42,10 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
         size(spline_grid.control_points)
     )
 
-    evaluate!(spline_grid; control_points, eval=u)
-    evaluate!(spline_grid; control_points, eval=∂₁²u, derivative_order=(2, 0, 0))
-    evaluate!(spline_grid; control_points, eval=∂₂²u, derivative_order=(0, 2, 0))
-    evaluate!(spline_grid; control_points, eval=∂₃²u, derivative_order=(0, 0, 2))
+    evaluate!(spline_grid; control_points, eval = u)
+    evaluate!(spline_grid; control_points, eval = ∂₁²u, derivative_order = (2, 0, 0))
+    evaluate!(spline_grid; control_points, eval = ∂₂²u, derivative_order = (0, 2, 0))
+    evaluate!(spline_grid; control_points, eval = ∂₃²u, derivative_order = (0, 0, 2))
 
     backend = get_backend(u)
     pde_residual_kernel(backend)(
@@ -55,7 +55,7 @@ end</code></pre><pre class="documenter-example-output"><code class="nohighlight 
         ∂₁²u,
         ∂₂²u,
         ∂₃²u,
-        ndrange=size(u)
+        ndrange = size(u)
     )
     synchronize(backend)
     return nothing
@@ -66,7 +66,8 @@ degree = (2, 2, 2)
 n_sample_points = n_control_points
 dim_out = 1
 
-spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; max_derivative_order = 2)
+spline_dimensions = SplineDimension.(
+    n_control_points, degree, n_sample_points; max_derivative_order = 2)
 spline_grid = SplineGrid(spline_dimensions, dim_out)
 spline_grid</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">SplineGrid volume with outputs in ℝ¹ (Float32)
 ----------------------------------------------
@@ -90,7 +91,7 @@ end
 function hills(x, y)
     R = 0.25
     out = 0.0
-    for θ in range(0, 2π, length=4)[1:end-1]
+    for θ in range(0, 2π, length = 4)[1:(end - 1)]
         x0 = 0.5 + R * cos(θ)
         y0 = 0.5 + R * sin(θ)
         out += hill(x, y, x0, y0, R / 2)
@@ -98,12 +99,10 @@ function hills(x, y)
     return 100 * out
 end
 
-
-f = [
-    hills.(x, y) for
-    x = spline_dimensions[1].sample_points,
-    y = spline_dimensions[2].sample_points
-]
+f = [hills.(x, y)
+     for
+     x in spline_dimensions[1].sample_points,
+y in spline_dimensions[2].sample_points]
 
 heatmap(f)</code></pre><img src="a3ba03ba.png" alt="Example block output"/><h2 id="Defining-the-problem"><a class="docs-heading-anchor" href="#Defining-the-problem">Defining the problem</a><a id="Defining-the-problem-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-the-problem" title="Permalink"></a></h2><p>We will solve the problem with a Jacobian free Newton-Krylov method. To do this, we need to provide a Jacobian-vector product (JVP) function.</p><pre><code class="language-julia hljs">using NonlinearSolve
 using Enzyme
@@ -193,6 +192,6 @@ u: 15625-element Vector{Float32}:
  2.0612349f-7</code></pre><h2 id="Viewing-the-solution"><a class="docs-heading-anchor" href="#Viewing-the-solution">Viewing the solution</a><a id="Viewing-the-solution-1"></a><a class="docs-heading-anchor-permalink" href="#Viewing-the-solution" title="Permalink"></a></h2><pre><code class="language-julia hljs">spline_grid.control_points .= reshape(sol.u, size(spline_grid.control_points))
 evaluate!(spline_grid)
 fig = Figure()
-ax, plt = volume(fig[1,1], log.(spline_grid.eval[:, :, :, 1] .+ 1))
-Colorbar(fig[1,2], plt; label = L&quot;\log(u + 1)&quot;)
-fig</code></pre><img src="23a8c715.png" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_enzyme/">« Control point derivatives with Enzyme</a><a class="docs-footer-nextpage" href="../examples_optics/">Optimizing a lens surface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Thursday 23 January 2025 23:06">Thursday 23 January 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ax, plt = volume(fig[1, 1], log.(spline_grid.eval[:, :, :, 1] .+ 1))
+Colorbar(fig[1, 2], plt; label = L&quot;\log(u + 1)&quot;)
+fig</code></pre><img src="23a8c715.png" alt="Example block output"/></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../examples_enzyme/">« Control point derivatives with Enzyme</a><a class="docs-footer-nextpage" href="../examples_optics/">Optimizing a lens surface »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Friday 24 January 2025 08:27">Friday 24 January 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
