@@ -159,7 +159,6 @@ function Adapt.adapt(
             DefaultControlPoints(adapt(backend, control_points.control_points))
         else # control_points isa LocallyRefinedControlPoints
             LocallyRefinedControlPoints(
-                adapt(backend, control_points.control_points_base),
                 map(cp -> adapt(backend, cp), control_points.control_points_refined),
                 map(lr -> adapt(backend, lr), control_points.local_refinements)
             )
@@ -194,4 +193,15 @@ function collect_indices(
     collect_indices_kernel(backend)(indices, I, ndrange = size(I))
     synchronize(backend)
     indices
+end
+
+function single_output_size(array::AbstractArray)
+    size_ = size(array)
+    ndims_ = ndims(array)
+    ntuple(dim -> (dim == ndims_) ? 1 : size_[dim], ndims_)
+end
+
+function single_output_view(array::AbstractArray)
+    ndims_ = ndims(array)
+    view(array, ntuple(dim -> (dim == ndims_) ? (1:1) : Colon(), ndims_)...)
 end

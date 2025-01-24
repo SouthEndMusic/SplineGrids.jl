@@ -433,11 +433,11 @@ end
   - `dims_refinement`: The dimension along which the refinement matrix multiplication will take place for each matrix
 """
 function mult!(
-        Y::V,
-        As::NTuple{N, <:RefinementMatrix{Tv}},
-        B::V,
+        Y::AbstractArray,
+        As::NTuple{N, <:RefinementMatrix},
+        B::AbstractArray,
         dims_refinement::NTuple{N, <:Integer}
-)::Nothing where {Tv, V <: AbstractArray{Tv}, N}
+)::Nothing where {N}
     backend = get_backend(B)
     size_B = size(B)
     size_Y = size(Y)

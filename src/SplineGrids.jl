@@ -21,6 +21,9 @@ using ConstructionBase
 # Needed for handling locally refined control point data
 using LazyArrays
 
+# Needed for tracing local refinement dependency on the refined grid
+using SparseConnectivityTracer
+
 # Type parameters:
 # - Nin: Number of input parameters
 # - Nout: number of output parameters
@@ -52,12 +55,30 @@ include("spline_grid.jl")
 include("plot_rec.jl")
 include("validation.jl")
 
-export KnotVector, SplineDimension, SplineGrid, NURBSGrid, decompress, evaluate!,
-       evaluate_adjoint!, insert_knot, refine, RefinementMatrix, rmeye, mult!,
-       DefaultControlPoints, LocalRefinement, LocallyRefinedControlPoints,
-       add_default_local_refinement, activate_local_refinement!, get_n_control_points,
-       plot_basis, plot_basis!, activate_local_control_point_range!,
-       error_informed_local_refinement!
+export activate_local_control_point_range!,
+       activate_local_refinement!,
+       add_default_local_refinement,
+       deactivate_overwritten_control_points,
+       deactivate_overwritten_control_points!,
+       decompress,
+       DefaultControlPoints,
+       error_informed_local_refinement!,
+       evaluate_adjoint!,
+       evaluate!,
+       get_n_control_points,
+       insert_knot,
+       KnotVector,
+       LocallyRefinedControlPoints,
+       LocalRefinement,
+       mult!,
+       NURBSGrid,
+       plot_basis,
+       plot_basis!,
+       refine,
+       RefinementMatrix,
+       rmeye,
+       SplineDimension,
+       SplineGrid
 
 # Define names for SplineGridsMakieExt
 function plot_basis end

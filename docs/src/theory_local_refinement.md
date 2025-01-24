@@ -43,8 +43,11 @@ spline_grid = add_default_local_refinement(spline_grid)
 activate_local_control_point_range!(spline_grid, 1:4, 1:6)
 activate_local_control_point_range!(spline_grid, 1:6, 1:2)
 activate_local_control_point_range!(spline_grid, 9:10, 7:10)
+spline_grid = deactivate_overwritten_control_points(spline_grid)
 plot_basis(spline_grid)
 ```
+
+Note that some of the original basis functions are completely gone, which means that their contribution to the final geometry is completely overwritten. The function `deactivate_overwritten_control_points` weeds out the control points associated with these overwritten basis functions. This means that every active control point is guaranteed to influence the spline geometry (assuming there is at least one global sample point in the effective support of the basis function associated with that control point).
 
 A nice property of this construction is that it can be iterated, creating a hierarchy. Let's refine the basis some more:
 
@@ -55,6 +58,7 @@ spline_grid = add_default_local_refinement(spline_grid)
 ```@example tutorial
 activate_local_control_point_range!(spline_grid, 5:12, 1:4)
 activate_local_control_point_range!(spline_grid, 7:8, 5:6)
+spline_grid = deactivate_overwritten_control_points(spline_grid)
 plot_basis(spline_grid)
 ```
 
