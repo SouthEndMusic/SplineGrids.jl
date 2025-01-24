@@ -26,7 +26,7 @@ SplineGridsMakieExt = ["Makie"]
 [compat]
 Adapt = "4.1"
 Aqua = "0.8.9"
-Atomix = "0.1"
+Atomix = "0.1, 1"
 BandedMatrices = "1.9"
 CairoMakie = "0.12"
 ConstructionBase = "1.5"
