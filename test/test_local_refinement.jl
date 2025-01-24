@@ -42,9 +42,6 @@ end
     @test obtain(control_points) ≈ control_points_before
 
     spline_grid = add_default_local_refinement(spline_grid)
-
-    empty!(control_points.control_points_refined)
-    @test obtain(control_points) === control_points.control_points_base
 end
 
 @testset "Local error informed local_refinement" begin
@@ -61,7 +58,7 @@ end
 
     error_informed_local_refinement!(spline_grid, error)
 
-    @test only(spline_grid.control_points.local_refinements).refinement_indices ==
+    @test last(spline_grid.control_points.local_refinements).refinement_indices ==
           adapt(backend,
         Int32[5 3; 6 3; 7 3; 8 3; 4 4; 5 4; 6 4; 7 4; 8 4; 4 5; 5 5; 6 5; 7 5; 8 5; 5 6;
               6 6; 7 6; 8 6]

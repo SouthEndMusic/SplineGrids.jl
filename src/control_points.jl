@@ -113,6 +113,37 @@ function Adapt.adapt(backend::Backend, local_refinement::LocalRefinement)
     end
 end
 
+# Set up a LocalRefinement for the base control points
+function LocalRefinement(
+        control_points_base::DefaultControlPoints{Nin, Nout, Tv},
+        ::LocalRefinement{Nin, Nout, Tv, Ti, R, I, D}
+)::LocalRefinement{Nin, Nout, Tv, Ti, R, I, D} where {Nin, Nout, Tv, Ti, R, I, D}
+    backend = get_backend(control_points_base)
+    n_control_points = get_n_control_points(control_points_base)
+    refinement_indices = collect_indices(
+        adapt(backend,
+            reshape(
+                collect(CartesianIndices(size(control_points_base)[1:(end - 1)])),
+                n_control_points
+            )
+        ),
+        Ti
+    )
+    refinement_values = copy(
+        reshape(
+        obtain(control_points_base),
+        n_control_points,
+        Nout
+    )
+    )
+    LocalRefinement(
+        Int[],
+        R[],
+        refinement_indices,
+        refinement_values
+    )
+end
+
 """
     LocallyRefinedControlPoints(
         control_points_base,
@@ -136,14 +167,13 @@ struct LocallyRefinedControlPoints{
     V <: AbstractArray{Tv},
     L <: LocalRefinement{Nin, Nout, Tv, Ti}
 } <: AbstractControlPoints{Nin, Nout, Tv}
-    control_points_base::V
     control_points_refined::Vector{V}
     local_refinements::Vector{L}
     function LocallyRefinedControlPoints(
-            control_points_base,
             control_points_refined,
             local_refinements::Vector{<:LocalRefinement{Nin, Nout, Tv, Ti}}
     ) where {Nin, Nout, Tv, Ti}
+        control_points_base = first(control_points_refined)
         new{
             ndims(control_points_base) - 1,
             size(control_points_base)[end],
@@ -152,7 +182,6 @@ struct LocallyRefinedControlPoints{
             typeof(control_points_base),
             eltype(local_refinements)
         }(
-            control_points_base,
             control_points_refined,
             local_refinements
         )
@@ -235,10 +264,10 @@ function get_n_control_points(control_points::AbstractControlPoints{Nin}) where 
 end
 
 function get_n_control_points(control_points::LocallyRefinedControlPoints{Nin}) where {Nin}
-    (; control_points_base, local_refinements) = control_points
-    n_control_points = prod(size(control_points_base)[1:Nin])
+    (; local_refinements) = control_points
+    n_control_points = 0
     for local_refinement in local_refinements
-        n_control_points += size(local_refinement.refinement_indices)[1]
+        n_control_points += size(local_refinement.refinement_indices, 1)
     end
     n_control_points
 end
@@ -271,8 +300,8 @@ Evaluate the locally refined control points. For each local refinement, first
 apply the refinement matrix and then overwrite the desired control point values.
 """
 function evaluate!(control_points::LocallyRefinedControlPoints)
-    (; control_points_base, control_points_refined, local_refinements) = control_points
-    backend = get_backend(control_points_base)
+    (; control_points_refined, local_refinements) = control_points
+    backend = get_backend(first(control_points_refined))
     kernel! = local_refinement_kernel(backend)
 
     for (i, local_refinement) in enumerate(local_refinements)
@@ -280,14 +309,16 @@ function evaluate!(control_points::LocallyRefinedControlPoints)
         refinement_matrices,
         refinement_indices,
         refinement_values) = local_refinement
-        cp_prev = (i == 1) ? control_points_base : control_points_refined[i - 1]
         cp_new = control_points_refined[i]
-        mult!(
-            cp_new,
-            Tuple(refinement_matrices),
-            cp_prev,
-            Tuple(dims_refinement)
-        )
+        if i > 1
+            cp_prev = control_points_refined[i - 1]
+            mult!(
+                cp_new,
+                Tuple(refinement_matrices),
+                cp_prev,
+                Tuple(dims_refinement)
+            )
+        end
         if !isempty(refinement_indices)
             kernel!(
                 cp_new,
@@ -304,11 +335,7 @@ obtain(control_points::AbstractArray) = control_points
 obtain(control_points::DefaultControlPoints) = control_points.control_points
 
 function obtain(control_points::LocallyRefinedControlPoints)
-    if isempty(control_points.control_points_refined)
-        control_points.control_points_base
-    else
-        last(control_points.control_points_refined)
-    end
+    last(control_points.control_points_refined)
 end
 
 """
@@ -363,10 +390,10 @@ function add_default_local_refinement(
     )
 
     control_points_new = if control_points isa DefaultControlPoints
+        local_refinement_base = LocalRefinement(control_points, local_refinement)
         LocallyRefinedControlPoints(
-            obtain(control_points),
-            [control_points_refined_new],
-            [local_refinement]
+            [obtain(control_points), control_points_refined_new],
+            [local_refinement_base, local_refinement]
         )
     else # control_points isa LocallyRefinedControlPoints
         push!(control_points.control_points_refined, control_points_refined_new)
