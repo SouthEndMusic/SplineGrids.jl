@@ -23,10 +23,12 @@ function SplineGrids.plot_basis!(
 
     eval_view = view(spline_grid.eval, :, :, 1)
     basis_functions = zero(eval_view)
+    CI = CartesianIndices(size(control_points_new)[1:2])
+
     for i in 1:get_n_control_points(spline_grid)
         control_points_new .= 0
         if control_points_new isa DefaultControlPoints
-            control_points_new[CartesianIndices(size(control_points_new)[1:2])[i], 1] = 1
+            control_points_new[CI[i], 1] = 1
         else
             control_points_new[i, 1] = 1
         end

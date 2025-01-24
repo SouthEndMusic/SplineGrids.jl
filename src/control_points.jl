@@ -191,11 +191,9 @@ end
 # Helper function for getindex and setindex! for LocallyRefinedControlPoints
 function get_control_point_view(control_points::LocallyRefinedControlPoints{
         Nin, Nout}) where {Nin, Nout}
-    (; control_points_base, local_refinements) = control_points
-    n_cp_base = prod(size(control_points_base)[1:(end - 1)])
+    (; local_refinements) = control_points
     ApplyArray(
         vcat,
-        reshape(control_points_base, n_cp_base, Nout),
         (lr.refinement_values for lr in local_refinements)...
     )
 end
