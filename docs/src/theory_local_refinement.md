@@ -1,11 +1,13 @@
 # Local refinement
 
-As we have seen in the previous section ([Refinement](@ref)), The number of control points can be increased without changing the geometry by using refinement matrices. The key concepts of local refinement are as follows: 
-1. Set up a base grid of control points
-2. Extend the control point grid using refinement matrices
-3. Overwrite certain control points in one of the intermediate extended grids
+As we have seen in the previous section ([Refinement](@ref)), The number of control points can be increased without changing the geometry by using refinement matrices. The key concepts of local refinement are as follows:
+
+ 1. Set up a base grid of control points
+ 2. Extend the control point grid using refinement matrices
+ 3. Overwrite certain control points in one of the intermediate extended grids
 
 !!! note "Understanding THB splines"
+    
     THB-splines can be a tricky construct to understand when you encounter them for the first time. This page does not aim to give a full theoretical background, that can be for instance found in [[1]](https://www.ag.jku.at/pubs/2016gjkmss.pdf). Playing around with THB-splines in the context of this package might however give you intuition for them more quickly than reading the theory.
 
 ## An example
@@ -71,6 +73,8 @@ evaluate!(spline_grid)
 p = Plots.plot(spline_grid, camera = (30, 60, 1.5))
 Plots.zlims!(p, 0, 1)
 ```
+
+See [Local refinement informed by local error](@ref) for an example of how a local fitting error can be used to inform where to refine.
 
 ## References
 

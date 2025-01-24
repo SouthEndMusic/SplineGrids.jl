@@ -493,3 +493,30 @@ function activate_local_control_point_range!(
     local_refinement_indices = reduce(vcat, local_refinement_indices')
     activate_local_refinement!(spline_grid, local_refinement_indices)
 end
+
+function error_informed_local_refinement!(
+        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
+        error::AbstractArray;
+        threshold::Union{Number, Nothing} = nothing
+)::Nothing where {Nin, Nout, HasWeights, Tv, Ti}
+    @assert size(error)==size(spline_grid.eval) "The error array must have the same size as the eval array."
+
+    # Map the error array back onto the control point array
+    control_points_error = zero(obtain(spline_grid.control_points))
+    evaluate_adjoint!(spline_grid; eval = error, control_points = control_points_error)
+
+    # Sum over output dimensions
+    control_grid_error = dropdims(sum(control_points_error, dims = Nin + 1), dims = Nin + 1)
+
+    # Default threshold if not provided
+    if isnothing(threshold)
+        threshold = sum(control_grid_error) / length(control_grid_error)
+    end
+
+    # Deduce the refinement indices
+    refinement_indices_ci = findall(>(threshold), control_grid_error)
+    refinement_indices = collect_indices(refinement_indices_ci, Ti)
+    activate_local_refinement!(spline_grid, refinement_indices)
+
+    return nothing
+end

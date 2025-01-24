@@ -22,7 +22,7 @@ spline_grid
 
 ## Gradient demonstration
 
-Here we show what the gradient of the output surface with respect to one control point looks like. 
+Here we show what the gradient of the output surface with respect to one control point looks like.
 
 ```@example tutorial
 using Enzyme

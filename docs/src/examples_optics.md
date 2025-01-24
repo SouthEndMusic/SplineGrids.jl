@@ -7,13 +7,13 @@ using CairoMakie # hide
 using Makie.GeometryBasics # hide
 
 fig = Figure() # hide
-ax = Axis(fig[1,1]; xlabel = "z axis") # hide
+ax = Axis(fig[1, 1]; xlabel = "z axis") # hide
 
 # Incoming beam # hide
 n_rays = 10 # hide
 arrows!(ax, # hide
     fill(-2.0, n_rays), # hide
-    range(-1,1, length = n_rays), # hide
+    range(-1, 1, length = n_rays), # hide
     ones(n_rays),  # hide
     zeros(n_rays), # hide
     label = "Incoming parallel beam" # hide
@@ -21,7 +21,7 @@ arrows!(ax, # hide
 
 # Lens first surface # hide
 n_points = 100  # hide
-y_lens = range(-1,1, length = n_points) # hide
+y_lens = range(-1, 1, length = n_points) # hide
 x_lens_1 = fill(-0.5, n_points) # hide
 lines!(ax, # hide
     x_lens_1,  # hide
@@ -30,11 +30,11 @@ lines!(ax, # hide
 ) # hide
 
 # Lens second surface # hide
-x_lens_2 = sin.(10y_lens)/25  # hide
+x_lens_2 = sin.(10y_lens) / 25  # hide
 lines!(ax, # hide
     x_lens_2, # hide
     y_lens, # hide
-    label = "Lens surface to optimize", # hide
+    label = "Lens surface to optimize" # hide
 ) # hide
 
 # Lens fill # hide
@@ -44,7 +44,7 @@ poly!( # hide
         Point2f.(x_lens_1, y_lens)..., # hide
         Point2f.(x_lens_2[end:-1:1], y_lens[end:-1:1])... # hide
     ], # hide
-    color = (:blue, 0.2), # hide
+    color = (:blue, 0.2) # hide
 ) # hide
 
 # Detector screen # hide
@@ -65,9 +65,10 @@ fig # hide
 ## Differentiable ray tracing kernel
 
 Here we define a kernel which computes for each sample point on the surface:
-- at which direction a ray leaves that point by Snell's law;
-- where that ray intersects the detector screen;
-- What the contributions of that ray to the pixel values are.
+
+  - at which direction a ray leaves that point by Snell's law;
+  - where that ray intersects the detector screen;
+  - What the contributions of that ray to the pixel values are.
 
 The contribution of the ray is smeared out over multiple pixels in a smooth way to make the rendering differentiable.
 
@@ -89,18 +90,17 @@ function F(x, x0, w)
 end
 
 @kernel function ray_tracing_kernel(
-    render,
-    @Const(u),
-    @Const(∂₁u),
-    @Const(∂₂u),
-    @Const(x),
-    @Const(y),
-    r,
-    z_screen,
-    screen_size,
-    ray_kernel_size,
+        render,
+        @Const(u),
+        @Const(∂₁u),
+        @Const(∂₂u),
+        @Const(x),
+        @Const(y),
+        r,
+        z_screen,
+        screen_size,
+        ray_kernel_size
 )
-
     I = @index(Global, Cartesian)
 
     u_I = u[I]
@@ -160,14 +160,13 @@ end
             h_kernel = (ray_kernel_size[2] + 0.5) * h_pixel
 
             for i_ in i_min:i_max
-                contribution_x =
-                    F(-0.5w_screen + i_ * w_pixel, x_screen, w_kernel) -
-                    F(-0.5w_screen + (i_ - 1) * w_pixel, x_screen, w_kernel)
+                contribution_x = F(-0.5w_screen + i_ * w_pixel, x_screen, w_kernel) -
+                                 F(-0.5w_screen + (i_ - 1) * w_pixel, x_screen, w_kernel)
 
                 for j_ in j_min:j_max
-                    contribution_y =
-                        F(-0.5h_screen + j_ * h_pixel, y_screen, h_kernel) -
-                        F(-0.5h_screen + (j_ - 1) * h_pixel, y_screen, h_kernel)
+                    contribution_y = F(-0.5h_screen + j_ * h_pixel, y_screen, h_kernel) -
+                                     F(
+                        -0.5h_screen + (j_ - 1) * h_pixel, y_screen, h_kernel)
 
                     Atomix.@atomic render[i_, j_] += contribution_x * contribution_y
                 end
@@ -187,9 +186,9 @@ function trace_rays!(render, control_points_flat, p)::Nothing
 
     control_points = reshape(control_points_flat, size(spline_grid.control_points))
 
-    evaluate!(spline_grid; control_points, eval=u)
-    evaluate!(spline_grid; control_points, eval=∂₁u, derivative_order=(1, 0))
-    evaluate!(spline_grid; control_points, eval=∂₂u, derivative_order=(0, 1))
+    evaluate!(spline_grid; control_points, eval = u)
+    evaluate!(spline_grid; control_points, eval = ∂₁u, derivative_order = (1, 0))
+    evaluate!(spline_grid; control_points, eval = ∂₂u, derivative_order = (0, 1))
 
     render .= 0.0
     backend = get_backend(u)
@@ -205,7 +204,7 @@ function trace_rays!(render, control_points_flat, p)::Nothing
         p.z_screen,
         p.screen_size,
         p.ray_kernel_size,
-        ndrange=size(u)
+        ndrange = size(u)
     )
     synchronize(backend)
     return nothing
@@ -226,27 +225,28 @@ n_sample_points = (300, 300) # Determines grid of sampled rays
 dim_out = 1
 extent = (-1.0, 1.0) # Lens extent in both x and y direction
 
-spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; max_derivative_order=1, extent)
+spline_dimensions = SplineDimension.(
+    n_control_points, degree, n_sample_points; max_derivative_order = 1, extent)
 spline_grid = SplineGrid(spline_dimensions, dim_out)
 spline_grid.control_points .= 0
 
 p_render = (;
     spline_grid,
-    u=similar(spline_grid.eval),
-    ∂₁u=similar(spline_grid.eval),
-    ∂₂u=similar(spline_grid.eval),
-    r=1.4,
-    z_screen=5.0,
-    screen_size=(4.0, 4.0),
-    ray_kernel_size=(3, 3),
-    screen_res=(250, 250)
+    u = similar(spline_grid.eval),
+    ∂₁u = similar(spline_grid.eval),
+    ∂₂u = similar(spline_grid.eval),
+    r = 1.4,
+    z_screen = 5.0,
+    screen_size = (4.0, 4.0),
+    ray_kernel_size = (3, 3),
+    screen_res = (250, 250)
 )
 
 render = zeros(Float32, p_render.screen_res)
 
 trace_rays!(render, vec(spline_grid.control_points), p_render)
 
-heatmap(render, aspect_ratio=:equal)
+heatmap(render, aspect_ratio = :equal)
 ```
 
 ## Defining the target distribution
@@ -256,15 +256,16 @@ We define a normalized target distribution, which we will compare to normalized 
 ```@example tutorial
 using LinearAlgebra
 
-target = [
-    exp(-(x.^2 + y.^2)^2) for
-    x = range(-p_render.screen_size[1] / 2, p_render.screen_size[1] / 2, length=p_render.screen_res[1]),
-    y = range(-p_render.screen_size[2] / 2, p_render.screen_size[2] / 2, length=p_render.screen_res[2])
-]
+target = [exp(-(x .^ 2 + y .^ 2)^2)
+          for
+          x in range(-p_render.screen_size[1] / 2, p_render.screen_size[1] / 2,
+    length = p_render.screen_res[1]),
+y in range(-p_render.screen_size[2] / 2, p_render.screen_size[2] / 2,
+    length = p_render.screen_res[2])]
 
 normalize!(target)
 
-heatmap(target, aspect_ratio=:equal)
+heatmap(target, aspect_ratio = :equal)
 ```
 
 ## The loss function
@@ -273,7 +274,6 @@ heatmap(target, aspect_ratio=:equal)
 using Distances
 
 function image_loss(control_points_flat, target, render, p_render)
-
     trace_rays!(render, control_points_flat, p_render)
     normalize!(render)
     Euclidean()(render, target)
@@ -285,7 +285,7 @@ image_loss(
     vec(spline_grid.control_points),
     target,
     render,
-    p_render,
+    p_render
 )
 ```
 
@@ -307,10 +307,10 @@ autodiff(
     Duplicated(vec(spline_grid.control_points), G),
     Const(target),
     DuplicatedNoNeed(render, drender),
-    DuplicatedNoNeed(p_render, dp_render),
+    DuplicatedNoNeed(p_render, dp_render)
 )
 
-heatmap(reshape(G, n_control_points), aspect_ratio=:equal)
+heatmap(reshape(G, n_control_points), aspect_ratio = :equal)
 ```
 
 ## Optimizing the surface
@@ -332,7 +332,7 @@ function image_loss_grad!(G, control_points_flat, meta_p)::Nothing
         Duplicated(control_points_flat, G),
         Const(meta_p.target),
         meta_p.render_duplicated,
-        meta_p.p_render_duplicated,
+        meta_p.p_render_duplicated
     )
     return nothing
 end
@@ -356,7 +356,7 @@ optimization_function = OptimizationFunction(
 prob = OptimizationProblem(
     optimization_function,
     vec(spline_grid.control_points),
-    meta_p,
+    meta_p
 )
 
 sol = solve(prob, BFGS(); maxiters = 50)
@@ -368,7 +368,7 @@ The final render looks like this:
 
 ```@example tutorial
 trace_rays!(render, sol.u, p_render)
-heatmap(render, aspect_ratio=:equal)
+heatmap(render, aspect_ratio = :equal)
 ```
 
 And the lens surface looks like this:
@@ -376,7 +376,7 @@ And the lens surface looks like this:
 ```@example tutorial
 spline_grid.control_points .= reshape(sol.u, size(spline_grid.control_points))
 evaluate!(spline_grid)
-plot(spline_grid; plot_knots = false, aspect_ratio=:equal)
+plot(spline_grid; plot_knots = false, aspect_ratio = :equal)
 ```
 
 ## A peek into upcoming features
@@ -397,7 +397,7 @@ function loss_from_grid(render, u, ∂₁u, ∂₂u, spline_grid, target, p_rend
         p_render.z_screen,
         p_render.screen_size,
         p_render.ray_kernel_size,
-        ndrange=size(u)
+        ndrange = size(u)
     )
     synchronize(backend)
     Euclidean()(render, target)
@@ -420,7 +420,7 @@ autodiff(
 )
 
 heatmap(
-    abs.(meta_p.p_render_duplicated.dval.∂₁u[:,:,1]) +
-    abs.(meta_p.p_render_duplicated.dval.∂₂u[:,:,1]), 
-    aspect_ratio=:equal)
+    abs.(meta_p.p_render_duplicated.dval.∂₁u[:, :, 1]) +
+    abs.(meta_p.p_render_duplicated.dval.∂₂u[:, :, 1]),
+    aspect_ratio = :equal)
 ```

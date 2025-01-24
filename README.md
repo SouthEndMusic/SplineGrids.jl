@@ -8,12 +8,13 @@
 [![codecov](https://codecov.io/gh/SouthEndMusic/SplineGrids.jl/graph/badge.svg?token=K4IMP0BI6Q)](https://codecov.io/gh/SouthEndMusic/SplineGrids.jl)
 
 SplineGrids.jl is designed to efficiently evaluate a broad class of spline objects on a grid in the spline's domain. The package supports:
-- Any number of input and output dimensions (see the examples [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_dimensions/))
-- Any degree of basis functions and type of knot vector
-- Using weights to define NURBS (see an example [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_nurbs/))
-- Any combination of partial derivatives (not for NURBS, coming up) (see an example [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_derivatives/))
-- Local refinement (see the example [here](https://southendmusic.github.io/SplineGrids.jl/dev/theory_local_refinement/))
-- CPU and GPU backends via [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl) (tested with `CUDABackend`)
+
+  - Any number of input and output dimensions (see the examples [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_dimensions/))
+  - Any degree of basis functions and type of knot vector
+  - Using weights to define NURBS (see an example [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_nurbs/))
+  - Any combination of partial derivatives (not for NURBS, coming up) (see an example [here](https://southendmusic.github.io/SplineGrids.jl/dev/examples_derivatives/))
+  - Local refinement (see the example [here](https://southendmusic.github.io/SplineGrids.jl/dev/theory_local_refinement/))
+  - CPU and GPU backends via [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl) (tested with `CUDABackend`)
 
 The intended use case of this package is to be integrated into the [SciML ecosystem](https://sciml.ai/), for easy and efficient incorporation of spline geometries in problems of [fitting](https://southendmusic.github.io/SplineGrids.jl/dev/examples_linear_fitting/), [optimization](https://southendmusic.github.io/SplineGrids.jl/dev/examples_optics/), [differential equation solving](https://southendmusic.github.io/SplineGrids.jl/dev/examples_pde/) and machine learning. Since SplineGrids.jl makes heavy use of in-place computations, the recommended automatic differentiation framework to use with SplineGrids.jl is [Enzyme](https://github.com/EnzymeAD/Enzyme.jl).
 

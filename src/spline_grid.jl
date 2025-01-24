@@ -271,10 +271,10 @@ end
 end
 
 """
-    evaluate_adjoint!(spline_grid::SplineGrid{Nin, Nout, false};
+    evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
-        control_points::AbstractArray = spline_grid.control_points,
-        eval::AbstractArray = spline_grid.eval)::Nothing where {Nin}
+        control_points::AbstractControlPointArray{Nin, Nout, Tv} = spline_grid.control_points,
+        eval::AbstractArray = spline_grid.eval)::Nothing where {Nin, Nout, Tv}
 
 evaluate the adjoint of the linear mapping `control_points -> eval`. This is a computation of the form
 `eval -> control_points`. If we write `evaluate!(spline_grid)` as a matrix vector multiplication `eval = M * control_points`,
@@ -285,6 +285,7 @@ function evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv}
         control_points::AbstractControlPointArray{Nin, Nout, Tv} = spline_grid.control_points,
         eval::AbstractArray = spline_grid.eval
 )::Nothing where {Nin, Nout, Tv}
+    @assert !is_nurbs(spline_grid) "Adjoint evaluation not supported for NURBS."
     (; spline_dimensions) = spline_grid
     validate_partial_derivatives(spline_dimensions, derivative_order)
     control_points = obtain(control_points)

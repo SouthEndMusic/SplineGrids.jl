@@ -184,3 +184,14 @@ function Adapt.adapt(
         )
     end
 end
+
+function collect_indices(
+        I::AbstractVector{<:CartesianIndex{Nin}},
+        int_type::Type{Ti}
+) where {Nin, Ti <: Integer}
+    backend = get_backend(I)
+    indices = KernelAbstractions.zeros(backend, int_type, length(I), Nin)
+    collect_indices_kernel(backend)(indices, I, ndrange = size(I))
+    synchronize(backend)
+    indices
+end

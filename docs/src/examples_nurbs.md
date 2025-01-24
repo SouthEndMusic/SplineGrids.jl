@@ -18,17 +18,15 @@ knot_vector = KnotVector(knot_values, multiplicities)
 spline_dimension = SplineDimension(n_control_points, degree, n_sample_points; knot_vector)
 nurbs_grid = NURBSGrid(spline_dimension, dim_out)
 nurbs_grid.weights[2:2:end] .= 1 / sqrt(2)
-nurbs_grid.control_points .= [
-    1 0;
-    1 1;
-    0 1;
-    -1 1;
-    -1 0;
-    -1 -1;
-    0 -1;
-    1 -1;
-    1 0
-]
+nurbs_grid.control_points .= [1 0;
+                              1 1;
+                              0 1;
+                              -1 1;
+                              -1 0;
+                              -1 -1;
+                              0 -1;
+                              1 -1;
+                              1 0]
 evaluate!(nurbs_grid)
-plot(nurbs_grid; aspect_ratio=:equal)
+plot(nurbs_grid; aspect_ratio = :equal)
 ```

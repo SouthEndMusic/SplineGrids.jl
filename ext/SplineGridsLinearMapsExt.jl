@@ -19,14 +19,20 @@ function LinearMaps.LinearMap(
             eval = reshape(evaluation_flat, size(spline_grid.eval))
         ),
         # In place evaluation spline grid -> control points (adjoint)
-        (control_points_flat, evaluation_flat) -> evaluate_adjoint!(
-            spline_grid;
-            derivative_order,
-            control_points = reshape(control_points_flat, size(spline_grid.control_points)),
-            eval = reshape(evaluation_flat, size(spline_grid.eval))
-        ),
+        (control_points_flat, evaluation_flat) -> begin
+            evaluate_adjoint!(
+                spline_grid;
+                derivative_order,
+                control_points = reshape(
+                    control_points_flat, size(spline_grid.control_points)),
+                eval = reshape(evaluation_flat, size(spline_grid.eval))
+            )
+            # TODO: This must be the adjoint of evaluate!(control_points::LocallyRefinedControlPoints)
+            # if applicable
+            # control_points_flat .= vec(SplineGrids.obtain(spline_grid.control_points))
+        end,
         length(spline_grid.eval),
-        length(spline_grid.control_points)
+        get_n_control_points(spline_grid) * Nout
     )
 end
 

@@ -1,5 +1,6 @@
 using SplineGrids
 using KernelAbstractions
+using Adapt
 
 if "--gpu_backend" ∈ ARGS
     backend = CUDABackend()
@@ -44,4 +45,25 @@ end
 
     empty!(control_points.control_points_refined)
     @test obtain(control_points) === control_points.control_points_base
+end
+
+@testset "Local error informed local_refinement" begin
+    n_control_points = (6, 6)
+    degree = (2, 2)
+    n_sample_points = (50, 50)
+    dim_out = 3
+
+    spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; backend)
+    spline_grid = SplineGrid(spline_dimensions, dim_out)
+    spline_grid = add_default_local_refinement(spline_grid)
+    error = zero(spline_grid.eval)
+    error[20:40, 10:30, 2] .= 1
+
+    error_informed_local_refinement!(spline_grid, error)
+
+    @test only(spline_grid.control_points.local_refinements).refinement_indices ==
+          adapt(backend,
+        Int32[5 3; 6 3; 7 3; 8 3; 4 4; 5 4; 6 4; 7 4; 8 4; 4 5; 5 5; 6 5; 7 5; 8 5; 5 6;
+              6 6; 7 6; 8 6]
+    )
 end

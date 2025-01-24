@@ -15,11 +15,13 @@ n_sample_points = 250
 dim_out = 1
 
 # Define spline grid
-spline_dimension = SplineDimension(n_control_points, degree, n_sample_points, extent=(3.0, 5.0))
+spline_dimension = SplineDimension(
+    n_control_points, degree, n_sample_points, extent = (3.0, 5.0))
 spline_grid = SplineGrid(spline_dimension, dim_out)
 
 # Set control points
-spline_grid.control_points .= [0.342, 0.633, 0.446, 0.716, 0.843, 0.171, 0.061, 0.973, 0.057, 0.671]
+spline_grid.control_points .= [
+    0.342, 0.633, 0.446, 0.716, 0.843, 0.171, 0.061, 0.973, 0.057, 0.671]
 
 # Evaluate spline grid
 evaluate!(spline_grid)
@@ -143,7 +145,7 @@ spline_grid = SplineGrid(spline_dimensions, dim_out)
 
 # Set control points
 spline_grid.control_points .= 0
-spline_grid.control_points[1:2:end] .= 1:prod(n_control_points)/2
+spline_grid.control_points[1:2:end] .= 1:(prod(n_control_points) / 2)
 
 # Evaluate spline grid 
 evaluate!(spline_grid)
@@ -170,7 +172,8 @@ spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
 spline_grid = SplineGrid(spline_dimensions, dim_out)
 
 # Set control points
-spline_grid.control_points .= [-0.358 0.795 -0.016 -0.295; 0.923 -0.182 -0.644 0.612; -0.91 0.708 -0.426 0.412; 0.56 -0.78 0.515 0.676;;; 0.938 0.393 -0.702 -0.99; -0.578 0.305 -0.842 -0.57; 0.034 -0.813 -0.514 0.162; -0.016 -0.822 -0.261 -0.148]
+spline_grid.control_points .= [-0.358 0.795 -0.016 -0.295; 0.923 -0.182 -0.644 0.612; -0.91 0.708 -0.426 0.412; 0.56 -0.78 0.515 0.676;;;
+                               0.938 0.393 -0.702 -0.99; -0.578 0.305 -0.842 -0.57; 0.034 -0.813 -0.514 0.162; -0.016 -0.822 -0.261 -0.148]
 
 # Evaluate spline grid
 evaluate!(spline_grid)
@@ -199,8 +202,8 @@ spline_grid = SplineGrid(spline_dimension, dim_out)
 # Set control points
 R = 3
 r = 1
-ρ = range(-r, r, length=n_control_points[2])
-for (i, θ) in enumerate(range(0, 2π, length=n_control_points[1]))
+ρ = range(-r, r, length = n_control_points[2])
+for (i, θ) in enumerate(range(0, 2π, length = n_control_points[1]))
     ϕ = 2θ
     spline_grid.control_points[i, :, 1] .= @. (R + ρ * cos(ϕ)) * cos(θ)
     spline_grid.control_points[i, :, 2] .= @. (R + ρ * cos(ϕ)) * sin(θ)
