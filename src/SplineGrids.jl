@@ -56,7 +56,6 @@ include("validation.jl")
 export activate_local_control_point_range!,
        activate_local_refinement!,
        add_default_local_refinement,
-       deactivate_overwritten_control_points,
        deactivate_overwritten_control_points!,
        decompress,
        DefaultControlPoints,
