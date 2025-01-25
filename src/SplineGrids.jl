@@ -21,9 +21,6 @@ using ConstructionBase
 # Needed for handling locally refined control point data
 using LazyArrays
 
-# Needed for tracing local refinement dependency on the refined grid
-using SparseConnectivityTracer
-
 # Type parameters:
 # - Nin: Number of input parameters
 # - Nout: number of output parameters
@@ -52,6 +49,7 @@ include("refinement_matrix.jl")
 include("refinement.jl")
 include("control_points.jl")
 include("spline_grid.jl")
+include("adjoint.jl")
 include("plot_rec.jl")
 include("validation.jl")
 

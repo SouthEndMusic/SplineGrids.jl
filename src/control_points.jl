@@ -548,26 +548,30 @@ function error_informed_local_refinement!(
     return nothing
 end
 
-function deactivate_overwritten_control_points(spline_grid::AbstractSplineGrid)
-    (; control_points) = spline_grid
-    if control_points isa LocallyRefinedControlPoints
-        setproperties(
-            spline_grid,
-            control_points = deactivate_overwritten_control_points(control_points)
-        )
-    else
-        spline_grid
+function deactivate_overwritten_control_points!(spline_grid::AbstractSplineGrid)
+    deactivate_overwritten_control_points!(spline_grid.control_points)
+end
+
+function deactivate_overwritten_control_points!(control_points::LocallyRefinedControlPoints)
+    for level in (length(control_points.local_refinements) - 1):-1:1
+        deactivate_overwritten_control_points!(control_points, level)
     end
 end
 
-function deactivate_overwritten_control_points(control_points::LocallyRefinedControlPoints)
-    backend = get_backend(control_points)
-    control_points_cpu = adapt(CPU(), control_points)
-    for level in (length(control_points_cpu.local_refinements) - 1):-1:1
-        deactivate_overwritten_control_points!(control_points_cpu, level)
-    end
-    adapt(backend, control_points_cpu)
+struct Flag <: AbstractFloat
+    flag::Bool
 end
+
+Base.zero(Flag) = Flag(false)
+Base.one(Flag) = Flag(true)
+
+Base.:+(a::Flag, b::Flag) = Flag(a.flag || b.flag)
+Base.:+(a::Flag, ::Number) = a
+Base.:+(::Number, b::Flag) = b
+
+Base.:*(a::Flag, b::Flag) = Flag(a.flag || b.flag)
+Base.:*(a::Flag, ::Number) = a
+Base.:*(::Number, b::Flag) = b
 
 function deactivate_overwritten_control_points!(
         control_points::LocallyRefinedControlPoints,
@@ -575,57 +579,48 @@ function deactivate_overwritten_control_points!(
 )::Nothing
     (; local_refinements, control_points_refined) = control_points
     @assert 1 ≤ local_refinement_level ≤ length(local_refinements) - 1
+
     local_refinement = local_refinements[local_refinement_level]
     local_refinement_next = local_refinements[local_refinement_level + 1]
+
     backend = get_backend(control_points)
-    kernel! = local_refinement_kernel(backend)
 
-    # Set up the function "local refinement values of this level" -> "control point grid of the next level"
-    f = (control_points_array_next, refinement_values) -> begin
-        control_points_array = similar(
-            control_points_array_next, single_output_size(control_points_refined[local_refinement_level]))
+    n_refinement_next = size(local_refinement_next.refinement_indices, 1)
+    refinement_values_next = KernelAbstractions.zeros(backend, Flag, n_refinement_next)
+    control_points_next = KernelAbstractions.ones(
+        backend, Flag, single_output_size(control_points_refined[local_refinement_level + 1]))
 
-        # First apply the local refinement values of this local refinement level
-        if !isempty(local_refinement.refinement_indices)
-            kernel!(
-                control_points_array,
-                local_refinement.refinement_indices,
-                refinement_values,
-                ndrange = (size(local_refinement.refinement_indices, 1),)
-            )
-            synchronize(backend)
-        end
+    local_refinement_kernel(backend)(
+        control_points_next,
+        local_refinement_next.refinement_indices,
+        refinement_values_next,
+        ndrange = (n_refinement_next,)
+    )
+    synchronize(backend)
 
-        # Then apply the refinement matrices
-        mult!(
-            control_points_array_next,
-            Tuple(local_refinement_next.refinement_matrices),
-            control_points_array,
-            Tuple(local_refinement_next.dims_refinement)
-        )
+    control_points_ = KernelAbstractions.zeros(
+        backend, Flag, single_output_size(control_points_refined[local_refinement_level]))
 
-        # Lastly apply the local refinement values of the next local refinement level
-        if !isempty(local_refinement_next.refinement_indices)
-            kernel!(
-                control_points_array_next,
-                local_refinement_next.refinement_indices,
-                local_refinement_next.refinement_values,
-                ndrange = (size(local_refinement_next.refinement_indices, 1),)
-            )
-            synchronize(backend)
-        end
-    end
-
-    # Produce a sparse matrix which states on which input data of this level the refined control points
-    # of the next level depend 
-    M = jacobian_sparsity(
-        f,
-        single_output_view(control_points_refined[local_refinement_level + 1]),
-        view(local_refinement.refinement_values, :, 1),
-        TracerSparsityDetector()
+    mult_adjoint!(
+        control_points_,
+        Tuple(local_refinement_next.refinement_matrices),
+        control_points_next,
+        Tuple(local_refinement_next.dims_refinement)
     )
 
-    where_not_overwritten = findall(!iszero, dropdims(sum(M, dims = 1), dims = 1))
+    n_refinement_ = size(local_refinement.refinement_indices, 1)
+    refinement_values_ = KernelAbstractions.zeros(backend, Flag, n_refinement_)
+
+    local_refinement_adjoint_kernel(backend)(
+        refinement_values_,
+        control_points_,
+        local_refinement.refinement_indices,
+        ndrange = (n_refinement_,)
+    )
+    synchronize(backend)
+
+    where_not_overwritten = findall(f -> f.flag, refinement_values_)
+
     refinement_indices_new = local_refinement.refinement_indices[where_not_overwritten, :]
     refinement_values_new = local_refinement.refinement_values[where_not_overwritten, :]
     local_refinements[local_refinement_level] = setproperties(

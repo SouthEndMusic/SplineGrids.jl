@@ -69,10 +69,9 @@ function Base.:(==)(
         (A.nzval == B.nzval)
 end
 
-function Base.getindex(
-        refinement_matrix::RefinementMatrix{Tv}, i::Integer, j::Integer
+function Base.getindex(A::RefinementMatrix{Tv}, i::Integer, j::Integer
 )::Tv where {Tv}
-    (; m, n, row_pointer, column_start, nzval) = refinement_matrix
+    (; m, n, row_pointer, column_start, nzval) = A
     if !((1 ≤ i ≤ m) && (1 ≤ j ≤ n))
         error("Index ($i, $j) out of bounds for refinement matrix of size ($m, $n).")
     end
@@ -375,27 +374,14 @@ end
     I = @index(Global, Cartesian)
 
     Ndims = ndims(Y)
-    Ti = eltype(first(row_pointer_all))
 
-    column_start = MVector{Ndims, Ti}(undef)
-    n_columns = MVector{Ndims, Ti}(undef)
-
-    for dim in 1:Ndims
-        refmat_index = refmat_index_all[dim]
-        if iszero(refmat_index)
-            column_start[dim] = I[dim]
-            n_columns[dim] = 1
-        else
-            column_start_, column_end = get_column_range(
-                row_pointer_all[refmat_index],
-                column_start_all[refmat_index],
-                length(nzval_all[refmat_index]),
-                I[dim]
-            )
-            column_start[dim] = column_start_
-            n_columns[dim] = column_end - column_start_ + 1
-        end
-    end
+    column_start, n_columns = get_row_extends(
+        I,
+        refmat_index_all,
+        row_pointer_all,
+        column_start_all,
+        nzval_all
+    )
 
     out = zero(eltype(Y))
 
@@ -439,22 +425,7 @@ function mult!(
         dims_refinement::NTuple{N, <:Integer}
 )::Nothing where {N}
     backend = get_backend(B)
-    size_B = size(B)
-    size_Y = size(Y)
-    @assert allunique(dims_refinement) "Refinement dimensions must be unique."
-    @assert length(As)==length(dims_refinement) "There must be exactly one refinement dimension per refinement matrix."
-    for (dim, (dimsize, dimsize_new)) in enumerate(zip(size_B, size_Y))
-        if dim ∈ dims_refinement
-            A = As[findfirst(==(dim), dims_refinement)]
-            if !((A.m == size_Y[dim]) &&
-                 (A.n == size_B[dim]))
-                error("Size of refinement matrix does not match `B` and `Y` along refinement dimension $dim.")
-            end
-        else
-            (dimsize != dimsize_new) &&
-                error("`B` and `Y` don't have the same size along dimension $dim.")
-        end
-    end
+    validate_mult_input(Y, As, B, dims_refinement)
 
     n_refmat = length(dims_refinement)
     refmat_index_all = ntuple(
@@ -467,7 +438,7 @@ function mult!(
         ntuple(i -> As[i].column_start, n_refmat),
         ntuple(i -> As[i].nzval, n_refmat),
         refmat_index_all,
-        ndrange = size_Y
+        ndrange = size(Y)
     )
     synchronize(backend)
     return nothing
