@@ -43,7 +43,7 @@ spline_grid = add_default_local_refinement(spline_grid)
 activate_local_control_point_range!(spline_grid, 1:4, 1:6)
 activate_local_control_point_range!(spline_grid, 1:6, 1:2)
 activate_local_control_point_range!(spline_grid, 9:10, 7:10)
-spline_grid = deactivate_overwritten_control_points(spline_grid)
+deactivate_overwritten_control_points!(spline_grid)
 plot_basis(spline_grid)
 ```
 
@@ -58,7 +58,7 @@ spline_grid = add_default_local_refinement(spline_grid)
 ```@example tutorial
 activate_local_control_point_range!(spline_grid, 5:12, 1:4)
 activate_local_control_point_range!(spline_grid, 7:8, 5:6)
-spline_grid = deactivate_overwritten_control_points(spline_grid)
+deactivate_overwritten_control_points!(spline_grid)
 plot_basis(spline_grid)
 ```
 
