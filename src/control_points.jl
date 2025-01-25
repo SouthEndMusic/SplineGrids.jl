@@ -558,12 +558,12 @@ function deactivate_overwritten_control_points!(control_points::LocallyRefinedCo
     end
 end
 
-struct Flag <: AbstractFloat
+struct Flag
     flag::Bool
 end
 
-Base.zero(Flag) = Flag(false)
-Base.one(Flag) = Flag(true)
+Base.zero(::Type{Flag}) = Flag(false)
+Base.one(::Type{Flag}) = Flag(true)
 
 Base.:+(a::Flag, b::Flag) = Flag(a.flag || b.flag)
 Base.:+(a::Flag, ::Number) = a
