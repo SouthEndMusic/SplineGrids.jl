@@ -3,7 +3,7 @@
 In this section we demonstrate how a spline grid can be fitted. We will fit a spline surface to the following image.
 
 ```@example tutorial
-using Images
+using FileIO
 image = load(normpath(@__DIR__, "julia_logo.png"))
 ```
 
@@ -12,6 +12,7 @@ image = load(normpath(@__DIR__, "julia_logo.png"))
 We define a spline grid with 2 input dimensions, 1 output dimension and a sample grid which matches the image resolution.
 
 ```@example tutorial
+using Colors: Gray
 using SplineGrids
 
 degree = (2, 2)
