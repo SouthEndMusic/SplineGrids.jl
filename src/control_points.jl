@@ -521,6 +521,22 @@ function activate_local_control_point_range!(
     activate_local_refinement!(spline_grid, local_refinement_indices)
 end
 
+"""
+    error_informed_local_refinement!(
+        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
+        error::AbstractArray;
+        threshold::Union{Number, Nothing} = nothing
+        )::Nothing where {Nin, Nout, HasWeights, Tv, Ti}
+
+Refine the last level of the locally refined spline grid informed by the `error` array which has the same
+shape as `spline_grid.eval`. This is done by:
+
+  - mapping the error back onto the control points by using the adjoint of the refinement matrices multiplication
+  - summing over the output dimensions to obtain a single number per control point stored in `control_grid_error`
+  - activating each control point whose value is bigger than `threshold`
+
+`threshold` can be explicitly provided but by default it is given by the mean of `control_grid_error`.
+"""
 function error_informed_local_refinement!(
         spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
         error::AbstractArray;
@@ -548,31 +564,50 @@ function error_informed_local_refinement!(
     return nothing
 end
 
-function deactivate_overwritten_control_points!(spline_grid::AbstractSplineGrid)
-    deactivate_overwritten_control_points!(spline_grid.control_points)
-end
-
+"""
+Perform `deactivate_control_points` for every refinement level except the last one in reverse order.
+For more details see `deactivate_overwritten_control_points!(::LocallyRefinedControlPoints, ::Integer)`.
+"""
 function deactivate_overwritten_control_points!(control_points::LocallyRefinedControlPoints)
     for level in (length(control_points.local_refinements) - 1):-1:1
         deactivate_overwritten_control_points!(control_points, level)
     end
 end
 
-struct Flag
-    flag::Bool
-end
+"""
+    deactivate_overwritten_control_points!(
+        control_points::LocallyRefinedControlPoints,
+        local_refinement_level::Integer)::Nothing
 
-Base.zero(::Type{Flag}) = Flag(false)
-Base.one(::Type{Flag}) = Flag(true)
+Deactivate control points whose effect is completely overwritten. The procedure works as follows:
 
-Base.:+(a::Flag, b::Flag) = Flag(a.flag || b.flag)
-Base.:+(a::Flag, ::Number) = a
-Base.:+(::Number, b::Flag) = b
+The 'forward' computation to process local refinement is as follows:
 
-Base.:*(a::Flag, b::Flag) = Flag(a.flag || b.flag)
-Base.:*(a::Flag, ::Number) = a
-Base.:*(::Number, b::Flag) = b
+`B = (O₂ ∘ L ∘ O₁)(A)`,
 
+where:
+
+  - `A` is the control point grid at `local_refinement_level`
+  - `B` is the control point grid at `local_refinement_level + 1`
+  - `O₁` is the overwriting operation of the active control points at `local_refinement_level`
+  - `L` is the linear operation consisting of multiplying by refinement matrices along specified dimensions
+  - `O₂` is the overwriting operation of the active control points at `local_refinement_level + 1`
+
+To figure out whether for any overwriting element of `O₁` its effect is still present in the final array, we
+perform the following computation:
+
+`A = (L* ∘ O₂)(B)`,
+
+where:
+
+  - `B` is initialized with a special number `Flag`, which is a simple wrapper of a Boolean effectively saying
+    whether this number is relevant or not. `B` is initialized with all `Flag(true)`
+  - The overwriting values of `O₂` are initialized with all `Flag(false)`
+  - `L*` is the adjoint version of `L`
+
+After this computation we can read of in `A` at the overwriting locations of `O₁` whether each number is still having an
+effect on `B` or not.
+"""
 function deactivate_overwritten_control_points!(
         control_points::LocallyRefinedControlPoints,
         local_refinement_level::Integer

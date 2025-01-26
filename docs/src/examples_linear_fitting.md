@@ -77,7 +77,7 @@ using CairoMakie
 
 spline_grid = add_default_local_refinement(spline_grid)
 error_informed_local_refinement!(spline_grid, err)
-deactivate_overwritten_control_points!(spline_grid)
+deactivate_overwritten_control_points!(spline_grid.control_points)
 plot_basis(spline_grid)
 ```
 

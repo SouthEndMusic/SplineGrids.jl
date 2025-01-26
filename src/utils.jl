@@ -238,3 +238,20 @@ function get_row_extends(
 
     column_start, n_columns
 end
+
+# Flag is used as a simple number type to track which control points are completely overwritten
+# in deactivate_overwritten_control_points!
+struct Flag
+    flag::Bool
+end
+
+Base.zero(::Type{Flag}) = Flag(false)
+Base.one(::Type{Flag}) = Flag(true)
+
+Base.:+(a::Flag, b::Flag) = Flag(a.flag || b.flag)
+Base.:+(a::Flag, ::Number) = a
+Base.:+(::Number, b::Flag) = b
+
+Base.:*(a::Flag, b::Flag) = Flag(a.flag || b.flag)
+Base.:*(a::Flag, ::Number) = a
+Base.:*(::Number, b::Flag) = b
