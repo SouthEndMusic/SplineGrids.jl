@@ -201,11 +201,6 @@ function single_output_size(array::AbstractArray)
     ntuple(dim -> (dim == ndims_) ? 1 : size_[dim], ndims_)
 end
 
-function single_output_view(array::AbstractArray)
-    ndims_ = ndims(array)
-    view(array, ntuple(dim -> (dim == ndims_) ? (1:1) : Colon(), ndims_)...)
-end
-
 function get_row_extends(
         I,
         refmat_index_all,
@@ -248,10 +243,4 @@ end
 Base.zero(::Type{Flag}) = Flag(false)
 Base.one(::Type{Flag}) = Flag(true)
 
-Base.:+(a::Flag, b::Flag) = Flag(a.flag || b.flag)
-Base.:+(a::Flag, ::Number) = a
-Base.:+(::Number, b::Flag) = b
-
-Base.:*(a::Flag, b::Flag) = Flag(a.flag || b.flag)
 Base.:*(a::Flag, ::Number) = a
-Base.:*(::Number, b::Flag) = b
