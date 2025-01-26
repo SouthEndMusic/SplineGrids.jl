@@ -36,7 +36,7 @@ end
     activate_local_control_point_range!(spline_grid, 1:4, 1:6)
     activate_local_control_point_range!(spline_grid, 1:6, 1:2)
     activate_local_control_point_range!(spline_grid, 9:10, 7:10)
-    deactivate_overwritten_control_points!(spline_grid)
+    deactivate_overwritten_control_points!(spline_grid.control_points)
     evaluate!(spline_grid.control_points)
 
     @test get_n_control_points(spline_grid) == 63
