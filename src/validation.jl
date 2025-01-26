@@ -86,3 +86,22 @@ function validate_partial_derivatives(
         error("Computing derivatives of NURBS is currently not supported.")
     end
 end
+
+function validate_mult_input(Y, As, B, dims_refinement)
+    size_B = size(B)
+    size_Y = size(Y)
+    @assert allunique(dims_refinement) "Refinement dimensions must be unique."
+    @assert length(As)==length(dims_refinement) "There must be exactly one refinement dimension per refinement matrix."
+    for (dim, (dimsize, dimsize_new)) in enumerate(zip(size_B, size_Y))
+        if dim ∈ dims_refinement
+            A = As[findfirst(==(dim), dims_refinement)]
+            if !((A.m == size_Y[dim]) &&
+                 (A.n == size_B[dim]))
+                error("Size of refinement matrix does not match `B` and `Y` along refinement dimension $dim.")
+            end
+        else
+            (dimsize != dimsize_new) &&
+                error("`B` and `Y` don't have the same size along dimension $dim.")
+        end
+    end
+end

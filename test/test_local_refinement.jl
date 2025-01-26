@@ -36,15 +36,13 @@ end
     activate_local_control_point_range!(spline_grid, 1:4, 1:6)
     activate_local_control_point_range!(spline_grid, 1:6, 1:2)
     activate_local_control_point_range!(spline_grid, 9:10, 7:10)
-    evaluate!(control_points)
+    deactivate_overwritten_control_points!(spline_grid.control_points)
+    evaluate!(spline_grid.control_points)
 
-    @test get_n_control_points(spline_grid) == 72
+    @test get_n_control_points(spline_grid) == 63
     @test obtain(control_points) ≈ control_points_before
 
     spline_grid = add_default_local_refinement(spline_grid)
-
-    empty!(control_points.control_points_refined)
-    @test obtain(control_points) === control_points.control_points_base
 end
 
 @testset "Local error informed local_refinement" begin
@@ -61,7 +59,7 @@ end
 
     error_informed_local_refinement!(spline_grid, error)
 
-    @test only(spline_grid.control_points.local_refinements).refinement_indices ==
+    @test last(spline_grid.control_points.local_refinements).refinement_indices ==
           adapt(backend,
         Int32[5 3; 6 3; 7 3; 8 3; 4 4; 5 4; 6 4; 7 4; 8 4; 4 5; 5 5; 6 5; 7 5; 8 5; 5 6;
               6 6; 7 6; 8 6]

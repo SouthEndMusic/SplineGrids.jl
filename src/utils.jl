@@ -159,7 +159,6 @@ function Adapt.adapt(
             DefaultControlPoints(adapt(backend, control_points.control_points))
         else # control_points isa LocallyRefinedControlPoints
             LocallyRefinedControlPoints(
-                adapt(backend, control_points.control_points_base),
                 map(cp -> adapt(backend, cp), control_points.control_points_refined),
                 map(lr -> adapt(backend, lr), control_points.local_refinements)
             )
@@ -195,3 +194,53 @@ function collect_indices(
     synchronize(backend)
     indices
 end
+
+function single_output_size(array::AbstractArray)
+    size_ = size(array)
+    ndims_ = ndims(array)
+    ntuple(dim -> (dim == ndims_) ? 1 : size_[dim], ndims_)
+end
+
+function get_row_extends(
+        I,
+        refmat_index_all,
+        row_pointer_all,
+        column_start_all,
+        nzval_all
+)
+    Ndims = length(I)
+
+    Ti = eltype(first(row_pointer_all))
+    column_start = MVector{Ndims, Ti}(undef)
+    n_columns = MVector{Ndims, Ti}(undef)
+
+    for dim in 1:Ndims
+        refmat_index = refmat_index_all[dim]
+        if iszero(refmat_index)
+            column_start[dim] = I[dim]
+            n_columns[dim] = 1
+        else
+            column_start_, column_end = get_column_range(
+                row_pointer_all[refmat_index],
+                column_start_all[refmat_index],
+                length(nzval_all[refmat_index]),
+                I[dim]
+            )
+            column_start[dim] = column_start_
+            n_columns[dim] = column_end - column_start_ + 1
+        end
+    end
+
+    column_start, n_columns
+end
+
+# Flag is used as a simple number type to track which control points are completely overwritten
+# in deactivate_overwritten_control_points!
+struct Flag
+    flag::Bool
+end
+
+Base.zero(::Type{Flag}) = Flag(false)
+Base.one(::Type{Flag}) = Flag(true)
+
+Base.:*(a::Flag, ::Number) = a

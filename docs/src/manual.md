@@ -34,6 +34,9 @@ activate_local_refinement!(
         ::AbstractMatrix{Ti}) where {Nin, Nout, Tv, Ti}
 activate_local_refinement!(::SplineGrids.AbstractSplineGrid, args...)
 activate_local_control_point_range!
+error_informed_local_refinement!
+deactivate_overwritten_control_points!(::LocallyRefinedControlPoints)
+deactivate_overwritten_control_points!(::LocallyRefinedControlPoints, ::Integer)
 ```
 
 # Structs
