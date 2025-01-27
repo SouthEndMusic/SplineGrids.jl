@@ -166,3 +166,38 @@ end
         refinement_values[i, dim_out] = control_points[indices..., dim_out]
     end
 end
+
+evaluate_adjoint!(control_points::AbstractControlPoints) = nothing
+
+function evaluate_adjoint!(control_points::LocallyRefinedControlPoints)::Nothing
+    (; control_points_refined, local_refinements) = control_points
+    backend = get_backend(first(control_points_refined))
+    kernel! = local_refinement_adjoint_kernel(backend)
+
+    for (i, local_refinement) in Base.Iterators.reverse(enumerate(local_refinements))
+        (; dims_refinement,
+        refinement_matrices,
+        refinement_indices,
+        refinement_values) = local_refinement
+        cp_new = control_points_refined[i]
+        if !isempty(refinement_indices)
+            kernel!(
+                refinement_values,
+                cp_new,
+                refinement_indices,
+                ndrange = (size(refinement_indices, 1),)
+            )
+            synchronize(backend)
+        end
+        if i > 1
+            cp_prev = control_points_refined[i - 1]
+            mult_adjoint!(
+                cp_prev,
+                Tuple(refinement_matrices),
+                cp_new,
+                Tuple(dims_refinement)
+            )
+        end
+    end
+    return nothing
+end
