@@ -14,7 +14,14 @@ function LinearMaps.LinearMap(
     LinearMap{Tv}(
         # In place evaluation control points -> spline grid
         (evaluation_flat, control_points_flat) -> begin
-            copyto!(control_points, control_points_flat)
+            copyto!(
+                control_points,
+                reshape(
+                    control_points_flat,
+                    get_n_control_points(control_points),
+                    Nout
+                )
+            )
             evaluate!(control_points)
             evaluate!(
                 spline_grid;
@@ -30,7 +37,14 @@ function LinearMaps.LinearMap(
                 eval = reshape(evaluation_flat, size(spline_grid.eval))
             )
             evaluate_adjoint!(control_points)
-            copyto!(control_points_flat, control_points)
+            copyto!(
+                reshape(
+                    control_points_flat,
+                    get_n_control_points(spline_grid.control_points),
+                    Nout
+                ),
+                control_points
+            )
         end,
         length(spline_grid.eval),
         get_n_control_points(spline_grid) * Nout

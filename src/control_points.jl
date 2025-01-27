@@ -39,16 +39,21 @@ function Base.getindex(control_points::DefaultControlPoints, inds...)
 end
 
 function Base.setindex!(control_points::DefaultControlPoints, val, inds...)
-    control_points.control_points[inds...] = val
+    obtain(control_points)[inds...] = val
 end
 
 function Base.copyto!(control_points::DefaultControlPoints,
-        vals::Union{AbstractArray, Base.Broadcast.Broadcasted}, inds...)
-    copyto!(control_points.control_points, vals)
+        vals::Union{AbstractArray, Base.Broadcast.Broadcasted})
+    copyto!(obtain(control_points), vals)
 end
 
-function Base.copyto!(v::AbstractVector, control_points::DefaultControlPoints)
-    copyto!(v, vec(obtain(control_points)))
+function Base.copyto!(M::AbstractMatrix, control_points::DefaultControlPoints)
+    copyto!(M, reshape(obtain(control_points), size(M)))
+end
+
+function Base.copyto!(control_points::DefaultControlPoints{Nin, Nout},
+        M::AbstractMatrix) where {Nin, Nout}
+    copyto!(obtain(control_points), reshape(M, get_n_control_points(control_points), Nout))
 end
 
 """
@@ -214,13 +219,17 @@ function Base.setindex!(control_points::LocallyRefinedControlPoints, vals, i_cp,
     end
 end
 
+function Base.copyto!(control_points::LocallyRefinedControlPoints, M::AbstractMatrix)
+    get_control_point_view(control_points) .= M
+end
+
 function Base.copyto!(control_points::LocallyRefinedControlPoints,
-        vals::Union{AbstractArray, Base.Broadcast.Broadcasted})
+        vals::Base.Broadcast.Broadcasted)
     get_control_point_view(control_points) .= vals
 end
 
-function Base.copyto!(v::AbstractVector, control_points::LocallyRefinedControlPoints)
-    v .= get_control_point_view(control_points)
+function Base.copyto!(M::AbstractMatrix, control_points::LocallyRefinedControlPoints)
+    M .= get_control_point_view(control_points)
 end
 
 function Base.show(
