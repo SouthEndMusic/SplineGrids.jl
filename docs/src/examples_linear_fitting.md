@@ -26,6 +26,12 @@ spline_grid = SplineGrid(spline_dimensions, dim_out)
 spline_grid
 ```
 
+The basis of this spline geometry looks like this:
+
+```@example tutorial
+plot_basis(spline_grid; title = "Unrefined spline basis")
+```
+
 ## Fitting
 
 We fit the spline surface to the image in a least squares sense, by interpreting the spline grid evaluation as a linear mapping.
@@ -37,9 +43,9 @@ using Plots
 
 spline_grid_map = LinearMap(spline_grid)
 sol = lsqr(spline_grid_map, vec(image_array))
-spline_grid.control_points .= reshape(sol, size(spline_grid.control_points))
+copyto!(spline_grid.control_points, sol)
 evaluate!(spline_grid)
-plot(spline_grid)
+plot(spline_grid; title = "Least squares fit")
 ```
 
 ## Matrix
@@ -66,8 +72,8 @@ heatmap(M[end:-1:1,:])
 Clearly the error of the fit is largest around the boundary of the text:
 
 ```@example tutorial
-err = (spline_grid.eval - image_array).^2
-heatmap(err[:,:,1]', colormap =  c=cgrad(:RdYlGn, rev=true))
+err_unrefined = (spline_grid.eval - image_array).^2
+heatmap(err_unrefined[:,:,1]', colormap =  c=cgrad(:RdYlGn, rev=true))
 title!("Squared error per pixel")
 ```
 
@@ -77,9 +83,26 @@ We can easily locally refine the spline basis by mapping this error back on to t
 using CairoMakie
 
 spline_grid = add_default_local_refinement(spline_grid)
-error_informed_local_refinement!(spline_grid, err)
+error_informed_local_refinement!(spline_grid, err_unrefined)
 deactivate_overwritten_control_points!(spline_grid.control_points)
-plot_basis(spline_grid)
+plot_basis(spline_grid; title = "Refined spline basis")
 ```
 
-We can now fit the image again with the refined basis (coming up).
+We can now fit the image again with the refined basis.
+
+```@example tutorial
+spline_grid_map = LinearMap(spline_grid)
+sol = lsqr(spline_grid_map, vec(image_array))
+copyto!(spline_grid.control_points, sol)
+evaluate!(spline_grid.control_points)
+evaluate!(spline_grid)
+plot(spline_grid; title = "Least squares fit")
+```
+
+and the local error looks a lot better:
+
+```@example tutorial
+err_refined = (spline_grid.eval - image_array).^2
+heatmap(err_refined[:,:,1]', colormap =  c=cgrad(:RdYlGn, rev=true), clims = (0, maximum(err_unrefined)))
+title!("Squared error per pixel")
+```

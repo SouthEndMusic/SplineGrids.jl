@@ -5,9 +5,10 @@ using KernelAbstractions
 using Makie
 using SplineGrids
 
-function SplineGrids.plot_basis(spline_grid::SplineGrid{2})
+function SplineGrids.plot_basis(spline_grid::SplineGrid{2}; kwargs...)
     fig = Figure()
-    ax = Axis3(fig[1, 1], azimuth = -π / 2, elevation = π / 2, perspectiveness = 0.5)
+    ax = Axis3(
+        fig[1, 1], azimuth = -π / 2, elevation = π / 2, perspectiveness = 0.5; kwargs...)
     plot_basis!(ax, spline_grid)
     fig
 end

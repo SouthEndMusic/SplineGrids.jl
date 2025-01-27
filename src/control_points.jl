@@ -47,6 +47,10 @@ function Base.copyto!(control_points::DefaultControlPoints,
     copyto!(control_points.control_points, vals)
 end
 
+function Base.copyto!(v::AbstractVector, control_points::DefaultControlPoints)
+    copyto!(v, vec(obtain(control_points)))
+end
+
 """
     LocalRefinement(
         dims_refinement,
@@ -213,6 +217,10 @@ end
 function Base.copyto!(control_points::LocallyRefinedControlPoints,
         vals::Union{AbstractArray, Base.Broadcast.Broadcasted})
     get_control_point_view(control_points) .= vals
+end
+
+function Base.copyto!(v::AbstractVector, control_points::LocallyRefinedControlPoints)
+    v .= get_control_point_view(control_points)
 end
 
 function Base.show(
