@@ -24,11 +24,14 @@ using SplineGrids
 degree = (2, 2)
 image_array = Float32.(Gray.(image))
 n_sample_points = size(image_array)
-n_control_points = ntuple(i -> n_sample_points[i]÷25, 2)
+n_control_points = ntuple(i -> n_sample_points[i] ÷ 25, 2)
 extent = ntuple(i -> (0, n_sample_points[i]), 2)
 dim_out = 1
 
-spline_dimensions = ntuple(i -> SplineDimension(n_control_points[i], degree[i], n_sample_points[i]; extent = extent[i]), 2)
+spline_dimensions = ntuple(
+    i -> SplineDimension(
+        n_control_points[i], degree[i], n_sample_points[i]; extent = extent[i]),
+    2)
 spline_grid = SplineGrid(spline_dimensions, dim_out)
 spline_grid
 ```
@@ -62,7 +65,8 @@ function fit!(spline_grid)
 end
 
 function plot_fit(spline_grid)
-    Plots.plot(spline_grid; aspect_ratio = :equal, title = "Least squares fit", clims = (-0.5, 1.5), cmap = :viridis)
+    Plots.plot(spline_grid; aspect_ratio = :equal, title = "Least squares fit",
+        clims = (-0.5, 1.5), cmap = :viridis)
 end
 # hide
 function _plot_fit(spline_grid, j) # hide
@@ -92,7 +96,7 @@ spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points)
 spline_grid_ = SplineGrid(spline_dimensions, dim_out)
 spline_grid_map = LinearMap(spline_grid_)
 M = sparse(spline_grid_map)
-Plots.heatmap(M[end:-1:1,:])
+Plots.heatmap(M[end:-1:1, :])
 ```
 
 ## Local refinement informed by local error
@@ -100,16 +104,18 @@ Plots.heatmap(M[end:-1:1,:])
 Clearly the error of the fit is largest where the text is:
 
 ```@example tutorial
-err_unrefined = (spline_grid.eval - image_array).^2
+err_unrefined = (spline_grid.eval - image_array) .^ 2
 
 function plot_error(error)
-    Plots.heatmap(error[:,:,1]', colormap = cgrad(:RdYlGn, rev=true), aspect_ratio = :equal, clims = (0, 1))
+    Plots.heatmap(error[:, :, 1]', colormap = cgrad(:RdYlGn, rev = true),
+        aspect_ratio = :equal, clims = (0, 1))
     title!("Squared error per pixel")
 end
 # hide
 function _plot_error(error, j) # hide
     ax_err = Axis(fig_total[3, j], aspect = ratio; title = "Squared error per pixel") # hide
-    CairoMakie.heatmap!(ax_err, error[:, :, 1], colormap = cgrad(:RdYlGn, rev=true); colorrange = (0, 1)) # hide
+    CairoMakie.heatmap!(
+        ax_err, error[:, :, 1], colormap = cgrad(:RdYlGn, rev = true); colorrange = (0, 1)) # hide
 end # hide
 
 _plot_error(err_unrefined, 1) # hide
@@ -142,7 +148,7 @@ plot_fit(spline_grid)
 and the local error looks a bit better:
 
 ```@example tutorial
-err_refined = (spline_grid.eval - image_array).^2
+err_refined = (spline_grid.eval - image_array) .^ 2
 _plot_error(err_refined, 2) # hide
 plot_error(err_refined)
 ```
@@ -154,16 +160,17 @@ Let's iterate the local refinement and fitting procedure a few more times to get
 ```@example tutorial
 function _iteration(spline_grid, j) # hide
     spline_grid = refine(spline_grid) # hide
-    plot_basis!(fig_total, spline_grid; i = 1, j,  title = "Refined spline basis (level $(j - 1))") # hide
+    plot_basis!(
+        fig_total, spline_grid; i = 1, j, title = "Refined spline basis (level $(j - 1))") # hide
     fit!(spline_grid) # hide
     _plot_fit(spline_grid, j) # hide
-    err_refined = (spline_grid.eval - image_array).^2 # hide
+    err_refined = (spline_grid.eval - image_array) .^ 2 # hide
     _plot_error(err_refined, j) # hide
     spline_grid # hide
 end # hide
 spline_grid = _iteration(spline_grid, 3) # hide
 _iteration(spline_grid, 4) # hide
-Colorbar(fig_total[2, 5], colorrange=(-0.5, 1.5)) # hide
-Colorbar(fig_total[3, 5], colorrange=(0, 1), colormap = cgrad(:RdYlGn, rev=true)) # hide
+Colorbar(fig_total[2, 5], colorrange = (-0.5, 1.5)) # hide
+Colorbar(fig_total[3, 5], colorrange = (0, 1), colormap = cgrad(:RdYlGn, rev = true)) # hide
 fig_total # hide
 ```
