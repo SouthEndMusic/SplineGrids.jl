@@ -542,7 +542,7 @@ end
     error_informed_local_refinement!(
         spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
         error::AbstractArray;
-        threshold::Union{Number, Nothing} = nothing
+        threshold_factor::Number = 1.0
         )::Nothing where {Nin, Nout, HasWeights, Tv, Ti}
 
 Refine the last level of the locally refined spline grid informed by the `error` array which has the same
@@ -550,14 +550,12 @@ shape as `spline_grid.eval`. This is done by:
 
   - mapping the error back onto the control points by using the adjoint of the refinement matrices multiplication
   - summing over the output dimensions to obtain a single number per control point stored in `control_grid_error`
-  - activating each control point whose value is bigger than `threshold`
-
-`threshold` can be explicitly provided but by default it is given by the mean of `control_grid_error`.
+  - activating each control point whose value is bigger than `threshold = threshold_factor * mean(control_grid_error)`
 """
 function error_informed_local_refinement!(
         spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
         error::AbstractArray;
-        threshold::Union{Number, Nothing} = nothing
+        threshold_factor::Number = 1.0
 )::Nothing where {Nin, Nout, HasWeights, Tv, Ti}
     @assert size(error)==size(spline_grid.eval) "The error array must have the same size as the eval array."
 
@@ -569,9 +567,7 @@ function error_informed_local_refinement!(
     control_grid_error = dropdims(sum(control_points_error, dims = Nin + 1), dims = Nin + 1)
 
     # Default threshold if not provided
-    if isnothing(threshold)
-        threshold = sum(control_grid_error) / length(control_grid_error)
-    end
+    threshold = threshold_factor * sum(control_grid_error) / length(control_grid_error)
 
     # Deduce the refinement indices
     refinement_indices_ci = findall(>(threshold), control_grid_error)

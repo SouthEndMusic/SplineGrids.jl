@@ -58,8 +58,5 @@ end
     eval_target = copy(spline_grid.eval)
     spline_grid_map = LinearMap(spline_grid)
     fit = lsqr(spline_grid_map, vec(eval_target))
-    copyto!(spline_grid.control_points, reshape(fit, n_control_points, Nout))
-    evaluate!(spline_grid.control_points)
-    evaluate!(spline_grid)
-    @test spline_grid.eval≈eval_target rtol=1e-4
+    @test fit≈vec(control_points_rand) rtol=1e-5
 end

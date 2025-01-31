@@ -242,5 +242,6 @@ end
 
 Base.zero(::Type{Flag}) = Flag(false)
 Base.one(::Type{Flag}) = Flag(true)
+Base.convert(::Type{Flag}, x::Number) = Flag(Bool(x))
 
 Base.:*(a::Flag, ::Number) = a
