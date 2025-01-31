@@ -163,5 +163,7 @@ function _iteration(spline_grid, j) # hide
 end # hide
 spline_grid = _iteration(spline_grid, 3) # hide
 _iteration(spline_grid, 4) # hide
+Colorbar(fig_total[2, 5], colorrange=(-0.5, 1.5)) # hide
+Colorbar(fig_total[3, 5], colorrange=(0, 1), colormap = cgrad(:RdYlGn, rev=true)) # hide
 fig_total # hide
 ```
