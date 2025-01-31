@@ -7,10 +7,18 @@ using SplineGrids
 
 function SplineGrids.plot_basis(spline_grid::SplineGrid{2}; kwargs...)
     fig = Figure()
-    ax = Axis3(
-        fig[1, 1], azimuth = -π / 2, elevation = π / 2, perspectiveness = 0.5; kwargs...)
-    plot_basis!(ax, spline_grid)
+    plot_basis!(fig, spline_grid; kwargs...)
     fig
+end
+
+function SplineGrids.plot_basis!(
+        fig::Figure, spline_grid::SplineGrid{2}; i = 1, j = 1, kwargs...)
+    extents = ntuple(i -> spline_grid.spline_dimensions[i].knot_vector.extent, 2)
+    ratio = (extents[2][2] - extents[2][1]) / (extents[1][2] - extents[1][1])
+    ax = Axis3(
+        fig[i, j], azimuth = -π / 2, elevation = π / 2,
+        perspectiveness = 0.5, aspect = (1, ratio, 1); kwargs...)
+    plot_basis!(ax, spline_grid)
 end
 
 function SplineGrids.plot_basis!(ax::Makie.Axis3, spline_grid::SplineGrid{2})::Nothing
