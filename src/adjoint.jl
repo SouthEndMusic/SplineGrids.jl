@@ -132,6 +132,7 @@ function mult_adjoint!(
 ) where {N}
     backend = get_backend(B)
     validate_mult_input(Y, As, B, dims_refinement)
+    B .= 0
 
     n_refmat = length(dims_refinement)
     refmat_index_all = ntuple(
@@ -152,7 +153,7 @@ end
 
 @kernel function local_refinement_adjoint_kernel(
         refinement_values,
-        @Const(control_points),
+        control_points,
         @Const(refinement_indices)
 )
     i = @index(Global, Linear)
@@ -164,6 +165,7 @@ end
 
     for dim_out in 1:Nout
         refinement_values[i, dim_out] = control_points[indices..., dim_out]
+        control_points[indices..., dim_out] = 0
     end
 end
 
