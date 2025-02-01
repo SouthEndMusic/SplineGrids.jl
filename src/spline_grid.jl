@@ -197,7 +197,8 @@ If weights are supplied, compute the rational basis functions for NURBS as the c
 Uses the `control_points` and `eval` arrays from the `spline_grid` by default,
 but different arrays can be specified as a convenience for optimization algorithms.
 """
-function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv};
+function evaluate!(
+        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractControlPointArray{Nin, Nout, Tv} = spline_grid.control_points,
         eval::AbstractArray = spline_grid.eval
@@ -226,5 +227,18 @@ function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv};
         ndrange = size(eval)[1:(end - 1)]
     )
     synchronize(backend)
+    return nothing
+end
+
+function SplineGrids.evaluate!(
+        spline_grid::SplineGrid,
+        control_points::AbstractControlPointArray;
+        kwargs...
+)::Nothing
+    evaluate!(
+        spline_grid;
+        control_points,
+        kwargs...
+    )
     return nothing
 end
