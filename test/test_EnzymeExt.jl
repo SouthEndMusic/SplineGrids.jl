@@ -22,8 +22,9 @@ end
     spline_grid = SplineGrid(spline_dimensions, Nout)
 
     function loss(control_points_flat, spline_grid)
-        evaluate!(spline_grid;
-            control_points = reshape(control_points_flat, size(spline_grid.control_points))
+        evaluate!(
+            spline_grid,
+            reshape(control_points_flat, size(spline_grid.control_points))
         )
         return sum(spline_grid.eval)
     end
