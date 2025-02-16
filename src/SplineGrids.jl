@@ -27,19 +27,21 @@ using LazyArrays
 # - HasWeights: Whether the spline has weights and thus is a NURBS
 # - Tv: The floating punt number type
 # - Ti: The integer type
-abstract type AbstractKnotVector{Tv <: AbstractFloat, Ti <: Integer} end
-abstract type AbstractSplineDimension{Tv <: AbstractFloat, Ti <: Integer} end
-abstract type AbstractSplineGrid{Nin, Nout, HasWeights, Tv <: AbstractFloat, Ti <: Integer} end
-abstract type AbstractRefinementMatrix{Tv, Ti <: Integer} end
-abstract type AbstractControlPoints{Nin, Nout, Tv <: AbstractFloat} end
+abstract type AbstractKnotVector{backend, Tv <: AbstractFloat, Ti <: Integer} end
+abstract type AbstractSplineDimension{
+    backend, Tv <: AbstractFloat, Ti <: Integer} end
+abstract type AbstractSplineGrid{
+    Nin, Nout, backend, Tv <: AbstractFloat, Ti <: Integer, HasWeights} end
+abstract type AbstractRefinementMatrix{backend, Tv, Ti <: Integer} end
+abstract type AbstractControlPoints{Nin, Nout, backend, Tv <: AbstractFloat} end
 
-const AbstractControlPointArray{Nin, Nout, Tv} = Union{
-    SplineGrids.AbstractControlPoints{Nin, Nout, Tv},
+const AbstractControlPointArray{Nin, Nout, Tv, backend} = Union{
+    SplineGrids.AbstractControlPoints{Nin, Nout, backend, Tv},
     AbstractArray{Tv}
-} where {Nin, Nout, Tv}
+} where {Nin, Nout, Tv, backend}
 
-const AbstractNURBSGrid{Nin, Nout, Tv, Ti} = AbstractSplineGrid{
-    Nin, Nout, true, Tv, Ti} where {Nin, Nout, Tv, Ti}
+const AbstractNURBSGrid{Nin, Nout, backend, Tv, Ti} = AbstractSplineGrid{
+    Nin, Nout, backend, Tv, Ti, true} where {Nin, Nout, backend, Tv, Ti}
 
 include("util_kernels.jl")
 include("utils.jl")

@@ -19,14 +19,15 @@ all information to evaluate the defined spline on the defined grid.
 struct SplineGrid{
     Nin,
     Nout,
+    backend,
     Tv <: AbstractFloat,
     Ti <: Integer,
-    S <: SplineDimension{Tv, Ti},
-    C <: AbstractControlPoints{Nin, Nout, Tv},
+    S <: SplineDimension{backend, Tv, Ti},
+    C <: AbstractControlPoints{Nin, Nout, backend, Tv},
     W <: Union{AbstractArray{Tv, Nin}, Nothing},
     E <: AbstractArray{Tv},
     HasWeights
-} <: AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti}
+} <: AbstractSplineGrid{Nin, Nout, backend, Tv, Ti, HasWeights}
     spline_dimensions::NTuple{Nin, S}
     control_points::C
     weights::W
@@ -38,9 +39,11 @@ struct SplineGrid{
             eval
     )
         validate_spline_grid(spline_dimensions, control_points, weights, eval)
+        validate_unique_backend(spline_dimensions..., control_points, weights, eval)
         new{
             length(spline_dimensions),
             size(control_points)[end],
+            get_backend(eval),
             eltype(control_points),
             eltype(first(spline_dimensions).sample_indices),
             eltype(spline_dimensions),
@@ -68,10 +71,9 @@ Define a `SplineGrid` from an NTuple of spline dimensions and the number of outp
   - `Nout`: The number of output dimensions. I.e. the control points and thus the spline live in ℝ^Nout.
 """
 function SplineGrid(
-        spline_dimensions::NTuple{Nin, <:SplineDimension{Tv, Ti}},
+        spline_dimensions::NTuple{Nin, <:SplineDimension{backend, Tv}},
         Nout::Integer
-)::SplineGrid{Nin, Nout, Tv, Ti} where {Nin, Tv, Ti}
-    backend = get_backend(first(spline_dimensions))
+)::SplineGrid where {Nin, backend, Tv}
     # The size of the point grid on which the spline is evaluated
     size_eval_grid = get_sample_grid_size(spline_dimensions)
     # The size of the grid of control points
@@ -97,11 +99,10 @@ end
 Create a SplineGrid but with preallocated weights to define a NURBS. See The SplineGrid
 constructors for more details.
 """
-function NURBSGrid(spline_dimensions::NTuple{Nin, <:SplineDimension{Tv, Ti}},
+function NURBSGrid(spline_dimensions::NTuple{Nin, <:SplineDimension{backend, Tv, Ti}},
         Nout::Integer
-)::AbstractSplineGrid{Nin, Nout, true, Tv, Ti} where {Nin, Tv, Ti}
+)::AbstractSplineGrid{Nin, Nout, backend, Tv, Ti, true} where {Nin, backend, Tv, Ti}
     nurbs_grid = SplineGrid(spline_dimensions, Nout)
-    backend = get_backend(first(spline_dimensions))
     size_cp_grid = get_control_point_grid_size(spline_dimensions)
     setproperties(
         nurbs_grid; weights = KernelAbstractions.ones(backend, Tv, size_cp_grid...))
@@ -197,11 +198,11 @@ If weights are supplied, compute the rational basis functions for NURBS as the c
 Uses the `control_points` and `eval` arrays from the `spline_grid` by default,
 but different arrays can be specified as a convenience for optimization algorithms.
 """
-function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv};
+function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout, backend, Tv};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractControlPointArray{Nin, Nout, Tv} = spline_grid.control_points,
-        eval::AbstractArray = spline_grid.eval
-)::Nothing where {Nin, Nout, HasWeights, Tv}
+        eval::AbstractArray{Tv} = spline_grid.eval
+)::Nothing where {Nin, Nout, backend, Tv}
     (; spline_dimensions, weights) = spline_grid
 
     validate_partial_derivatives(spline_grid, derivative_order)
@@ -213,7 +214,6 @@ function evaluate!(spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv};
     control_point_kernel_size = get_cp_kernel_size(spline_dimensions)
     degrees = ntuple(i -> spline_dimensions[i].degree, Nin)
 
-    backend = get_backend(eval)
     spline_eval_kernel(backend)(
         eval,
         basis_function_eval_all,

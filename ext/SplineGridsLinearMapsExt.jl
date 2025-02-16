@@ -3,9 +3,9 @@ using SplineGrids
 using LinearMaps
 
 function LinearMaps.LinearMap(
-        spline_grid::SplineGrid{Nin, Nout, Tv};
+        spline_grid::SplineGrid{Nin, Nout, backend, Tv};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin)
-) where {Nin, Nout, Tv}
+) where {Nin, Nout, backend, Tv}
     (; control_points) = spline_grid
     SplineGrids.validate_partial_derivatives(
         spline_grid, derivative_order

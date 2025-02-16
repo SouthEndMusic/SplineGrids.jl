@@ -1,5 +1,6 @@
 {
     "[julia]": {
         "editor.formatOnSave": true
-    }
+    },
+    "julia.executablePath": "julia +1.10.8",
 }

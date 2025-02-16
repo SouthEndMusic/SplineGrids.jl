@@ -25,10 +25,15 @@ end
     (; control_points) = spline_grid
 
     @test control_points isa LocallyRefinedControlPoints
-    @test occursin(
-        "LocallyRefinedControlPoints for final grid of size (10, 10) in ℝ³ (Float32). Local refinements:",
+    if backend == CPU()
+        @test occursin(
+            "LocallyRefinedControlPoints for final grid of size (10, 10) in ℝ³ (Float32, CPU). Local refinements:",
+            sprint(io -> show(io, MIME"text/plain"(), spline_grid))
+        )
+    else
+        "LocallyRefinedControlPoints for final grid of size (10, 10) in ℝ³ (Float32, CUDABackend). Local refinements:",
         sprint(io -> show(io, MIME"text/plain"(), spline_grid))
-    )
+    end
     @test get_n_control_points(spline_grid) == 36
 
     control_points_before = copy(obtain(control_points))

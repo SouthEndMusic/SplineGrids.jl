@@ -72,9 +72,9 @@ function validate_partial_derivatives(
 end
 
 function validate_partial_derivatives(
-        spline_grid::AbstractSplineGrid{Nin, Nout, false},
+        spline_grid::AbstractSplineGrid{Nin},
         derivative_order::NTuple{Nin, <:Integer}
-)::Nothing where {Nin, Nout}
+)::Nothing where {Nin}
     validate_partial_derivatives(spline_grid.spline_dimensions, derivative_order)
 end
 

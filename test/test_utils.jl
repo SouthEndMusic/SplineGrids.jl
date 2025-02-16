@@ -25,6 +25,11 @@ spline_grid = SplineGrid(spline_dimensions, Nout)
 end
 
 @testset "Show" begin
-    @test startswith(sprint(io -> show(io, MIME"text/plain"(), spline_grid)),
-        "SplineGrid surface with outputs in ℝ² (Float32)\n")
+    if backend == CPU()
+        @test startswith(sprint(io -> show(io, MIME"text/plain"(), spline_grid)),
+            "SplineGrid surface with outputs in ℝ² (Float32, CPU)\n")
+    else
+        @test startswith(sprint(io -> show(io, MIME"text/plain"(), spline_grid)),
+            "SplineGrid surface with outputs in ℝ² (Float32, CUDABackend)\n")
+    end
 end

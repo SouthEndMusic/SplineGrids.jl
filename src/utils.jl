@@ -16,8 +16,7 @@ end
 
 # Get the index i of each sample point t in the knot vector such 
 # such that t ∈ [knots_all[i], knots_all[i + 1])
-function set_sample_indices!(spline_dimension::AbstractSplineDimension)::Nothing
-    backend = get_backend(spline_dimension)
+function set_sample_indices!(spline_dimension::AbstractSplineDimension{backend})::Nothing where {backend}
     set_sample_indices_kernel(backend)(
         spline_dimension.sample_indices,
         spline_dimension.sample_points,
@@ -76,8 +75,8 @@ base_name(::AbstractNURBSGrid) = "NURBSGrid"
 function Base.show(
         io::IO,
         mime::MIME"text/plain",
-        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv}
-) where {Nin, Nout, HasWeights, Tv}
+        spline_grid::AbstractSplineGrid{Nin, Nout, backend, Tv, Ti, HasWeights}
+) where {Nin, Nout, backend, Tv, Ti, HasWeights}
     (; spline_dimensions, control_points) = spline_grid
     header = ["input dimension", "degree", "# basis functions", "# sample points"]
     data = zip(
@@ -95,7 +94,7 @@ function Base.show(
     )...)
 
     data = hcat(collect.(collect(data))...)
-    intro = "$(base_name(spline_grid)) $(shape_name(Nin)) with outputs in ℝ$(super(string(Nout))) ($Tv)"
+    intro = "$(base_name(spline_grid)) $(shape_name(Nin)) with outputs in ℝ$(super(string(Nout))) ($Tv, $(struct_name(backend)))"
 
     println(io, intro, "\n", repeat("-", length(intro)))
     println(io, "* Properties per dimension:")
@@ -107,79 +106,70 @@ end
 is_nurbs(::Any) = false
 is_nurbs(::AbstractNURBSGrid) = true
 
-function KernelAbstractions.get_backend(spline_dimension::AbstractSplineDimension)
-    get_backend(spline_dimension.eval)
-end
-
-function KernelAbstractions.get_backend(control_points::AbstractControlPoints)
-    get_backend(obtain(control_points))
-end
-
 function Adapt.adapt(
-        backend::Backend,
-        knot_vector::AbstractKnotVector{Ti, Tv}
-)::AbstractKnotVector{Ti, Tv} where {Ti, Tv}
-    if backend == get_backend(knot_vector.knot_values)
+        backend_new::Backend,
+        knot_vector::AbstractKnotVector{backend, Ti, Tv}
+)::AbstractKnotVector{Ti, Tv} where {backend, Ti, Tv}
+    if backend == backend_new
         knot_vector
     else
         KnotVector(
-            adapt(backend, knot_vector.knot_values),
-            adapt(backend, knot_vector.multiplicities)
+            adapt(backend_new, knot_vector.knot_values),
+            adapt(backend_new, knot_vector.multiplicities)
         )
     end
 end
 
 function Adapt.adapt(
-        backend::Backend,
-        spline_dimension::AbstractSplineDimension{Ti, Tv}
-)::AbstractSplineDimension{Ti, Tv} where {Ti, Tv}
+        backend_new::Backend,
+        spline_dimension::AbstractSplineDimension{backend, Ti, Tv}
+)::AbstractSplineDimension{backend_new, Ti, Tv} where {backend, Ti, Tv}
     if backend == get_backend(spline_dimension)
         spline_dimension
     else
         SplineDimension(
             spline_dimension.degree,
             spline_dimension.max_derivative_order,
-            adapt(backend, spline_dimension.knot_vector),
-            adapt(backend, spline_dimension.sample_points),
-            adapt(backend, spline_dimension.sample_indices),
-            adapt(backend, spline_dimension.eval),
-            adapt(backend, spline_dimension.eval_prev)
+            adapt(backend_new, spline_dimension.knot_vector),
+            adapt(backend_new, spline_dimension.sample_points),
+            adapt(backend_new, spline_dimension.sample_indices),
+            adapt(backend_new, spline_dimension.eval),
+            adapt(backend_new, spline_dimension.eval_prev)
         )
     end
 end
 
 function Adapt.adapt(
-        backend::Backend,
-        control_points::AbstractControlPoints
-)
-    if get_backend(control_points) == backend
+        backend_new::Backend,
+        control_points::AbstractControlPoints{backend}
+) where {backend}
+    if backend == backend_new
         control_points
     else
         if control_points isa DefaultControlPoints
             DefaultControlPoints(adapt(backend, control_points.control_points))
         else # control_points isa LocallyRefinedControlPoints
             LocallyRefinedControlPoints(
-                map(cp -> adapt(backend, cp), control_points.control_points_refined),
-                map(lr -> adapt(backend, lr), control_points.local_refinements)
+                map(cp -> adapt(backend_new, cp), control_points.control_points_refined),
+                map(lr -> adapt(backend_new, lr), control_points.local_refinements)
             )
         end
     end
 end
 
 function Adapt.adapt(
-        backend::Backend,
-        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti}
-)::AbstractSplineGrid{
-        Nin, Nout, HasWeights, Tv, Ti} where {Nin, Nout, HasWeights, Tv, Ti}
+        backend_new::Backend,
+        spline_grid::AbstractSplineGrid{<:Integer, <:Integer, backend}
+)::AbstractSplineGrid where {backend}
     (; spline_dimensions) = spline_grid
-    if backend == get_backend(first(spline_dimensions))
+    if backend == backend_new
         spline_grid
     else
         SplineGrid(
             ntuple(i -> adapt(backend, spline_dimensions[i]), length(spline_dimensions)),
-            adapt(backend, spline_grid.control_points),
-            adapt(backend, spline_grid.weights),
-            adapt(backend, spline_grid.eval)
+            adapt(backend_new, spline_grid.control_points),
+            adapt(backend_new, spline_grid.weights),
+            adapt(backend_new, spline_grid.eval)
         )
     end
 end
@@ -233,6 +223,21 @@ function get_row_extends(
 
     column_start, n_columns
 end
+
+KernelAbstractions.get_backend(::AbstractKnotVector{backend}) where {backend} = backend
+KernelAbstractions.get_backend(::AbstractSplineDimension{backend}) where {backend} = backend
+function KernelAbstractions.get_backend(::AbstractControlPoints{
+        Nin, Nout, backend}) where {Nin, Nout, backend}
+    backend
+end
+KernelAbstractions.get_backend(::AbstractSplineGrid{backend}) where {backend} = backend
+
+function validate_unique_backend(args...; msg = "All arguments must have the same backend.")
+    backend = get_backend(first(args))
+    @assert all(arg -> isnothing(arg) || (get_backend(arg) == backend), args) msg
+end
+
+struct_name(::T) where {T} = nameof(T)
 
 # Flag is used as a simple number type to track which control points are completely overwritten
 # in deactivate_overwritten_control_points!

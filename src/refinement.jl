@@ -51,17 +51,16 @@ Build a refinement matrix per row given a knot vector and a to be added new knot
   - `knot_new`: The value of the new knot
 """
 function RefinementMatrix(
-        spline_dimension::SplineDimension{Tv, Ti},
+        spline_dimension::SplineDimension{backend, Tv, Ti},
         knot_span_index::Integer,
         knot_new::Any
-)::RefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
+)::RefinementMatrix{backend, Tv, Ti} where {backend, Tv, Ti <: Integer}
     (; degree, knot_vector) = spline_dimension
 
     n_basis_functions = get_n_basis_functions(spline_dimension)
     n_basis_functions_new = n_basis_functions + 1
     n_nzval = n_basis_functions + degree + 1
 
-    backend = get_backend(spline_dimension)
     row_pointer = allocate(backend, Ti, n_basis_functions_new)
     column_start = allocate(backend, Ti, n_basis_functions_new)
     nzval = KernelAbstractions.ones(backend, Tv, n_nzval)
@@ -254,11 +253,11 @@ Create a new spline dimension with multiple knots added to the underlying knot v
     the basis functions after the refinement.
 """
 function refine(
-        spline_dimension::SplineDimension{Tv, Ti};
+        spline_dimension::SplineDimension{backend, Tv, Ti};
         knots_new::Union{Vector{<:AbstractFloat}, Nothing} = nothing
-)::Tuple{SplineDimension{Tv, Ti}, RefinementMatrix{Tv, Ti}} where {Tv, Ti}
+)::Tuple{SplineDimension{backend, Tv, Ti},
+        RefinementMatrix{backend, Tv, Ti}} where {backend, Tv, Ti}
     (; knot_values) = spline_dimension.knot_vector
-    backend = get_backend(spline_dimension)
 
     # Default new knots: midpoints of knot spans
     if isnothing(knots_new)
@@ -339,11 +338,11 @@ end
 Update the spline grid with a refined spline dimension in the specified dimension with the associated refinement matrix.
 """
 function refine(
-        spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv, Ti},
-        spline_dimension_new::SplineDimension{Tv, Ti},
+        spline_grid::AbstractSplineGrid{Nin, Nout, backend, Tv, Ti, false},
+        spline_dimension_new::SplineDimension{backend, Tv, Ti},
         dim_refinement::Integer,
-        refinement_matrix::RefinementMatrix{Tv, Ti}
-) where {Nin, Nout, Tv, Ti}
+        refinement_matrix::RefinementMatrix{backend, Tv, Ti}
+) where {Nin, Nout, backend, Tv, Ti}
     (; spline_dimensions, control_points) = spline_grid
 
     # The number of control points added in the refinement dimension
@@ -356,7 +355,6 @@ function refine(
                size_cp_grid[dim],
         ndims(control_points))
 
-    backend = get_backend(spline_dimension_new)
     control_points_new = allocate(
         backend,
         Tv,

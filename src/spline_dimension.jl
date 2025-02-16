@@ -23,13 +23,14 @@ Defines the set of basis functions for a single dimension, and how it is sampled
     whose support the sample point is in, and the derivatives if requested.
 """
 struct SplineDimension{
+    backend,
     Tv <: AbstractFloat,
     Ti <: Integer,
-    K <: KnotVector{Tv, Ti},
+    K <: KnotVector{backend, Tv, Ti},
     S <: AbstractVector{Tv},
     I <: AbstractVector{Ti},
     E <: AbstractArray{Tv, 3}
-} <: AbstractSplineDimension{Tv, Ti}
+} <: AbstractSplineDimension{backend, Tv, Ti}
     degree::Int
     max_derivative_order::Int
     knot_vector::K
@@ -46,7 +47,16 @@ struct SplineDimension{
             eval,
             eval_prev
     )
+        validate_unique_backend(
+            knot_vector,
+            sample_points,
+            sample_indices,
+            eval,
+            eval_prev;
+            msg = "All input arrays for the SplineDimension constructor must have the same backend."
+        )
         new{
+            get_backend(knot_vector),
             eltype(eval),
             eltype(sample_indices),
             typeof(knot_vector),
@@ -99,7 +109,7 @@ function SplineDimension(
         degree::Integer,
         n_sample_points::Integer;
         max_derivative_order::Integer = 0,
-        knot_vector::Union{Nothing, KnotVector{Tv, Ti}} = nothing,
+        knot_vector::Union{Nothing, KnotVector{backend_kv, Tv, Ti}} where {backend_kv} = nothing,
         backend::Backend = CPU(),
         float_type::Type{Tv} = Float32,
         int_type::Type{Ti} = Int32,
@@ -115,7 +125,7 @@ function SplineDimension(
             kwargs...)
     else
         @assert length(knot_vector.knots_all)==n_basis_functions + degree + 1 "Incompatible knot vector supplied."
-        backend = get_backend(knot_vector.knot_values)
+        backend = get_backend(knot_vector)
     end
 
     sample_points = adapt(
@@ -228,12 +238,11 @@ For degree `k`, `t` is in the domain of `Bⱼₖ` which is `[tⱼ, tⱼ₊ₖ₊
 
   - `spline_dimension`
 """
-function evaluate!(spline_dimension::SplineDimension)::Nothing
+function evaluate!(spline_dimension::SplineDimension{backend})::Nothing where {backend}
     (; degree, max_derivative_order, knot_vector, sample_points, sample_indices, eval, eval_prev) = spline_dimension
     (; knots_all) = knot_vector
     n_samples = (length(sample_points),)
 
-    backend = get_backend(eval)
     spline_dimension_kernel(backend)(
         eval, eval_prev, knots_all, sample_points, sample_indices,
         degree, ndrange = n_samples, max_derivative_order)
@@ -249,9 +258,8 @@ Transform `spline_dimension.eval` into a matrix of shape `(n_sample_points, n_po
 which explicitly gives the value for each basis function at each sample point.
 """
 function decompress(
-        spline_dimension::SplineDimension{Tv}; derivative_order::Integer = 0) where {Tv}
-    backend = get_backend(spline_dimension)
-
+        spline_dimension::SplineDimension{backend, Tv}; derivative_order::Integer = 0) where {
+        backend, Tv}
     (; sample_indices, degree, eval, max_derivative_order) = spline_dimension
     @assert derivative_order ≤ max_derivative_order
     n_sample_points = length(sample_indices)

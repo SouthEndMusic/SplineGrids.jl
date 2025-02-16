@@ -61,9 +61,9 @@ end
 
 function SplineGrids.plot_basis!(
         ax::Makie.Axis3,
-        spline_grid::SplineGrid{2, Nout, Tv},
+        spline_grid::SplineGrid{2, Nout, backend, Tv},
         control_points_new::LocallyRefinedControlPoints
-) where {Nout, Tv}
+) where {Nout, backend, Tv}
     (; local_refinements) = control_points_new
     (; spline_dimensions) = spline_grid
     eval_view = view(spline_grid.eval, :, :, 1)

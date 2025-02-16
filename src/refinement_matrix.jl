@@ -17,11 +17,12 @@ The non-zeros are stored in a dense vector per row.
   - `nzval`: The nonzero values in the matrix
 """
 struct RefinementMatrix{
+    backend,
     Tv,
     Ti <: Integer,
-    I <: AbstractVector{Ti} where {Ti},
-    V <: AbstractVector{Tv} where {Tv}
-} <: AbstractRefinementMatrix{Tv, Ti}
+    I <: AbstractVector{Ti},
+    V <: AbstractVector{Tv}
+} <: AbstractRefinementMatrix{backend, Tv, Ti}
     m::Int
     n::Int
     row_pointer::I
@@ -30,9 +31,14 @@ struct RefinementMatrix{
     function RefinementMatrix(m, n, row_pointer, column_start, nzval)
         @assert length(row_pointer) == length(column_start) == m
         @assert row_pointer == sort(row_pointer)
+        validate_unique_backend(
+            row_pointer,
+            column_start,
+            nzval;
+            msg = "All arguments of the RefinementMatrix constructor must have the same backend."
+        )
         backend = get_backend(nzval)
         valid_row = KernelAbstractions.zeros(backend, Bool, length(row_pointer))
-        backend = get_backend(nzval)
         validate_refinement_matrix_kernel(backend)(
             valid_row,
             row_pointer,
@@ -46,6 +52,7 @@ struct RefinementMatrix{
             error("Invalid rows: $(findall(x -> !x, valid_row)).")
         end
         new{
+            backend,
             eltype(nzval),
             eltype(row_pointer),
             typeof(row_pointer),
@@ -59,6 +66,10 @@ end
 Base.size(A::RefinementMatrix) = (A.m, A.n)
 Base.length(A::RefinementMatrix) = A.m * A.n
 
+function KernelAbstractions.get_backend(::AbstractRefinementMatrix{backend}) where {backend}
+    backend
+end
+
 function Base.:(==)(
         A::RefinementMatrix{Tv, Ti},
         B::RefinementMatrix{Tv, Ti}
@@ -69,8 +80,8 @@ function Base.:(==)(
         (A.nzval == B.nzval)
 end
 
-function Base.getindex(A::RefinementMatrix{Tv}, i::Integer, j::Integer
-)::Tv where {Tv}
+function Base.getindex(A::RefinementMatrix{backend, Tv}, i::Integer, j::Integer
+)::Tv where {backend, Tv}
     (; m, n, row_pointer, column_start, nzval) = A
     if !((1 ≤ i ≤ m) && (1 ≤ j ≤ n))
         error("Index ($i, $j) out of bounds for refinement matrix of size ($m, $n).")
@@ -85,15 +96,15 @@ function Base.getindex(A::RefinementMatrix{Tv}, i::Integer, j::Integer
     end
 end
 
-function Adapt.adapt(backend::Backend, A::RefinementMatrix)
-    if backend == get_backend(A.nzval)
+function Adapt.adapt(backend_new::Backend, A::RefinementMatrix{backend}) where {backend}
+    if backend == backend_new
         A
     else
         RefinementMatrix(
             size(A)...,
-            adapt(backend, A.row_pointer),
-            adapt(backend, A.column_start),
-            adapt(backend, A.nzval)
+            adapt(backend_new, A.row_pointer),
+            adapt(backend_new, A.column_start),
+            adapt(backend_new, A.nzval)
         )
     end
 end
@@ -271,14 +282,12 @@ end
 end
 
 function Base.:*(
-        A::RefinementMatrix{Tv, Ti},
-        B::RefinementMatrix{Tv, Ti}
-)::RefinementMatrix{Tv, Ti} where {Tv, Ti}
+        A::RefinementMatrix{backend, Tv, Ti},
+        B::RefinementMatrix{backend, Tv, Ti}
+)::RefinementMatrix{backend, Tv, Ti} where {backend, Tv, Ti}
     if A.n != B.m
         throw(DimensionMismatch("Inner dimensions must match"))
     end
-
-    backend = get_backend(A.nzval)
 
     n_nonzero_C = allocate(backend, Ti, A.m)
     column_start_C = allocate(backend, Ti, A.m)
@@ -346,8 +355,7 @@ end
     end
 end
 
-function Base.collect(A::RefinementMatrix{Tv}) where {Tv}
-    backend = get_backend(A.nzval)
+function Base.collect(A::RefinementMatrix{backend, Tv}) where {backend, Tv}
     out = KernelAbstractions.zeros(backend, Tv, A.m, A.n)
 
     collect_refinement_matrix_kernel(backend)(
@@ -420,11 +428,10 @@ end
 """
 function mult!(
         Y::AbstractArray,
-        As::NTuple{N, <:RefinementMatrix},
+        As::NTuple{N, <:RefinementMatrix{backend}},
         B::AbstractArray,
         dims_refinement::NTuple{N, <:Integer}
-)::Nothing where {N}
-    backend = get_backend(B)
+)::Nothing where {backend, N}
     validate_mult_input(Y, As, B, dims_refinement)
 
     n_refmat = length(dims_refinement)
@@ -462,10 +469,10 @@ Construct an identity refinement matrix.
 """
 function rmeye(
         n::Integer;
-        backend::Backend = CPU(),
-        float_type::Type{Tv} = Float32,
-        int_type::Type{Ti} = Int32
-)::RefinementMatrix{Tv, Ti} where {Tv, Ti <: Integer}
+        backend = CPU(),
+        float_type::Type{<:AbstractFloat} = Float32,
+        int_type::Type{<:Integer} = Int32
+)::RefinementMatrix
     row_pointer = int_type.(collect(1:n))
     column_start = int_type.(collect(1:n))
     nzval = ones(float_type, n)

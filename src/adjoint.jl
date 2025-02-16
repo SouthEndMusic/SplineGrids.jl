@@ -49,11 +49,12 @@ evaluate the adjoint of the linear mapping `control_points -> eval`. This is a c
 `eval -> control_points`. If we write `evaluate!(spline_grid)` as a matrix vector multiplication `eval = M * control_points`,
 Then the adjoint is given by `v -> M' * v`. This mapping is used in fitting algorithms.
 """
-function evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv};
+function evaluate_adjoint!(
+        spline_grid::AbstractSplineGrid{Nin, Nout, backend, Tv, <:Integer, false};
         derivative_order::NTuple{Nin, <:Integer} = ntuple(_ -> 0, Nin),
         control_points::AbstractControlPointArray{Nin, Nout, Tv} = spline_grid.control_points,
-        eval::AbstractArray = spline_grid.eval
-)::Nothing where {Nin, Nout, Tv}
+        eval::AbstractArray{Tv} = spline_grid.eval
+)::Nothing where {Nin, Nout, backend, Tv}
     @assert !is_nurbs(spline_grid) "Adjoint evaluation not supported for NURBS."
     (; spline_dimensions) = spline_grid
     validate_partial_derivatives(spline_dimensions, derivative_order)
@@ -67,7 +68,6 @@ function evaluate_adjoint!(spline_grid::AbstractSplineGrid{Nin, Nout, false, Tv}
     control_point_kernel_size = get_cp_kernel_size(spline_dimensions)
     degrees = ntuple(i -> spline_dimensions[i].degree, Nin)
 
-    backend = get_backend(eval)
     spline_eval_adjoint_kernel(backend)(
         control_points,
         basis_function_eval_all,
@@ -126,11 +126,10 @@ end
 
 function mult_adjoint!(
         B::AbstractArray,
-        As::NTuple{N, <:RefinementMatrix},
+        As::NTuple{N, <:RefinementMatrix{backend}},
         Y::AbstractArray,
         dims_refinement::NTuple{N, <:Integer}
-) where {N}
-    backend = get_backend(B)
+) where {backend, N}
     validate_mult_input(Y, As, B, dims_refinement)
     B .= 0
 
@@ -169,11 +168,11 @@ end
     end
 end
 
-evaluate_adjoint!(control_points::AbstractControlPoints) = nothing
+evaluate_adjoint!(::DefaultControlPoints) = nothing
 
-function evaluate_adjoint!(control_points::LocallyRefinedControlPoints)::Nothing
+function evaluate_adjoint!(control_points::LocallyRefinedControlPoints{
+        Nin, Nout, backend})::Nothing where {Nin, Nout, backend}
     (; control_points_refined, local_refinements) = control_points
-    backend = get_backend(first(control_points_refined))
     kernel! = local_refinement_adjoint_kernel(backend)
 
     for (i, local_refinement) in Base.Iterators.reverse(enumerate(local_refinements))
