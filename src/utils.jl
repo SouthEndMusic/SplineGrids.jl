@@ -108,8 +108,8 @@ is_nurbs(::AbstractNURBSGrid) = true
 
 function Adapt.adapt(
         backend_new::Backend,
-        knot_vector::AbstractKnotVector{backend, Ti, Tv}
-)::AbstractKnotVector{Ti, Tv} where {backend, Ti, Tv}
+        knot_vector::AbstractKnotVector{backend}
+)::AbstractKnotVector where {backend}
     if backend == backend_new
         knot_vector
     else
@@ -122,9 +122,9 @@ end
 
 function Adapt.adapt(
         backend_new::Backend,
-        spline_dimension::AbstractSplineDimension{backend, Ti, Tv}
-)::AbstractSplineDimension{backend_new, Ti, Tv} where {backend, Ti, Tv}
-    if backend == get_backend(spline_dimension)
+        spline_dimension::AbstractSplineDimension{backend}
+)::AbstractSplineDimension where {backend}
+    if backend == backend_new
         spline_dimension
     else
         SplineDimension(
@@ -159,14 +159,15 @@ end
 
 function Adapt.adapt(
         backend_new::Backend,
-        spline_grid::AbstractSplineGrid{<:Integer, <:Integer, backend}
-)::AbstractSplineGrid where {backend}
+        spline_grid::AbstractSplineGrid{Nin, Nout, backend}
+)::AbstractSplineGrid where {Nin, Nout, backend}
     (; spline_dimensions) = spline_grid
     if backend == backend_new
         spline_grid
     else
         SplineGrid(
-            ntuple(i -> adapt(backend, spline_dimensions[i]), length(spline_dimensions)),
+            ntuple(
+                i -> adapt(backend_new, spline_dimensions[i]), length(spline_dimensions)),
             adapt(backend_new, spline_grid.control_points),
             adapt(backend_new, spline_grid.weights),
             adapt(backend_new, spline_grid.eval)

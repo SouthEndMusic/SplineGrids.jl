@@ -124,7 +124,7 @@ function KernelAbstractions.get_backend(::LocalRefinement{
 end
 
 function Adapt.adapt(backend_new::Backend,
-        local_refinement::LocalRefinement{<:Integer, <:Integer, backend}) where {backend}
+        local_refinement::LocalRefinement{Nin, Nout, backend}) where {Nin, Nout, backend}
     if backend == backend_new
         local_refinement
     else
