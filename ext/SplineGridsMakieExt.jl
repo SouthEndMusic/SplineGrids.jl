@@ -12,12 +12,18 @@ function SplineGrids.plot_basis(spline_grid::SplineGrid{2}; kwargs...)
 end
 
 function SplineGrids.plot_basis!(
-        fig::Figure, spline_grid::SplineGrid{2}; i = 1, j = 1, kwargs...)
+        fig::Figure, spline_grid::SplineGrid{2};
+        i = 1, j = 1,
+        xlabel = "Input dimension 1",
+        ylabel = "Input dimension 2",
+        zlabel = "Basis function value",
+        kwargs...
+)
     extents = ntuple(i -> spline_grid.spline_dimensions[i].knot_vector.extent, 2)
     ratio = (extents[2][2] - extents[2][1]) / (extents[1][2] - extents[1][1])
     ax = Axis3(
         fig[i, j], azimuth = -π / 2, elevation = π / 2,
-        perspectiveness = 0.5, aspect = (1, ratio, 1); kwargs...)
+        perspectiveness = 0.5, aspect = (1, ratio, 1); xlabel, ylabel, zlabel, kwargs...)
     plot_basis!(ax, spline_grid)
 end
 

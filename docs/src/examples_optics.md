@@ -76,104 +76,8 @@ The contribution of the ray is smeared out over multiple pixels in a smooth way 
 using KernelAbstractions
 using Atomix
 
-# Kernel function for computing the contribution of a ray intersection to the
-# pixels close to the intersection.
-function F(x, x0, w)
-    if x < x0 - w
-        -one(x) / 2
-    elseif x > x0 + w
-        one(x) / 2
-    else
-        x_transformed = (x - x0) / w
-        (sin(π * x_transformed) / π + x_transformed) / 2
-    end
-end
-
-@kernel function ray_tracing_kernel(
-        render,
-        @Const(u),
-        @Const(∂₁u),
-        @Const(∂₂u),
-        @Const(x),
-        @Const(y),
-        r,
-        z_screen,
-        screen_size,
-        ray_kernel_size
-)
-    I = @index(Global, Cartesian)
-
-    u_I = u[I]
-    ∂₁u_I = ∂₁u[I]
-    ∂₂u_I = ∂₂u[I]
-
-    x_I = x[I[1]]
-    y_I = y[I[2]]
-
-    # x direction tangent vector: (1, 0, ∂₁u[I])
-    # y direction tangent vector: (0, 1, ∂₂u[I])
-    # -cross product (surface normal): n = (∂₁u[I], ∂₂u[I], -1) / √(1 + ∂₁u[I]^2 + ∂₁u[I]^2)
-    # light vector: ℓ = (0, 0, 1)
-    # Snell's law (vector form):
-    # c = -⟨n, ℓ⟩ = 1 / √(1 + ∂₁u[I]^2 + ∂₁u[I]^2)
-    # v = r * (0, 0, 1) + (r * c - √(1 - r^2 * (1 - c^2))) * (∂₁u[I], ∂₂u[I], -1) / √(1 + ∂₁u[I]^2 + ∂₁u[I]^2)
-
-    cross_product_norm = √(1 + ∂₁u_I^2 + ∂₂u_I^2)
-    c = 1 / cross_product_norm
-    sqrt_arg = 1 - r^2 * (1 - c^2)
-    if sqrt_arg >= 0
-        normal_vector_coef = (r * c - √(1 - r^2 * (1 - c^2))) / cross_product_norm
-
-        # Refracted ray direction
-        v_x = normal_vector_coef * ∂₁u_I
-        v_y = normal_vector_coef * ∂₂u_I
-        v_z = -normal_vector_coef + r
-
-        # Refracted ray starting point: (x_I, y_I, u_I)
-        t_screen_int = (z_screen - u_I) / v_z
-
-        if t_screen_int >= 0
-
-            # Screen intersection coordinates
-            x_screen = x_I + t_screen_int * v_x
-            y_screen = y_I + t_screen_int * v_y
-
-            # Pixel size
-            w_screen, h_screen = screen_size
-            n_x, n_y = size(render)
-            w_pixel = w_screen / n_x
-            h_pixel = h_screen / n_y
-
-            # Pixel intersection indices
-            n_x, n_y = size(render)
-
-            i = 1 + Int(floor((w_screen / 2 + x_screen) / w_pixel))
-            j = 1 + Int(floor((h_screen / 2 + y_screen) / h_pixel))
-
-            # Render contribution from this ray
-            i_min = max(i - ray_kernel_size[1] - 1, 1)
-            i_max = min(i + ray_kernel_size[1] + 1, n_x)
-            j_min = max(j - ray_kernel_size[2] - 1, 1)
-            j_max = min(j + ray_kernel_size[2] + 1, n_y)
-
-            w_kernel = (ray_kernel_size[1] + 0.5) * w_pixel
-            h_kernel = (ray_kernel_size[2] + 0.5) * h_pixel
-
-            for i_ in i_min:i_max
-                contribution_x = F(-0.5w_screen + i_ * w_pixel, x_screen, w_kernel) -
-                                 F(-0.5w_screen + (i_ - 1) * w_pixel, x_screen, w_kernel)
-
-                for j_ in j_min:j_max
-                    contribution_y = F(-0.5h_screen + j_ * h_pixel, y_screen, h_kernel) -
-                                     F(
-                        -0.5h_screen + (j_ - 1) * h_pixel, y_screen, h_kernel)
-
-                    Atomix.@atomic render[i_, j_] += contribution_x * contribution_y
-                end
-            end
-        end
-    end
-end
+# See the included file for the ray tracing implementation
+include("ray_tracing_kernel.jl")
 ```
 
 ## Calling the ray tracing kernel
@@ -184,11 +88,12 @@ Here we define a function which computes the input for the ray tracing kernel fr
 function trace_rays!(render, control_points_flat, p)::Nothing
     (; spline_grid, u, ∂₁u, ∂₂u) = p
 
-    control_points = reshape(control_points_flat, size(spline_grid.control_points))
+    copyto!(spline_grid.control_points, control_points_flat)
+    evaluate!(spline_grid.control_points) # Only relevant for LocallyRefinedControlPoints
 
-    evaluate!(spline_grid; control_points, eval = u)
-    evaluate!(spline_grid; control_points, eval = ∂₁u, derivative_order = (1, 0))
-    evaluate!(spline_grid; control_points, eval = ∂₂u, derivative_order = (0, 1))
+    evaluate!(spline_grid; eval = u)
+    evaluate!(spline_grid; eval = ∂₁u, derivative_order = (1, 0))
+    evaluate!(spline_grid; eval = ∂₂u, derivative_order = (0, 1))
 
     render .= 0.0
     backend = get_backend(u)
@@ -200,10 +105,7 @@ function trace_rays!(render, control_points_flat, p)::Nothing
         ∂₂u,
         spline_grid.spline_dimensions[1].sample_points,
         spline_grid.spline_dimensions[2].sample_points,
-        p.r,
-        p.z_screen,
-        p.screen_size,
-        p.ray_kernel_size,
+        p.scene_params,
         ndrange = size(u)
     )
     synchronize(backend)
@@ -218,10 +120,11 @@ Let's define a flat spline surface and trace some rays. We expect to see a proje
 ```@example tutorial
 using SplineGrids
 using Plots
+using CairoMakie # hide
 
-n_control_points = (50, 50)
+n_control_points = (20, 20)
 degree = (2, 2)
-n_sample_points = (300, 300) # Determines grid of sampled rays
+n_sample_points = (1000, 1000) # Determines grid of sampled rays
 dim_out = 1
 extent = (-1.0, 1.0) # Lens extent in both x and y direction
 
@@ -229,24 +132,32 @@ spline_dimensions = SplineDimension.(
     n_control_points, degree, n_sample_points; max_derivative_order = 1, extent)
 spline_grid = SplineGrid(spline_dimensions, dim_out)
 spline_grid.control_points .= 0
+fig_total = Figure(size = (1600, 900)) # hide
+plot_basis!(fig_total, spline_grid; j = 2, title = "Unrefined spline basis") # hide
+
+# Static scene parameters
+scene_params = (;
+    r = 1.4f0,
+    z_screen = 4.0f0,
+    screen_size = (7.5f0, 7.5f0),
+    ray_kernel_size = (5, 5),
+    screen_res = (250, 250)
+)
 
 p_render = (;
     spline_grid,
     u = similar(spline_grid.eval),
     ∂₁u = similar(spline_grid.eval),
     ∂₂u = similar(spline_grid.eval),
-    r = 1.4,
-    z_screen = 5.0,
-    screen_size = (4.0, 4.0),
-    ray_kernel_size = (3, 3),
-    screen_res = (250, 250)
+    scene_params
 )
 
-render = zeros(Float32, p_render.screen_res)
+render = zeros(Float32, scene_params.screen_res)
 
 trace_rays!(render, vec(spline_grid.control_points), p_render)
 
-heatmap(render, aspect_ratio = :equal)
+Plots.heatmap(render, aspect_ratio = :equal, cmap = :grays,
+    title = "Initial distribution with flat lens")
 ```
 
 ## Defining the target distribution
@@ -254,18 +165,21 @@ heatmap(render, aspect_ratio = :equal)
 We define a normalized target distribution, which we will compare to normalized renders.
 
 ```@example tutorial
-using LinearAlgebra
-
 target = [exp(-(x .^ 2 + y .^ 2)^2)
           for
-          x in range(-p_render.screen_size[1] / 2, p_render.screen_size[1] / 2,
-    length = p_render.screen_res[1]),
-y in range(-p_render.screen_size[2] / 2, p_render.screen_size[2] / 2,
-    length = p_render.screen_res[2])]
+          x in range(-2, 2,
+    length = scene_params.screen_res[1]
+),
+y in range(-2, 2,
+    length = scene_params.screen_res[2]
+)]
 
-normalize!(target)
+# Normalize target
+target ./= sum(target)
 
-heatmap(target, aspect_ratio = :equal)
+ax_target = Axis(fig_total[2, 1]; title = "Target illumination", aspect = 1) # hide
+CairoMakie.heatmap!(ax_target, target, colormap = :grays) # hide
+Plots.heatmap(target, aspect_ratio = :equal, cmap = :grays, title = "Target distribution")
 ```
 
 ## The loss function
@@ -275,11 +189,10 @@ using Distances
 
 function image_loss(control_points_flat, target, render, p_render)
     trace_rays!(render, control_points_flat, p_render)
-    normalize!(render)
+    # normalize render
+    render ./= sum(render)
     Euclidean()(render, target)
 end
-
-render = zeros(Float32, p_render.screen_res...)
 
 image_loss(
     vec(spline_grid.control_points),
@@ -301,7 +214,7 @@ drender = make_zero(render)
 dp_render = make_zero(p_render)
 
 autodiff(
-    Reverse,
+    Enzyme.Reverse,
     image_loss,
     Active,
     Duplicated(vec(spline_grid.control_points), G),
@@ -310,23 +223,29 @@ autodiff(
     DuplicatedNoNeed(p_render, dp_render)
 )
 
-heatmap(reshape(G, n_control_points), aspect_ratio = :equal)
+M = maximum(abs.(G))
+Plots.heatmap(
+    reshape(G, n_control_points), aspect_ratio = :equal, cmap = :bluesreds, clims = (-M, M),
+    title = "The gradient of the loss function\nw.r.t. the control point grid")
 ```
 
 ## Optimizing the surface
 
 ```@example tutorial
 using Optimization
-using OptimizationOptimJL: BFGS
+using OptimizationOptimJL: Adam
 
 function image_loss_grad!(G, control_points_flat, meta_p)::Nothing
     make_zero!(G)
-    make_zero!(meta_p.render_duplicated.dval)
-    for val in values(meta_p.p_render_duplicated.dval)
-        val isa Union{Array, SplineGrid} && make_zero!(val)
-    end
+    (; render_duplicated, p_render_duplicated) = meta_p
+    (; spline_grid, u, ∂₁u, ∂₂u) = p_render_duplicated.dval
+    make_zero!(render_duplicated.dval)
+    make_zero!(spline_grid)
+    make_zero!(u)
+    make_zero!(∂₁u)
+    make_zero!(∂₂u)
     autodiff(
-        Reverse,
+        Enzyme.Reverse,
         image_loss,
         Active,
         Duplicated(control_points_flat, G),
@@ -359,16 +278,35 @@ prob = OptimizationProblem(
     meta_p
 )
 
-sol = solve(prob, BFGS(); maxiters = 50)
+loss_values = Float32[]
+function loss_callback(state, args...)
+    (; objective) = state
+    push!(loss_values, objective)
+    println("Loss (iteration #$(length(loss_values))) = $objective")
+    # Stop the optimization if the loss doesn't reduce
+    false
+end
+
+sol = solve(prob, Adam(; alpha = 1f-3, epsilon=1f-8, beta_mean=0.9f0, beta_var=0.999f0); maxiters = 20, callback = loss_callback)
 ```
 
 ## Viewing the optimization result
+
+The loss reduces over the iterations as follows:
+
+```@example tutorial
+Plots.plot(loss_values, yscale = :log10, xlabel = "Iterations", title = "Loss")
+```
 
 The final render looks like this:
 
 ```@example tutorial
 trace_rays!(render, sol.u, p_render)
-heatmap(render, aspect_ratio = :equal)
+ax_render = Axis(
+    fig_total[2, 2]; aspect = 1, title = "Illumination after first optimization") # hide
+CairoMakie.heatmap!(ax_render, render; colormap = :grays) # hide
+#err =  # hide
+Plots.heatmap(render, aspect_ratio = :equal, cmap = :grays, title = "Final render")
 ```
 
 And the lens surface looks like this:
@@ -376,10 +314,18 @@ And the lens surface looks like this:
 ```@example tutorial
 spline_grid.control_points .= reshape(sol.u, size(spline_grid.control_points))
 evaluate!(spline_grid)
-plot(spline_grid; plot_knots = false, aspect_ratio = :equal)
+M = maximum(abs.(spline_grid.eval))
+ax_lens = Axis(fig_total[4, 2]; aspect = 1, title = "Lens surface after first optimization") # hide
+CairoMakie.heatmap!(ax_lens, spline_grid.eval[:, :, 1]) # hide
+err = render ./ sum(render) - target # hide
+ax_err = Axis(fig_total[3, 2]; aspect = 1, title = "Error after first optimization")
+M = maximum(abs.(err))
+CairoMakie.heatmap!(ax_err, err, colorrange = (-M, M), colormap = :redblue)
+Plots.plot(spline_grid; plot_knots = false, aspect_ratio = :equal,
+    cmap = :viridis, title = "Final lens surface")
 ```
 
-## A peek into upcoming features
+## Locally refining the basis of the lens surface
 
 One of the neat things we can do with this setup is look at all sorts of gradients. We are most interested in the gradient of the loss with respect to the partial derivatives of the surface, since those are the most important for the rendering result. In particular, we look at the sum of the absolute values of these gradients. This shows which regions of the lens surface the loss is most sensitive to, and thus where the surface might need more degrees of freedom.
 
@@ -393,10 +339,7 @@ function loss_from_grid(render, u, ∂₁u, ∂₂u, spline_grid, target, p_rend
         ∂₂u,
         spline_grid.spline_dimensions[1].sample_points,
         spline_grid.spline_dimensions[2].sample_points,
-        p_render.r,
-        p_render.z_screen,
-        p_render.screen_size,
-        p_render.ray_kernel_size,
+        p_render.scene_params,
         ndrange = size(u)
     )
     synchronize(backend)
@@ -407,7 +350,7 @@ for val in values(meta_p.p_render_duplicated.dval)
     val isa Union{Array, SplineGrid} && make_zero!(val)
 end
 autodiff(
-    Reverse,
+    Enzyme.Reverse,
     loss_from_grid,
     Active,
     meta_p.render_duplicated,
@@ -419,8 +362,45 @@ autodiff(
     Const(p_render)
 )
 
-heatmap(
-    abs.(meta_p.p_render_duplicated.dval.∂₁u[:, :, 1]) +
-    abs.(meta_p.p_render_duplicated.dval.∂₂u[:, :, 1]),
-    aspect_ratio = :equal)
+sensitivity = abs.(meta_p.p_render_duplicated.dval.∂₁u) +
+              abs.(meta_p.p_render_duplicated.dval.∂₂u)
+
+Plots.heatmap(
+    sensitivity[:, :, 1], aspect_ratio = :equal, title = "Loss sensitivity of lens surface")
+```
+
+With the local refinement functionality of `SplineGrids.jl`, we can use this sensitivity data to refine the spline basis of the lens surface in those regions where the sensitivity to the loss is highest:
+
+```@example tutorial
+using CairoMakie
+
+fig = Figure()
+plot_basis!(fig, spline_grid, title = "Unrefined basis")
+
+spline_grid = add_default_local_refinement(spline_grid)
+error_informed_local_refinement!(spline_grid, sensitivity)
+deactivate_overwritten_control_points!(spline_grid.control_points)
+plot_basis!(fig_total, spline_grid; j = 3, title = "Refined spline basis") # hide
+plot_basis!(fig, spline_grid; j = 2, title = "Refined basis")
+fig
+```
+
+Now let's see whether the optimization can do better.
+
+```@example tutorial
+using ConstructionBase
+control_points = zeros(Float32, get_n_control_points(spline_grid), 1)
+copyto!(control_points, spline_grid.control_points)
+
+p_render = setproperties(p_render; spline_grid)
+meta_p = setproperties(
+    meta_p; p_render_duplicated = DuplicatedNoNeed(p_render, make_zero(p_render)))
+
+prob = OptimizationProblem(
+    optimization_function,
+    control_points,
+    meta_p
+)
+
+sol = solve(prob, Adam(; alpha = 1f-3, epsilon=1f-8, beta_mean=0.9f0, beta_var=0.999f0); maxiters = 100, callback = loss_callback)
 ```
