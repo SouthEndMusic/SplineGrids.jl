@@ -38,14 +38,41 @@ backend = CUDABackend()
 # Defining the spline grid
 spline_dimensions = SplineDimension.(n_control_points, degree, n_sample_points; backend)
 spline_grid = SplineGrid(spline_dimensions, Nout)
+# SplineGrid volume with outputs in ℝ⁴ (Float32, CUDABackend)
+# -----------------------------------------------------------
+# * Properties per dimension:
+# ┌─────────────────┬────────┬───────────────────┬─────────────────┐
+# │ input dimension │ degree │ # basis functions │ # sample points │
+# ├─────────────────┼────────┼───────────────────┼─────────────────┤
+# │               1 │      2 │                10 │              50 │
+# │               2 │      3 │                10 │              50 │
+# │               3 │      2 │                 5 │              25 │
+# └─────────────────┴────────┴───────────────────┴─────────────────┘
+# * Control points:
+# DefaultControlPoints for grid of size (10, 10, 5) in ℝ⁴ (Float32, CUDABackend).
 
 # Set the desired control points
-spline_grid.control_points .= rand(n_control_points..., Nout)
+copyto!(spline_grid.control_points, rand(n_control_points..., Nout))
 
 # Evaluate
 evaluate!(spline_grid)
 
 # The output can be found in spline_grid.eval of shape (n_sample_points..., Nout)
+
+# Local refinement
+spline_grid = add_default_local_refinement(spline_grid)
+activate_local_control_point_range!(spline_grid, 1:4, 1:6, 3:4)
+deactivate_overwritten_control_points!(spline_grid.control_points)
+spline_grid.control_points
+# LocallyRefinedControlPoints for final grid of size (18, 17, 8) in ℝ⁴ (Float32, CUDABackend). Local refinements:
+# ┌────────────┬───────────────┬──────────────┬──────────────────┐
+# │ input dim. │ # c.p. before │ # c.p. after │ # activated c.p. │
+# ├────────────┼───────────────┼──────────────┼──────────────────┤
+# │        NaN │           NaN │          NaN │              500 │
+# │          1 │            10 │           18 │                0 │
+# │          2 │            10 │           17 │                0 │
+# │          3 │             5 │            8 │               48 │
+# └────────────┴───────────────┴──────────────┴──────────────────┘
 ```
 
 ## History and theory

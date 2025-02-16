@@ -31,7 +31,7 @@ function Base.show(
 ) where {Nin, Nout, backend, Tv}
     cp_grid_size = size(control_points)[1:(end - 1)]
     println(io,
-        "DefaultControlPoints for grid of size $cp_grid_size in ℝ$(super(string(Nout))) ($Tv, $(struct_name(backend)).")
+        "DefaultControlPoints for grid of size $cp_grid_size in ℝ$(super(string(Nout))) ($Tv, $(struct_name(backend))).")
 end
 
 Base.lastindex(control_points::DefaultControlPoints) = length(control_points)
@@ -550,12 +550,15 @@ Instead of supplying explicit indices of the control points for local refinement
 supply a range of indices per dimension.
 """
 function activate_local_control_point_range!(
-        spline_grid::AbstractSplineGrid{Nin, Nout, HasWeights, Tv, Ti},
+        spline_grid::AbstractSplineGrid{Nin, Nout, backend, Tv, Ti},
         ranges::Vararg{UnitRange}
-)::Nothing where {Nin, Nout, HasWeights, Tv, Ti}
+)::Nothing where {Nin, Nout, backend, Tv, Ti}
     @assert length(ranges) == Nin
-    local_refinement_indices = [Ti.(collect(x)) for x in Iterators.product(ranges...)]
-    local_refinement_indices = reduce(vcat, local_refinement_indices')
+    n = prod(length.(ranges))
+    local_refinement_indices = allocate(backend, Ti, n, Nin)
+    for (i, I) in enumerate(Iterators.product(ranges...))
+        local_refinement_indices[i, :] .= I
+    end
     activate_local_refinement!(spline_grid, local_refinement_indices)
 end
 

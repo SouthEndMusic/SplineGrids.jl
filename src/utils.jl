@@ -141,13 +141,13 @@ end
 
 function Adapt.adapt(
         backend_new::Backend,
-        control_points::AbstractControlPoints{backend}
-) where {backend}
+        control_points::AbstractControlPoints{Nin, Nout, backend}
+) where {Nin, Nout, backend}
     if backend == backend_new
         control_points
     else
         if control_points isa DefaultControlPoints
-            DefaultControlPoints(adapt(backend, control_points.control_points))
+            DefaultControlPoints(adapt(backend_new, control_points.control_points))
         else # control_points isa LocallyRefinedControlPoints
             LocallyRefinedControlPoints(
                 map(cp -> adapt(backend_new, cp), control_points.control_points_refined),
