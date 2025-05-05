@@ -1,3 +1,6 @@
+# NOTE
+All functionality from this package will be moved to https://github.com/SciML/NDInterpolations.jl.
+
 # SplineGrids.jl
 
 [![DocStable](https://img.shields.io/badge/docs-stable-blue.svg)](https://southendmusic.github.io/SplineGrids.jl/stable/)
